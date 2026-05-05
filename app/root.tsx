@@ -9,6 +9,12 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { ok as _smokeOk } from "~/lib/_smoke";
+
+// Reference smoke symbol so it survives tree-shaking — proves `~/*` alias resolves under strict TS.
+if (!_smokeOk) {
+  throw new Error("smoke import failed");
+}
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
