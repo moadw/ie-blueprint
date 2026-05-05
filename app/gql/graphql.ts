@@ -1,0 +1,10658 @@
+/* eslint-disable */
+import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
+export type Maybe<T> = T | null;
+export type InputMaybe<T> = Maybe<T>;
+export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
+export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
+export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
+export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = { [_ in K]?: never };
+export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
+/** All built-in and custom scalars, mapped to their actual values */
+export type Scalars = {
+  ID: { input: string; output: string; }
+  String: { input: string; output: string; }
+  Boolean: { input: boolean; output: boolean; }
+  Int: { input: number; output: number; }
+  Float: { input: number; output: number; }
+  Date: { input: any; output: any; }
+  /** The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf). */
+  JSON: { input: any; output: any; }
+  /** The `ID` scalar type represents a unique MongoDB identifier in collection. MongoDB by default use 12-byte ObjectId value (https://docs.mongodb.com/manual/reference/bson-types/#objectid). But MongoDB also may accepts string or integer as correct values for _id field. */
+  MongoID: { input: any; output: any; }
+  /** The string representation of JavaScript regexp. You may provide it with flags "/^abc.*\/i" or without flags like "^abc.*". More info about RegExp characters and flags: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions */
+  RegExpAsString: { input: any; output: any; }
+};
+
+export type Card = {
+  __typename?: 'Card';
+  brand?: Maybe<Scalars['String']['output']>;
+  country?: Maybe<Scalars['String']['output']>;
+  customer?: Maybe<Scalars['String']['output']>;
+  cvc_check?: Maybe<Scalars['String']['output']>;
+  dynamic_last4?: Maybe<Scalars['JSON']['output']>;
+  exp_month?: Maybe<Scalars['Float']['output']>;
+  exp_year?: Maybe<Scalars['Float']['output']>;
+  fingerprint?: Maybe<Scalars['String']['output']>;
+  funding?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['String']['output']>;
+  last4?: Maybe<Scalars['String']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+  object?: Maybe<Scalars['String']['output']>;
+  tokenization_method?: Maybe<Scalars['JSON']['output']>;
+};
+
+export type CategoryCount = {
+  __typename?: 'CategoryCount';
+  category?: Maybe<Scalars['String']['output']>;
+  categoryName?: Maybe<Scalars['String']['output']>;
+  count?: Maybe<Scalars['Int']['output']>;
+};
+
+export type ClassAndStudents = {
+  __typename?: 'ClassAndStudents';
+  classes: Scalars['Int']['output'];
+  students: Scalars['Int']['output'];
+};
+
+export type CleverGroup = {
+  __typename?: 'CleverGroup';
+  data?: Maybe<CleverGroup_Data>;
+};
+
+export type CleverGroup_Data = {
+  __typename?: 'CleverGroup_Data';
+  grade?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['String']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+  subject?: Maybe<Scalars['String']['output']>;
+  teacher?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOneanimalsInput = {
+  categories?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  levels?: InputMaybe<Array<InputMaybe<animalsLevelsInput>>>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOneanimalsPayload = {
+  __typename?: 'CreateOneanimalsPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<animals>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOneanimalscategoriesInput = {
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOneanimalscategoriesPayload = {
+  __typename?: 'CreateOneanimalscategoriesPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<animalscategories>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOnecategoriesInput = {
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOnecategoriesPayload = {
+  __typename?: 'CreateOnecategoriesPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<categories>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOnecheckinquestionInput = {
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  start?: InputMaybe<Scalars['Boolean']['input']>;
+  teacher?: InputMaybe<Scalars['Boolean']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOnecheckinquestionPayload = {
+  __typename?: 'CreateOnecheckinquestionPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<checkinquestion>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOneclassesInput = {
+  activity?: InputMaybe<Array<InputMaybe<classesActivityInput>>>;
+  bigIdea?: InputMaybe<Scalars['String']['input']>;
+  categories?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  classLength?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<classesCoverInput>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  discussion?: InputMaybe<Array<InputMaybe<classesDiscussionInput>>>;
+  documents?: InputMaybe<Array<InputMaybe<classesDocumentsInput>>>;
+  extend?: InputMaybe<Array<InputMaybe<classesExtendInput>>>;
+  extra?: InputMaybe<Scalars['Boolean']['input']>;
+  extraActivities?: InputMaybe<Scalars['String']['input']>;
+  extracurricular?: InputMaybe<classesExtracurricularInput>;
+  free?: InputMaybe<Scalars['Boolean']['input']>;
+  learningGoal?: InputMaybe<Scalars['String']['input']>;
+  lifeSkill?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  overview?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  prefix?: InputMaybe<Scalars['String']['input']>;
+  reflection?: InputMaybe<Array<InputMaybe<classesReflectionInput>>>;
+  skillSet?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  skills?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  subcategories?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  tags?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  theme?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  trailer?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+export type CreateOneclassesPayload = {
+  __typename?: 'CreateOneclassesPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<classes>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOneclassificationtypeInput = {
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOneclassificationtypePayload = {
+  __typename?: 'CreateOneclassificationtypePayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<classificationtype>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOnecurriculumcategoryInput = {
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOnecurriculumcategoryPayload = {
+  __typename?: 'CreateOnecurriculumcategoryPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<curriculumcategory>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOnecurriculumsInput = {
+  active?: InputMaybe<Scalars['Boolean']['input']>;
+  animalCategory?: InputMaybe<Scalars['String']['input']>;
+  category?: InputMaybe<Scalars['String']['input']>;
+  classLength?: InputMaybe<Scalars['String']['input']>;
+  courseDuration?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<curriculumsCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  documents?: InputMaybe<Array<InputMaybe<curriculumsDocumentsInput>>>;
+  donation?: InputMaybe<Scalars['Boolean']['input']>;
+  grade?: InputMaybe<Scalars['String']['input']>;
+  hidden?: InputMaybe<Scalars['Boolean']['input']>;
+  language?: InputMaybe<curriculumsLanguageInput>;
+  leaderBio?: InputMaybe<Scalars['String']['input']>;
+  leaderName?: InputMaybe<Scalars['String']['input']>;
+  learningGoal?: InputMaybe<Scalars['String']['input']>;
+  lifeSkill?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  logo?: InputMaybe<curriculumsLogoInput>;
+  loop?: InputMaybe<curriculumsLoopInput>;
+  mini?: InputMaybe<Scalars['Boolean']['input']>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  pacingGuide?: InputMaybe<curriculumsPacingGuideInput>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  resources?: InputMaybe<Array<InputMaybe<curriculumsResourcesInput>>>;
+  schoolLevel?: InputMaybe<Scalars['String']['input']>;
+  skillSet?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  slug?: InputMaybe<Scalars['String']['input']>;
+  teacher?: InputMaybe<Scalars['String']['input']>;
+  theme?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  totalClass?: InputMaybe<Scalars['Float']['input']>;
+  totalLesson?: InputMaybe<Scalars['Float']['input']>;
+  totalLessonRestricted?: InputMaybe<Scalars['Float']['input']>;
+  trailer?: InputMaybe<curriculumsTrailerInput>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOnecurriculumsPayload = {
+  __typename?: 'CreateOnecurriculumsPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<curriculums>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOnedistrictInput = {
+  country?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  exemptionDates?: InputMaybe<Array<InputMaybe<Scalars['Date']['input']>>>;
+  extraCourse?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  organization?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  state?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOnedistrictPayload = {
+  __typename?: 'CreateOnedistrictPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<district>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOnefavoritesInput = {
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type CreateOnefavoritesPayload = {
+  __typename?: 'CreateOnefavoritesPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<favorites>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOnelessonInput = {
+  class?: InputMaybe<Scalars['String']['input']>;
+  classificationType?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  cover?: InputMaybe<lessonCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  lifeSkill?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOnelessonPayload = {
+  __typename?: 'CreateOnelessonPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<lesson>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOnelifeskillInput = {
+  color?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  icon?: InputMaybe<lifeskillIconInput>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOnelifeskillPayload = {
+  __typename?: 'CreateOnelifeskillPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<lifeskill>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOneorganizationtokenInput = {
+  cleverDistrictId?: InputMaybe<Scalars['String']['input']>;
+  cleverToken?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  oneRosterAppId?: InputMaybe<Scalars['String']['input']>;
+  oneRosterToken?: InputMaybe<Scalars['String']['input']>;
+  organization?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOneorganizationtokenPayload = {
+  __typename?: 'CreateOneorganizationtokenPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<organizationtoken>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOnepinInput = {
+  class?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<pinCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  sparkLibrary?: InputMaybe<Scalars['String']['input']>;
+  times?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  video?: InputMaybe<pinVideoInput>;
+};
+
+export type CreateOnepinPayload = {
+  __typename?: 'CreateOnepinPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<pin>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOnequestionsInput = {
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  labelHtml?: InputMaybe<Scalars['String']['input']>;
+  language?: InputMaybe<questionsLanguageInput>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  responses?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  rightAnswers?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOnequestionsPayload = {
+  __typename?: 'CreateOnequestionsPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<questions>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOneregionInput = {
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  district?: InputMaybe<Scalars['String']['input']>;
+  exemptionDates?: InputMaybe<Array<InputMaybe<Scalars['Date']['input']>>>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOneregionPayload = {
+  __typename?: 'CreateOneregionPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<region>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOnereportsInput = {
+  body?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  scale?: InputMaybe<Scalars['Float']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOnereportsPayload = {
+  __typename?: 'CreateOnereportsPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<reports>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOneresourcecategoryInput = {
+  color?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  icon?: InputMaybe<resourcecategoryIconInput>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOneresourcecategoryPayload = {
+  __typename?: 'CreateOneresourcecategoryPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<resourcecategory>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOneresponsesInput = {
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  language?: InputMaybe<responsesLanguageInput>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOneresponsesPayload = {
+  __typename?: 'CreateOneresponsesPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<responses>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOneschoolcodeInput = {
+  classes?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  code?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculums?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  district?: InputMaybe<Scalars['String']['input']>;
+  expirationDate?: InputMaybe<Scalars['Date']['input']>;
+  limit?: InputMaybe<Scalars['Float']['input']>;
+  mini?: InputMaybe<Scalars['Boolean']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  school?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOneschoolcodePayload = {
+  __typename?: 'CreateOneschoolcodePayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<schoolcode>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOneschoollevelInput = {
+  color?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  survey?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOneschoollevelPayload = {
+  __typename?: 'CreateOneschoollevelPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<schoollevel>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOneschoolsDataInput = {
+  city?: InputMaybe<Scalars['String']['input']>;
+  cleverId?: InputMaybe<Scalars['String']['input']>;
+  cleverSync?: InputMaybe<Scalars['Boolean']['input']>;
+  country?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  district?: InputMaybe<Scalars['String']['input']>;
+  extraCourse?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  oneRosterId?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  region?: InputMaybe<Scalars['String']['input']>;
+  settings?: InputMaybe<Scalars['String']['input']>;
+  slug?: InputMaybe<Scalars['String']['input']>;
+  state?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOneschoolsDataPayload = {
+  __typename?: 'CreateOneschoolsDataPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<schoolsData>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOneskillsetInput = {
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  icon?: InputMaybe<skillsetIconInput>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOneskillsetPayload = {
+  __typename?: 'CreateOneskillsetPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<skillset>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOnesparklibraryInput = {
+  article?: InputMaybe<sparklibraryArticleInput>;
+  articleBody?: InputMaybe<Scalars['String']['input']>;
+  articleQuestion?: InputMaybe<Array<InputMaybe<sparklibraryArticleQuestionInput>>>;
+  articleTitle?: InputMaybe<Scalars['String']['input']>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<sparklibraryCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  funFact?: InputMaybe<Array<InputMaybe<sparklibraryFunFactInput>>>;
+  journals?: InputMaybe<Array<InputMaybe<sparklibraryJournalsInput>>>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  mindfulMoment?: InputMaybe<Array<InputMaybe<sparklibraryMindfulMomentInput>>>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  slug?: InputMaybe<Scalars['String']['input']>;
+  takeAwayDescription?: InputMaybe<Scalars['String']['input']>;
+  takeAwayLabel?: InputMaybe<Scalars['String']['input']>;
+  times?: InputMaybe<Array<InputMaybe<Scalars['Date']['input']>>>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  video?: InputMaybe<sparklibraryVideoInput>;
+  videoQuestions?: InputMaybe<Array<InputMaybe<sparklibraryVideoQuestionsInput>>>;
+};
+
+export type CreateOnesparklibraryPayload = {
+  __typename?: 'CreateOnesparklibraryPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<sparklibrary>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOnestickerInput = {
+  cover?: InputMaybe<stickerCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deedlyVault?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  video?: InputMaybe<stickerVideoInput>;
+};
+
+export type CreateOnestickerPayload = {
+  __typename?: 'CreateOnestickerPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<sticker>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOnesubcategoriesInput = {
+  categories?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOnesubcategoriesPayload = {
+  __typename?: 'CreateOnesubcategoriesPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<subcategories>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOnetapInput = {
+  additional?: InputMaybe<Scalars['String']['input']>;
+  canva?: InputMaybe<Array<InputMaybe<tapCanvaInput>>>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<tapCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  donation?: InputMaybe<Scalars['Float']['input']>;
+  donationVault?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  extraQuestions?: InputMaybe<Array<InputMaybe<tapExtraQuestionsInput>>>;
+  intro?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  lifeSkills?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  points?: InputMaybe<Scalars['Float']['input']>;
+  questions?: InputMaybe<Array<InputMaybe<tapQuestionsInput>>>;
+  resources?: InputMaybe<Array<InputMaybe<tapResourcesInput>>>;
+  slug?: InputMaybe<Scalars['String']['input']>;
+  sparkLibrary?: InputMaybe<Scalars['String']['input']>;
+  survey?: InputMaybe<Scalars['String']['input']>;
+  themes?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  time?: InputMaybe<Scalars['Float']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  videos?: InputMaybe<Array<InputMaybe<tapVideosInput>>>;
+};
+
+export type CreateOnetapPayload = {
+  __typename?: 'CreateOnetapPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<tap>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOnethemeInput = {
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  icon?: InputMaybe<themeIconInput>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOnethemePayload = {
+  __typename?: 'CreateOnethemePayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<theme>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOneuseranimalsInput = {
+  animal?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  level?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type CreateOneuseranimalsPayload = {
+  __typename?: 'CreateOneuseranimalsPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<useranimals>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOneuserorganizationInput = {
+  platform?: InputMaybe<Scalars['String']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type CreateOneuserorganizationPayload = {
+  __typename?: 'CreateOneuserorganizationPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<userorganization>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CreateOnevideotapInput = {
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  end?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  sparkLibrary?: InputMaybe<Scalars['String']['input']>;
+  start?: InputMaybe<Scalars['Float']['input']>;
+  tag?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type CreateOnevideotapPayload = {
+  __typename?: 'CreateOnevideotapPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<videotap>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type CurriculumObj = {
+  __typename?: 'CurriculumObj';
+  _id?: Maybe<Scalars['String']['output']>;
+  active?: Maybe<Scalars['Boolean']['output']>;
+  animalCategory?: Maybe<Scalars['String']['output']>;
+  cover?: Maybe<DocumentType>;
+  description?: Maybe<Scalars['String']['output']>;
+  hidden?: Maybe<Scalars['Boolean']['output']>;
+  leaderBio?: Maybe<Scalars['String']['output']>;
+  learningGoal?: Maybe<Scalars['String']['output']>;
+  lifeSkill?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  logo?: Maybe<DocumentType>;
+  loop?: Maybe<DocumentType>;
+  resources?: Maybe<Array<Maybe<DocumentType>>>;
+  skillSet?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  slug?: Maybe<Scalars['String']['output']>;
+  teacher?: Maybe<Scalars['String']['output']>;
+  theme?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  title?: Maybe<Scalars['String']['output']>;
+  trailer?: Maybe<DocumentType>;
+};
+
+export type DateUserCount = {
+  __typename?: 'DateUserCount';
+  count: Scalars['Int']['output'];
+  date: Scalars['String']['output'];
+};
+
+export type DocumentType = {
+  __typename?: 'DocumentType';
+  title?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type ErrorInterface = {
+  /** Generic error message */
+  message?: Maybe<Scalars['String']['output']>;
+};
+
+export type FilterFindManyanimalsInput = {
+  AND?: InputMaybe<Array<FilterFindManyanimalsInput>>;
+  OR?: InputMaybe<Array<FilterFindManyanimalsInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyanimalsOperatorsInput>;
+  categories?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  levels?: InputMaybe<Array<InputMaybe<FilterFindManyanimalsLevelsInput>>>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type FilterFindManyanimalsLevelsImageInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManyanimalsLevelsInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  image?: InputMaybe<FilterFindManyanimalsLevelsImageInput>;
+  level?: InputMaybe<Scalars['Float']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  points?: InputMaybe<Scalars['Float']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyanimalsOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyanimals_idOperatorsInput>;
+};
+
+export type FilterFindManyanimals_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyavatarArtworkInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManyavatarInput = {
+  AND?: InputMaybe<Array<FilterFindManyavatarInput>>;
+  /** Filter premium or free Avatars */
+  GREATER_THAN_ZERO?: InputMaybe<Scalars['Boolean']['input']>;
+  OR?: InputMaybe<Array<FilterFindManyavatarInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyavatarOperatorsInput>;
+  artwork?: InputMaybe<FilterFindManyavatarArtworkInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  price?: InputMaybe<Scalars['Float']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyavatarOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyavatar_idOperatorsInput>;
+};
+
+export type FilterFindManyavatar_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyavatartypesInput = {
+  AND?: InputMaybe<Array<FilterFindManyavatartypesInput>>;
+  OR?: InputMaybe<Array<FilterFindManyavatartypesInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyavatartypesOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyavatartypesOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyavatartypes_idOperatorsInput>;
+};
+
+export type FilterFindManyavatartypes_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManybadgesCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManybadgesInput = {
+  AND?: InputMaybe<Array<FilterFindManybadgesInput>>;
+  OR?: InputMaybe<Array<FilterFindManybadgesInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManybadgesOperatorsInput>;
+  cover?: InputMaybe<FilterFindManybadgesCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  video?: InputMaybe<FilterFindManybadgesVideoInput>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManybadgesOperatorsInput = {
+  _id?: InputMaybe<FilterFindManybadges_idOperatorsInput>;
+};
+
+export type FilterFindManybadgesVideoInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManybadges_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManybillingtypesInput = {
+  AND?: InputMaybe<Array<FilterFindManybillingtypesInput>>;
+  OR?: InputMaybe<Array<FilterFindManybillingtypesInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManybillingtypesOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  dateRenews?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  licenses?: InputMaybe<Scalars['Float']['input']>;
+  price?: InputMaybe<Scalars['Float']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManybillingtypesOperatorsInput = {
+  _id?: InputMaybe<FilterFindManybillingtypes_idOperatorsInput>;
+};
+
+export type FilterFindManybillingtypes_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManycategoriesInput = {
+  AND?: InputMaybe<Array<FilterFindManycategoriesInput>>;
+  OR?: InputMaybe<Array<FilterFindManycategoriesInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManycategoriesOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManycategoriesOperatorsInput = {
+  _id?: InputMaybe<FilterFindManycategories_idOperatorsInput>;
+};
+
+export type FilterFindManycategories_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManycheckinquestionInput = {
+  AND?: InputMaybe<Array<FilterFindManycheckinquestionInput>>;
+  OR?: InputMaybe<Array<FilterFindManycheckinquestionInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManycheckinquestionOperatorsInput>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  start?: InputMaybe<Scalars['Boolean']['input']>;
+  teacher?: InputMaybe<Scalars['Boolean']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManycheckinquestionOperatorsInput = {
+  _id?: InputMaybe<FilterFindManycheckinquestion_idOperatorsInput>;
+};
+
+export type FilterFindManycheckinquestion_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyclassesActivityInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManyclassesCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManyclassesDiscussionInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManyclassesDocumentsInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManyclassesExtendInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManyclassesExtracurricularInput = {
+  available?: InputMaybe<Scalars['Boolean']['input']>;
+  points?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManyclassesInput = {
+  AND?: InputMaybe<Array<FilterFindManyclassesInput>>;
+  OR?: InputMaybe<Array<FilterFindManyclassesInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyclassesOperatorsInput>;
+  activity?: InputMaybe<Array<InputMaybe<FilterFindManyclassesActivityInput>>>;
+  bigIdea?: InputMaybe<Scalars['String']['input']>;
+  categories?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  classLength?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<FilterFindManyclassesCoverInput>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  discussion?: InputMaybe<Array<InputMaybe<FilterFindManyclassesDiscussionInput>>>;
+  documents?: InputMaybe<Array<InputMaybe<FilterFindManyclassesDocumentsInput>>>;
+  extend?: InputMaybe<Array<InputMaybe<FilterFindManyclassesExtendInput>>>;
+  extra?: InputMaybe<Scalars['Boolean']['input']>;
+  extraActivities?: InputMaybe<Scalars['String']['input']>;
+  extracurricular?: InputMaybe<FilterFindManyclassesExtracurricularInput>;
+  free?: InputMaybe<Scalars['Boolean']['input']>;
+  learningGoal?: InputMaybe<Scalars['String']['input']>;
+  lifeSkill?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  overview?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  prefix?: InputMaybe<Scalars['String']['input']>;
+  reflection?: InputMaybe<Array<InputMaybe<FilterFindManyclassesReflectionInput>>>;
+  skillSet?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  skills?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  subcategories?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  tags?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  theme?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  trailer?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyclassesOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyclasses_idOperatorsInput>;
+};
+
+export type FilterFindManyclassesReflectionInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManyclasses_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyclassificationtypeInput = {
+  AND?: InputMaybe<Array<FilterFindManyclassificationtypeInput>>;
+  OR?: InputMaybe<Array<FilterFindManyclassificationtypeInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyclassificationtypeOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyclassificationtypeOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyclassificationtype_idOperatorsInput>;
+};
+
+export type FilterFindManyclassificationtype_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManycurriculumcategoryInput = {
+  AND?: InputMaybe<Array<FilterFindManycurriculumcategoryInput>>;
+  OR?: InputMaybe<Array<FilterFindManycurriculumcategoryInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManycurriculumcategoryOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManycurriculumcategoryOperatorsInput = {
+  _id?: InputMaybe<FilterFindManycurriculumcategory_idOperatorsInput>;
+};
+
+export type FilterFindManycurriculumcategory_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManydistrictInput = {
+  AND?: InputMaybe<Array<FilterFindManydistrictInput>>;
+  OR?: InputMaybe<Array<FilterFindManydistrictInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManydistrictOperatorsInput>;
+  country?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  exemptionDates?: InputMaybe<Array<InputMaybe<Scalars['Date']['input']>>>;
+  extraCourse?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  organization?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  state?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManydistrictOperatorsInput = {
+  _id?: InputMaybe<FilterFindManydistrict_idOperatorsInput>;
+};
+
+export type FilterFindManydistrict_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManygradeInput = {
+  AND?: InputMaybe<Array<FilterFindManygradeInput>>;
+  OR?: InputMaybe<Array<FilterFindManygradeInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManygradeOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManygradeOperatorsInput = {
+  _id?: InputMaybe<FilterFindManygrade_idOperatorsInput>;
+};
+
+export type FilterFindManygrade_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyjournalsCreatedAtOperatorsInput = {
+  gte?: InputMaybe<Scalars['Date']['input']>;
+  lte?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type FilterFindManyjournalsDocumentsInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManyjournalsInput = {
+  AND?: InputMaybe<Array<FilterFindManyjournalsInput>>;
+  OR?: InputMaybe<Array<FilterFindManyjournalsInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyjournalsOperatorsInput>;
+  analyze?: InputMaybe<Scalars['String']['input']>;
+  body?: InputMaybe<Scalars['String']['input']>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  documents?: InputMaybe<Array<InputMaybe<FilterFindManyjournalsDocumentsInput>>>;
+  group?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+  scale?: InputMaybe<Scalars['Float']['input']>;
+  teacher?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyjournalsOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyjournals_idOperatorsInput>;
+  createdAt?: InputMaybe<FilterFindManyjournalsCreatedAtOperatorsInput>;
+  question?: InputMaybe<FilterFindManyjournalsQuestionOperatorsInput>;
+  scale?: InputMaybe<FilterFindManyjournalsScaleOperatorsInput>;
+};
+
+export type FilterFindManyjournalsQuestionOperatorsInput = {
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+};
+
+export type FilterFindManyjournalsScaleOperatorsInput = {
+  gte?: InputMaybe<Scalars['Float']['input']>;
+  lte?: InputMaybe<Scalars['Float']['input']>;
+};
+
+export type FilterFindManyjournals_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManylifeskillIconInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManylifeskillInput = {
+  AND?: InputMaybe<Array<FilterFindManylifeskillInput>>;
+  OR?: InputMaybe<Array<FilterFindManylifeskillInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManylifeskillOperatorsInput>;
+  color?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  icon?: InputMaybe<FilterFindManylifeskillIconInput>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManylifeskillOperatorsInput = {
+  _id?: InputMaybe<FilterFindManylifeskill_idOperatorsInput>;
+};
+
+export type FilterFindManylifeskill_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManymoodCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManymoodInput = {
+  AND?: InputMaybe<Array<FilterFindManymoodInput>>;
+  OR?: InputMaybe<Array<FilterFindManymoodInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManymoodOperatorsInput>;
+  category?: InputMaybe<Scalars['String']['input']>;
+  color?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<FilterFindManymoodCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  textColor?: InputMaybe<Scalars['String']['input']>;
+  tips?: InputMaybe<Array<InputMaybe<FilterFindManymoodTipsInput>>>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  video?: InputMaybe<FilterFindManymoodVideoInput>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManymoodOperatorsInput = {
+  _id?: InputMaybe<FilterFindManymood_idOperatorsInput>;
+};
+
+export type FilterFindManymoodTipsInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  link?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManymoodVideoInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManymood_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyorganizationCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManyorganizationInput = {
+  AND?: InputMaybe<Array<FilterFindManyorganizationInput>>;
+  OR?: InputMaybe<Array<FilterFindManyorganizationInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyorganizationOperatorsInput>;
+  code?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<FilterFindManyorganizationCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  extraCourse?: InputMaybe<Scalars['Boolean']['input']>;
+  lockedAt?: InputMaybe<Scalars['Date']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyorganizationOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyorganization_idOperatorsInput>;
+};
+
+export type FilterFindManyorganization_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyorganizationtokenInput = {
+  AND?: InputMaybe<Array<FilterFindManyorganizationtokenInput>>;
+  OR?: InputMaybe<Array<FilterFindManyorganizationtokenInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyorganizationtokenOperatorsInput>;
+  cleverDistrictId?: InputMaybe<Scalars['String']['input']>;
+  cleverToken?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  oneRosterAppId?: InputMaybe<Scalars['String']['input']>;
+  oneRosterToken?: InputMaybe<Scalars['String']['input']>;
+  organization?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyorganizationtokenOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyorganizationtoken_idOperatorsInput>;
+};
+
+export type FilterFindManyorganizationtoken_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyparentchildrenChildOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyparentchildrenInput = {
+  AND?: InputMaybe<Array<FilterFindManyparentchildrenInput>>;
+  OR?: InputMaybe<Array<FilterFindManyparentchildrenInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyparentchildrenOperatorsInput>;
+  approved?: InputMaybe<Scalars['Boolean']['input']>;
+  approvedAt?: InputMaybe<Scalars['Date']['input']>;
+  child?: InputMaybe<Scalars['String']['input']>;
+  code?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  parent?: InputMaybe<Scalars['String']['input']>;
+  slot?: InputMaybe<Scalars['Float']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyparentchildrenOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyparentchildren_idOperatorsInput>;
+  child?: InputMaybe<FilterFindManyparentchildrenChildOperatorsInput>;
+};
+
+export type FilterFindManyparentchildren_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManypinCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManypinInput = {
+  AND?: InputMaybe<Array<FilterFindManypinInput>>;
+  OR?: InputMaybe<Array<FilterFindManypinInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManypinOperatorsInput>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<FilterFindManypinCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  sparkLibrary?: InputMaybe<Scalars['String']['input']>;
+  times?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  video?: InputMaybe<FilterFindManypinVideoInput>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManypinOperatorsInput = {
+  _id?: InputMaybe<FilterFindManypin_idOperatorsInput>;
+};
+
+export type FilterFindManypinVideoInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManypin_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyprogressDeletedAtOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['Date']['input']>;
+  gte?: InputMaybe<Scalars['Date']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['Date']['input']>>>;
+  lt?: InputMaybe<Scalars['Date']['input']>;
+  lte?: InputMaybe<Scalars['Date']['input']>;
+  ne?: InputMaybe<Scalars['Date']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['Date']['input']>>>;
+};
+
+export type FilterFindManyprogressInput = {
+  AND?: InputMaybe<Array<FilterFindManyprogressInput>>;
+  OR?: InputMaybe<Array<FilterFindManyprogressInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyprogressOperatorsInput>;
+  answerResponse?: InputMaybe<Scalars['Float']['input']>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  ended?: InputMaybe<Scalars['Boolean']['input']>;
+  extraAnswerResponse?: InputMaybe<Scalars['Float']['input']>;
+  group?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  taps?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  time?: InputMaybe<Scalars['Float']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyprogressOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyprogress_idOperatorsInput>;
+  deletedAt?: InputMaybe<FilterFindManyprogressDeletedAtOperatorsInput>;
+};
+
+export type FilterFindManyprogress_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyregionInput = {
+  AND?: InputMaybe<Array<FilterFindManyregionInput>>;
+  OR?: InputMaybe<Array<FilterFindManyregionInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyregionOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  district?: InputMaybe<Scalars['String']['input']>;
+  exemptionDates?: InputMaybe<Array<InputMaybe<Scalars['Date']['input']>>>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyregionOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyregion_idOperatorsInput>;
+};
+
+export type FilterFindManyregion_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyreportsInput = {
+  AND?: InputMaybe<Array<FilterFindManyreportsInput>>;
+  OR?: InputMaybe<Array<FilterFindManyreportsInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyreportsOperatorsInput>;
+  body?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  scale?: InputMaybe<Scalars['Float']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyreportsOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyreports_idOperatorsInput>;
+};
+
+export type FilterFindManyreports_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyresourcecategoryIconInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManyresourcecategoryInput = {
+  AND?: InputMaybe<Array<FilterFindManyresourcecategoryInput>>;
+  OR?: InputMaybe<Array<FilterFindManyresourcecategoryInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyresourcecategoryOperatorsInput>;
+  color?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  icon?: InputMaybe<FilterFindManyresourcecategoryIconInput>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyresourcecategoryOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyresourcecategory_idOperatorsInput>;
+};
+
+export type FilterFindManyresourcecategory_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyresponsesInput = {
+  AND?: InputMaybe<Array<FilterFindManyresponsesInput>>;
+  OR?: InputMaybe<Array<FilterFindManyresponsesInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyresponsesOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  language?: InputMaybe<FilterFindManyresponsesLanguageInput>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type FilterFindManyresponsesLanguageEnglishInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManyresponsesLanguageFrenchInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManyresponsesLanguageInput = {
+  _id?: InputMaybe<Scalars['MongoID']['input']>;
+  english?: InputMaybe<FilterFindManyresponsesLanguageEnglishInput>;
+  french?: InputMaybe<FilterFindManyresponsesLanguageFrenchInput>;
+  spanish?: InputMaybe<FilterFindManyresponsesLanguageSpanishInput>;
+};
+
+export type FilterFindManyresponsesLanguageSpanishInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyresponsesOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyresponses_idOperatorsInput>;
+};
+
+export type FilterFindManyresponses_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyschoolcodeInput = {
+  AND?: InputMaybe<Array<FilterFindManyschoolcodeInput>>;
+  OR?: InputMaybe<Array<FilterFindManyschoolcodeInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyschoolcodeOperatorsInput>;
+  classes?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  code?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculums?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  district?: InputMaybe<Scalars['String']['input']>;
+  expirationDate?: InputMaybe<Scalars['Date']['input']>;
+  limit?: InputMaybe<Scalars['Float']['input']>;
+  mini?: InputMaybe<Scalars['Boolean']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  school?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyschoolcodeOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyschoolcode_idOperatorsInput>;
+};
+
+export type FilterFindManyschoolcode_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyschoollevelInput = {
+  AND?: InputMaybe<Array<FilterFindManyschoollevelInput>>;
+  OR?: InputMaybe<Array<FilterFindManyschoollevelInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyschoollevelOperatorsInput>;
+  color?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  survey?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyschoollevelOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyschoollevel_idOperatorsInput>;
+};
+
+export type FilterFindManyschoollevel_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyschoolsettingsInput = {
+  AND?: InputMaybe<Array<FilterFindManyschoolsettingsInput>>;
+  OR?: InputMaybe<Array<FilterFindManyschoolsettingsInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyschoolsettingsOperatorsInput>;
+  accessWithClassLink?: InputMaybe<Scalars['Boolean']['input']>;
+  accessWithClever?: InputMaybe<Scalars['Boolean']['input']>;
+  accessWithEmail?: InputMaybe<Scalars['Boolean']['input']>;
+  accessWithGoogle?: InputMaybe<Scalars['Boolean']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  restrictions?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  school?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyschoolsettingsOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyschoolsettings_idOperatorsInput>;
+  school?: InputMaybe<FilterFindManyschoolsettingsSchoolOperatorsInput>;
+};
+
+export type FilterFindManyschoolsettingsSchoolOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyschoolsettings_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyskillsetIconInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManyskillsetInput = {
+  AND?: InputMaybe<Array<FilterFindManyskillsetInput>>;
+  OR?: InputMaybe<Array<FilterFindManyskillsetInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyskillsetOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  icon?: InputMaybe<FilterFindManyskillsetIconInput>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyskillsetOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyskillset_idOperatorsInput>;
+};
+
+export type FilterFindManyskillset_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManysparklibraryArticleInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManysparklibraryArticleQuestionInput = {
+  points?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManysparklibraryCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManysparklibraryFunFactInput = {
+  points?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManysparklibraryInput = {
+  AND?: InputMaybe<Array<FilterFindManysparklibraryInput>>;
+  OR?: InputMaybe<Array<FilterFindManysparklibraryInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManysparklibraryOperatorsInput>;
+  article?: InputMaybe<FilterFindManysparklibraryArticleInput>;
+  articleBody?: InputMaybe<Scalars['String']['input']>;
+  articleQuestion?: InputMaybe<Array<InputMaybe<FilterFindManysparklibraryArticleQuestionInput>>>;
+  articleTitle?: InputMaybe<Scalars['String']['input']>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<FilterFindManysparklibraryCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  funFact?: InputMaybe<Array<InputMaybe<FilterFindManysparklibraryFunFactInput>>>;
+  journals?: InputMaybe<Array<InputMaybe<FilterFindManysparklibraryJournalsInput>>>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  mindfulMoment?: InputMaybe<Array<InputMaybe<FilterFindManysparklibraryMindfulMomentInput>>>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  slug?: InputMaybe<Scalars['String']['input']>;
+  takeAwayDescription?: InputMaybe<Scalars['String']['input']>;
+  takeAwayLabel?: InputMaybe<Scalars['String']['input']>;
+  times?: InputMaybe<Array<InputMaybe<Scalars['Date']['input']>>>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  video?: InputMaybe<FilterFindManysparklibraryVideoInput>;
+  videoQuestions?: InputMaybe<Array<InputMaybe<FilterFindManysparklibraryVideoQuestionsInput>>>;
+};
+
+export type FilterFindManysparklibraryJournalsInput = {
+  points?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManysparklibraryMindfulMomentInput = {
+  points?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManysparklibraryOperatorsInput = {
+  _id?: InputMaybe<FilterFindManysparklibrary_idOperatorsInput>;
+};
+
+export type FilterFindManysparklibraryVideoCaptionsFileInput = {
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManysparklibraryVideoCaptionsInput = {
+  available?: InputMaybe<Scalars['Boolean']['input']>;
+  file?: InputMaybe<FilterFindManysparklibraryVideoCaptionsFileInput>;
+  language?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManysparklibraryVideoInput = {
+  captions?: InputMaybe<Array<InputMaybe<FilterFindManysparklibraryVideoCaptionsInput>>>;
+  thumbnail?: InputMaybe<FilterFindManysparklibraryVideoThumbnailInput>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManysparklibraryVideoQuestionsInput = {
+  points?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManysparklibraryVideoThumbnailInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManysparklibrary_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManysparklibraryuserArticleResponsesInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  assert?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+export type FilterFindManysparklibraryuserFunFactInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  assert?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+export type FilterFindManysparklibraryuserInput = {
+  AND?: InputMaybe<Array<FilterFindManysparklibraryuserInput>>;
+  OR?: InputMaybe<Array<FilterFindManysparklibraryuserInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManysparklibraryuserOperatorsInput>;
+  articleResponses?: InputMaybe<Array<InputMaybe<FilterFindManysparklibraryuserArticleResponsesInput>>>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  finished?: InputMaybe<Scalars['Boolean']['input']>;
+  found?: InputMaybe<Scalars['Boolean']['input']>;
+  funFact?: InputMaybe<Array<InputMaybe<FilterFindManysparklibraryuserFunFactInput>>>;
+  journals?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  mindfulMoment?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  sparkLibrary?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+  videoResponses?: InputMaybe<Array<InputMaybe<FilterFindManysparklibraryuserVideoResponsesInput>>>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManysparklibraryuserOperatorsInput = {
+  _id?: InputMaybe<FilterFindManysparklibraryuser_idOperatorsInput>;
+};
+
+export type FilterFindManysparklibraryuserVideoResponsesInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  assert?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+export type FilterFindManysparklibraryuser_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManystickerCoverInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManystickerInput = {
+  AND?: InputMaybe<Array<FilterFindManystickerInput>>;
+  OR?: InputMaybe<Array<FilterFindManystickerInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManystickerOperatorsInput>;
+  cover?: InputMaybe<FilterFindManystickerCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deedlyVault?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  video?: InputMaybe<FilterFindManystickerVideoInput>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManystickerOperatorsInput = {
+  _id?: InputMaybe<FilterFindManysticker_idOperatorsInput>;
+};
+
+export type FilterFindManystickerVideoInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManysticker_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManysubcategoriesInput = {
+  AND?: InputMaybe<Array<FilterFindManysubcategoriesInput>>;
+  OR?: InputMaybe<Array<FilterFindManysubcategoriesInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManysubcategoriesOperatorsInput>;
+  categories?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManysubcategoriesOperatorsInput = {
+  _id?: InputMaybe<FilterFindManysubcategories_idOperatorsInput>;
+};
+
+export type FilterFindManysubcategories_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManytapCanvaInput = {
+  ratio?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManytapClassOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManytapCoverInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManytapExtraQuestionsInput = {
+  points?: InputMaybe<Scalars['Float']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManytapInput = {
+  AND?: InputMaybe<Array<FilterFindManytapInput>>;
+  /** Filter Tap Time */
+  GREATER_THAN_ZERO?: InputMaybe<Scalars['Boolean']['input']>;
+  OR?: InputMaybe<Array<FilterFindManytapInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManytapOperatorsInput>;
+  additional?: InputMaybe<Scalars['String']['input']>;
+  canva?: InputMaybe<Array<InputMaybe<FilterFindManytapCanvaInput>>>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<FilterFindManytapCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  donation?: InputMaybe<Scalars['Float']['input']>;
+  donationVault?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  extraQuestions?: InputMaybe<Array<InputMaybe<FilterFindManytapExtraQuestionsInput>>>;
+  intro?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  lifeSkills?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  points?: InputMaybe<Scalars['Float']['input']>;
+  questions?: InputMaybe<Array<InputMaybe<FilterFindManytapQuestionsInput>>>;
+  resources?: InputMaybe<Array<InputMaybe<FilterFindManytapResourcesInput>>>;
+  slug?: InputMaybe<Scalars['String']['input']>;
+  sparkLibrary?: InputMaybe<Scalars['String']['input']>;
+  survey?: InputMaybe<Scalars['String']['input']>;
+  themes?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  time?: InputMaybe<Scalars['Float']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  videos?: InputMaybe<Array<InputMaybe<FilterFindManytapVideosInput>>>;
+};
+
+export type FilterFindManytapLessonOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManytapOperatorsInput = {
+  _id?: InputMaybe<FilterFindManytap_idOperatorsInput>;
+  class?: InputMaybe<FilterFindManytapClassOperatorsInput>;
+  lesson?: InputMaybe<FilterFindManytapLessonOperatorsInput>;
+  order?: InputMaybe<FilterFindManytapOrderOperatorsInput>;
+  slug?: InputMaybe<FilterFindManytapSlugOperatorsInput>;
+};
+
+export type FilterFindManytapOrderOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['Float']['input']>;
+  gte?: InputMaybe<Scalars['Float']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['Float']['input']>>>;
+  lt?: InputMaybe<Scalars['Float']['input']>;
+  lte?: InputMaybe<Scalars['Float']['input']>;
+  ne?: InputMaybe<Scalars['Float']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['Float']['input']>>>;
+};
+
+export type FilterFindManytapQuestionsInput = {
+  points?: InputMaybe<Scalars['Float']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManytapResourcesInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManytapSlugOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManytapVideosCaptionsFileInput = {
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManytapVideosCaptionsInput = {
+  available?: InputMaybe<Scalars['Boolean']['input']>;
+  file?: InputMaybe<FilterFindManytapVideosCaptionsFileInput>;
+  language?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManytapVideosInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  captions?: InputMaybe<Array<InputMaybe<FilterFindManytapVideosCaptionsInput>>>;
+  skip?: InputMaybe<Scalars['Float']['input']>;
+  thumbnail?: InputMaybe<FilterFindManytapVideosThumbnailInput>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManytapVideosThumbnailInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManytap_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManytaptypeInput = {
+  AND?: InputMaybe<Array<FilterFindManytaptypeInput>>;
+  OR?: InputMaybe<Array<FilterFindManytaptypeInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManytaptypeOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManytaptypeOperatorsInput = {
+  _id?: InputMaybe<FilterFindManytaptype_idOperatorsInput>;
+};
+
+export type FilterFindManytaptype_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManythemeIconInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManythemeInput = {
+  AND?: InputMaybe<Array<FilterFindManythemeInput>>;
+  OR?: InputMaybe<Array<FilterFindManythemeInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManythemeOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  icon?: InputMaybe<FilterFindManythemeIconInput>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManythemeOperatorsInput = {
+  _id?: InputMaybe<FilterFindManytheme_idOperatorsInput>;
+};
+
+export type FilterFindManytheme_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyusertypesInput = {
+  AND?: InputMaybe<Array<FilterFindManyusertypesInput>>;
+  OR?: InputMaybe<Array<FilterFindManyusertypesInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyusertypesOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  weight?: InputMaybe<Scalars['Float']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyusertypesOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyusertypes_idOperatorsInput>;
+};
+
+export type FilterFindManyusertypes_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyvideotapInput = {
+  AND?: InputMaybe<Array<FilterFindManyvideotapInput>>;
+  OR?: InputMaybe<Array<FilterFindManyvideotapInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyvideotapOperatorsInput>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  end?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  sparkLibrary?: InputMaybe<Scalars['String']['input']>;
+  start?: InputMaybe<Scalars['Float']['input']>;
+  tag?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyvideotapOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyvideotap_idOperatorsInput>;
+};
+
+export type FilterFindManyvideotap_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOneanimalsInput = {
+  AND?: InputMaybe<Array<FilterFindOneanimalsInput>>;
+  OR?: InputMaybe<Array<FilterFindOneanimalsInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOneanimalsOperatorsInput>;
+  categories?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  levels?: InputMaybe<Array<InputMaybe<FilterFindOneanimalsLevelsInput>>>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type FilterFindOneanimalsLevelsImageInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOneanimalsLevelsInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  image?: InputMaybe<FilterFindOneanimalsLevelsImageInput>;
+  level?: InputMaybe<Scalars['Float']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  points?: InputMaybe<Scalars['Float']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOneanimalsOperatorsInput = {
+  _id?: InputMaybe<FilterFindOneanimals_idOperatorsInput>;
+};
+
+export type FilterFindOneanimals_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOneavatarArtworkInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOneavatarInput = {
+  AND?: InputMaybe<Array<FilterFindOneavatarInput>>;
+  OR?: InputMaybe<Array<FilterFindOneavatarInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOneavatarOperatorsInput>;
+  artwork?: InputMaybe<FilterFindOneavatarArtworkInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  price?: InputMaybe<Scalars['Float']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOneavatarOperatorsInput = {
+  _id?: InputMaybe<FilterFindOneavatar_idOperatorsInput>;
+};
+
+export type FilterFindOneavatar_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOnebadgesCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOnebadgesInput = {
+  AND?: InputMaybe<Array<FilterFindOnebadgesInput>>;
+  OR?: InputMaybe<Array<FilterFindOnebadgesInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOnebadgesOperatorsInput>;
+  cover?: InputMaybe<FilterFindOnebadgesCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  video?: InputMaybe<FilterFindOnebadgesVideoInput>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOnebadgesOperatorsInput = {
+  _id?: InputMaybe<FilterFindOnebadges_idOperatorsInput>;
+};
+
+export type FilterFindOnebadgesVideoInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOnebadges_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOnecategoriesInput = {
+  AND?: InputMaybe<Array<FilterFindOnecategoriesInput>>;
+  OR?: InputMaybe<Array<FilterFindOnecategoriesInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOnecategoriesOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOnecategoriesOperatorsInput = {
+  _id?: InputMaybe<FilterFindOnecategories_idOperatorsInput>;
+};
+
+export type FilterFindOnecategories_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOnecheckinquestionInput = {
+  AND?: InputMaybe<Array<FilterFindOnecheckinquestionInput>>;
+  OR?: InputMaybe<Array<FilterFindOnecheckinquestionInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOnecheckinquestionOperatorsInput>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  start?: InputMaybe<Scalars['Boolean']['input']>;
+  teacher?: InputMaybe<Scalars['Boolean']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOnecheckinquestionOperatorsInput = {
+  _id?: InputMaybe<FilterFindOnecheckinquestion_idOperatorsInput>;
+};
+
+export type FilterFindOnecheckinquestion_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOneclassesActivityInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOneclassesCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOneclassesDiscussionInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOneclassesDocumentsInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOneclassesExtendInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOneclassesExtracurricularInput = {
+  available?: InputMaybe<Scalars['Boolean']['input']>;
+  points?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOneclassesInput = {
+  AND?: InputMaybe<Array<FilterFindOneclassesInput>>;
+  OR?: InputMaybe<Array<FilterFindOneclassesInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOneclassesOperatorsInput>;
+  activity?: InputMaybe<Array<InputMaybe<FilterFindOneclassesActivityInput>>>;
+  bigIdea?: InputMaybe<Scalars['String']['input']>;
+  categories?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  classLength?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<FilterFindOneclassesCoverInput>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  discussion?: InputMaybe<Array<InputMaybe<FilterFindOneclassesDiscussionInput>>>;
+  documents?: InputMaybe<Array<InputMaybe<FilterFindOneclassesDocumentsInput>>>;
+  extend?: InputMaybe<Array<InputMaybe<FilterFindOneclassesExtendInput>>>;
+  extra?: InputMaybe<Scalars['Boolean']['input']>;
+  extraActivities?: InputMaybe<Scalars['String']['input']>;
+  extracurricular?: InputMaybe<FilterFindOneclassesExtracurricularInput>;
+  free?: InputMaybe<Scalars['Boolean']['input']>;
+  learningGoal?: InputMaybe<Scalars['String']['input']>;
+  lifeSkill?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  overview?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  prefix?: InputMaybe<Scalars['String']['input']>;
+  reflection?: InputMaybe<Array<InputMaybe<FilterFindOneclassesReflectionInput>>>;
+  skillSet?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  skills?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  subcategories?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  tags?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  theme?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  trailer?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOneclassesOperatorsInput = {
+  _id?: InputMaybe<FilterFindOneclasses_idOperatorsInput>;
+};
+
+export type FilterFindOneclassesReflectionInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOneclasses_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOneclassificationtypeInput = {
+  AND?: InputMaybe<Array<FilterFindOneclassificationtypeInput>>;
+  OR?: InputMaybe<Array<FilterFindOneclassificationtypeInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOneclassificationtypeOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOneclassificationtypeOperatorsInput = {
+  _id?: InputMaybe<FilterFindOneclassificationtype_idOperatorsInput>;
+};
+
+export type FilterFindOneclassificationtype_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOnecurriculumcategoryInput = {
+  AND?: InputMaybe<Array<FilterFindOnecurriculumcategoryInput>>;
+  OR?: InputMaybe<Array<FilterFindOnecurriculumcategoryInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOnecurriculumcategoryOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOnecurriculumcategoryOperatorsInput = {
+  _id?: InputMaybe<FilterFindOnecurriculumcategory_idOperatorsInput>;
+};
+
+export type FilterFindOnecurriculumcategory_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOnedistrictInput = {
+  AND?: InputMaybe<Array<FilterFindOnedistrictInput>>;
+  OR?: InputMaybe<Array<FilterFindOnedistrictInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOnedistrictOperatorsInput>;
+  country?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  exemptionDates?: InputMaybe<Array<InputMaybe<Scalars['Date']['input']>>>;
+  extraCourse?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  organization?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  state?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOnedistrictOperatorsInput = {
+  _id?: InputMaybe<FilterFindOnedistrict_idOperatorsInput>;
+};
+
+export type FilterFindOnedistrict_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOnegradeInput = {
+  AND?: InputMaybe<Array<FilterFindOnegradeInput>>;
+  OR?: InputMaybe<Array<FilterFindOnegradeInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOnegradeOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOnegradeOperatorsInput = {
+  _id?: InputMaybe<FilterFindOnegrade_idOperatorsInput>;
+};
+
+export type FilterFindOnegrade_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOnejournalsDocumentsInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOnejournalsInput = {
+  AND?: InputMaybe<Array<FilterFindOnejournalsInput>>;
+  OR?: InputMaybe<Array<FilterFindOnejournalsInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOnejournalsOperatorsInput>;
+  analyze?: InputMaybe<Scalars['String']['input']>;
+  body?: InputMaybe<Scalars['String']['input']>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  documents?: InputMaybe<Array<InputMaybe<FilterFindOnejournalsDocumentsInput>>>;
+  group?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+  scale?: InputMaybe<Scalars['Float']['input']>;
+  teacher?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOnejournalsOperatorsInput = {
+  _id?: InputMaybe<FilterFindOnejournals_idOperatorsInput>;
+};
+
+export type FilterFindOnejournals_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOnelifeskillIconInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOnelifeskillInput = {
+  AND?: InputMaybe<Array<FilterFindOnelifeskillInput>>;
+  OR?: InputMaybe<Array<FilterFindOnelifeskillInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOnelifeskillOperatorsInput>;
+  color?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  icon?: InputMaybe<FilterFindOnelifeskillIconInput>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOnelifeskillOperatorsInput = {
+  _id?: InputMaybe<FilterFindOnelifeskill_idOperatorsInput>;
+};
+
+export type FilterFindOnelifeskill_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOnemoodCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOnemoodInput = {
+  AND?: InputMaybe<Array<FilterFindOnemoodInput>>;
+  OR?: InputMaybe<Array<FilterFindOnemoodInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOnemoodOperatorsInput>;
+  category?: InputMaybe<Scalars['String']['input']>;
+  color?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<FilterFindOnemoodCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  textColor?: InputMaybe<Scalars['String']['input']>;
+  tips?: InputMaybe<Array<InputMaybe<FilterFindOnemoodTipsInput>>>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  video?: InputMaybe<FilterFindOnemoodVideoInput>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOnemoodOperatorsInput = {
+  _id?: InputMaybe<FilterFindOnemood_idOperatorsInput>;
+};
+
+export type FilterFindOnemoodTipsInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  link?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOnemoodVideoInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOnemood_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOneorganizationtokenInput = {
+  AND?: InputMaybe<Array<FilterFindOneorganizationtokenInput>>;
+  OR?: InputMaybe<Array<FilterFindOneorganizationtokenInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOneorganizationtokenOperatorsInput>;
+  cleverDistrictId?: InputMaybe<Scalars['String']['input']>;
+  cleverToken?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  oneRosterAppId?: InputMaybe<Scalars['String']['input']>;
+  oneRosterToken?: InputMaybe<Scalars['String']['input']>;
+  organization?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOneorganizationtokenOperatorsInput = {
+  _id?: InputMaybe<FilterFindOneorganizationtoken_idOperatorsInput>;
+};
+
+export type FilterFindOneorganizationtoken_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOnepinCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOnepinInput = {
+  AND?: InputMaybe<Array<FilterFindOnepinInput>>;
+  OR?: InputMaybe<Array<FilterFindOnepinInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOnepinOperatorsInput>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<FilterFindOnepinCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  sparkLibrary?: InputMaybe<Scalars['String']['input']>;
+  times?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  video?: InputMaybe<FilterFindOnepinVideoInput>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOnepinOperatorsInput = {
+  _id?: InputMaybe<FilterFindOnepin_idOperatorsInput>;
+};
+
+export type FilterFindOnepinVideoInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOnepin_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOneprogressDeletedAtOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['Date']['input']>;
+  gte?: InputMaybe<Scalars['Date']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['Date']['input']>>>;
+  lt?: InputMaybe<Scalars['Date']['input']>;
+  lte?: InputMaybe<Scalars['Date']['input']>;
+  ne?: InputMaybe<Scalars['Date']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['Date']['input']>>>;
+};
+
+export type FilterFindOneprogressInput = {
+  AND?: InputMaybe<Array<FilterFindOneprogressInput>>;
+  OR?: InputMaybe<Array<FilterFindOneprogressInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOneprogressOperatorsInput>;
+  answerResponse?: InputMaybe<Scalars['Float']['input']>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  ended?: InputMaybe<Scalars['Boolean']['input']>;
+  extraAnswerResponse?: InputMaybe<Scalars['Float']['input']>;
+  group?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  taps?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  time?: InputMaybe<Scalars['Float']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOneprogressOperatorsInput = {
+  _id?: InputMaybe<FilterFindOneprogress_idOperatorsInput>;
+  deletedAt?: InputMaybe<FilterFindOneprogressDeletedAtOperatorsInput>;
+};
+
+export type FilterFindOneprogress_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOneregionInput = {
+  AND?: InputMaybe<Array<FilterFindOneregionInput>>;
+  OR?: InputMaybe<Array<FilterFindOneregionInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOneregionOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  district?: InputMaybe<Scalars['String']['input']>;
+  exemptionDates?: InputMaybe<Array<InputMaybe<Scalars['Date']['input']>>>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOneregionOperatorsInput = {
+  _id?: InputMaybe<FilterFindOneregion_idOperatorsInput>;
+};
+
+export type FilterFindOneregion_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOnereportsInput = {
+  AND?: InputMaybe<Array<FilterFindOnereportsInput>>;
+  OR?: InputMaybe<Array<FilterFindOnereportsInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOnereportsOperatorsInput>;
+  body?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  scale?: InputMaybe<Scalars['Float']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOnereportsOperatorsInput = {
+  _id?: InputMaybe<FilterFindOnereports_idOperatorsInput>;
+};
+
+export type FilterFindOnereports_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOneresourcecategoryIconInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOneresourcecategoryInput = {
+  AND?: InputMaybe<Array<FilterFindOneresourcecategoryInput>>;
+  OR?: InputMaybe<Array<FilterFindOneresourcecategoryInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOneresourcecategoryOperatorsInput>;
+  color?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  icon?: InputMaybe<FilterFindOneresourcecategoryIconInput>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOneresourcecategoryOperatorsInput = {
+  _id?: InputMaybe<FilterFindOneresourcecategory_idOperatorsInput>;
+};
+
+export type FilterFindOneresourcecategory_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOneresponsesInput = {
+  AND?: InputMaybe<Array<FilterFindOneresponsesInput>>;
+  OR?: InputMaybe<Array<FilterFindOneresponsesInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOneresponsesOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  language?: InputMaybe<FilterFindOneresponsesLanguageInput>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type FilterFindOneresponsesLanguageEnglishInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOneresponsesLanguageFrenchInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOneresponsesLanguageInput = {
+  _id?: InputMaybe<Scalars['MongoID']['input']>;
+  english?: InputMaybe<FilterFindOneresponsesLanguageEnglishInput>;
+  french?: InputMaybe<FilterFindOneresponsesLanguageFrenchInput>;
+  spanish?: InputMaybe<FilterFindOneresponsesLanguageSpanishInput>;
+};
+
+export type FilterFindOneresponsesLanguageSpanishInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOneresponsesOperatorsInput = {
+  _id?: InputMaybe<FilterFindOneresponses_idOperatorsInput>;
+};
+
+export type FilterFindOneresponses_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOneschoolcodeInput = {
+  AND?: InputMaybe<Array<FilterFindOneschoolcodeInput>>;
+  OR?: InputMaybe<Array<FilterFindOneschoolcodeInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOneschoolcodeOperatorsInput>;
+  classes?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  code?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculums?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  district?: InputMaybe<Scalars['String']['input']>;
+  expirationDate?: InputMaybe<Scalars['Date']['input']>;
+  limit?: InputMaybe<Scalars['Float']['input']>;
+  mini?: InputMaybe<Scalars['Boolean']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  school?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOneschoolcodeOperatorsInput = {
+  _id?: InputMaybe<FilterFindOneschoolcode_idOperatorsInput>;
+};
+
+export type FilterFindOneschoolcode_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOneschoollevelInput = {
+  AND?: InputMaybe<Array<FilterFindOneschoollevelInput>>;
+  OR?: InputMaybe<Array<FilterFindOneschoollevelInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOneschoollevelOperatorsInput>;
+  color?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  survey?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOneschoollevelOperatorsInput = {
+  _id?: InputMaybe<FilterFindOneschoollevel_idOperatorsInput>;
+};
+
+export type FilterFindOneschoollevel_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOneschoolsettingsInput = {
+  AND?: InputMaybe<Array<FilterFindOneschoolsettingsInput>>;
+  OR?: InputMaybe<Array<FilterFindOneschoolsettingsInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOneschoolsettingsOperatorsInput>;
+  accessWithClassLink?: InputMaybe<Scalars['Boolean']['input']>;
+  accessWithClever?: InputMaybe<Scalars['Boolean']['input']>;
+  accessWithEmail?: InputMaybe<Scalars['Boolean']['input']>;
+  accessWithGoogle?: InputMaybe<Scalars['Boolean']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  restrictions?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  school?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOneschoolsettingsOperatorsInput = {
+  _id?: InputMaybe<FilterFindOneschoolsettings_idOperatorsInput>;
+  school?: InputMaybe<FilterFindOneschoolsettingsSchoolOperatorsInput>;
+};
+
+export type FilterFindOneschoolsettingsSchoolOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOneschoolsettings_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOneskillsetIconInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOneskillsetInput = {
+  AND?: InputMaybe<Array<FilterFindOneskillsetInput>>;
+  OR?: InputMaybe<Array<FilterFindOneskillsetInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOneskillsetOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  icon?: InputMaybe<FilterFindOneskillsetIconInput>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOneskillsetOperatorsInput = {
+  _id?: InputMaybe<FilterFindOneskillset_idOperatorsInput>;
+};
+
+export type FilterFindOneskillset_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOnestickerCoverInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOnestickerInput = {
+  AND?: InputMaybe<Array<FilterFindOnestickerInput>>;
+  OR?: InputMaybe<Array<FilterFindOnestickerInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOnestickerOperatorsInput>;
+  cover?: InputMaybe<FilterFindOnestickerCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deedlyVault?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  video?: InputMaybe<FilterFindOnestickerVideoInput>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOnestickerOperatorsInput = {
+  _id?: InputMaybe<FilterFindOnesticker_idOperatorsInput>;
+};
+
+export type FilterFindOnestickerVideoInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOnesticker_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOnesubcategoriesInput = {
+  AND?: InputMaybe<Array<FilterFindOnesubcategoriesInput>>;
+  OR?: InputMaybe<Array<FilterFindOnesubcategoriesInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOnesubcategoriesOperatorsInput>;
+  categories?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOnesubcategoriesOperatorsInput = {
+  _id?: InputMaybe<FilterFindOnesubcategories_idOperatorsInput>;
+};
+
+export type FilterFindOnesubcategories_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOnesubscriptionInput = {
+  AND?: InputMaybe<Array<FilterFindOnesubscriptionInput>>;
+  OR?: InputMaybe<Array<FilterFindOnesubscriptionInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOnesubscriptionOperatorsInput>;
+  appleLatestReceipt?: InputMaybe<Scalars['String']['input']>;
+  autoRenew?: InputMaybe<Scalars['Boolean']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  expirationDate?: InputMaybe<Scalars['Date']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  promoCodes?: InputMaybe<Scalars['String']['input']>;
+  stripeId?: InputMaybe<Scalars['String']['input']>;
+  transactionId?: InputMaybe<Scalars['String']['input']>;
+  types?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+  usersLeft?: InputMaybe<Scalars['Float']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOnesubscriptionOperatorsInput = {
+  _id?: InputMaybe<FilterFindOnesubscription_idOperatorsInput>;
+};
+
+export type FilterFindOnesubscription_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOnethemeIconInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOnethemeInput = {
+  AND?: InputMaybe<Array<FilterFindOnethemeInput>>;
+  OR?: InputMaybe<Array<FilterFindOnethemeInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOnethemeOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  icon?: InputMaybe<FilterFindOnethemeIconInput>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOnethemeOperatorsInput = {
+  _id?: InputMaybe<FilterFindOnetheme_idOperatorsInput>;
+};
+
+export type FilterFindOnetheme_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOneuseranimalsInput = {
+  AND?: InputMaybe<Array<FilterFindOneuseranimalsInput>>;
+  OR?: InputMaybe<Array<FilterFindOneuseranimalsInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOneuseranimalsOperatorsInput>;
+  animal?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum: Scalars['String']['input'];
+  level?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOneuseranimalsOperatorsInput = {
+  _id?: InputMaybe<FilterFindOneuseranimals_idOperatorsInput>;
+};
+
+export type FilterFindOneuseranimals_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOnevideosparksInput = {
+  AND?: InputMaybe<Array<FilterFindOnevideosparksInput>>;
+  OR?: InputMaybe<Array<FilterFindOnevideosparksInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOnevideosparksOperatorsInput>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  sparks?: InputMaybe<Scalars['Float']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOnevideosparksOperatorsInput = {
+  _id?: InputMaybe<FilterFindOnevideosparks_idOperatorsInput>;
+};
+
+export type FilterFindOnevideosparks_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOnevideotapInput = {
+  AND?: InputMaybe<Array<FilterFindOnevideotapInput>>;
+  OR?: InputMaybe<Array<FilterFindOnevideotapInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOnevideotapOperatorsInput>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  end?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  sparkLibrary?: InputMaybe<Scalars['String']['input']>;
+  start?: InputMaybe<Scalars['Float']['input']>;
+  tag?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOnevideotapOperatorsInput = {
+  _id?: InputMaybe<FilterFindOnevideotap_idOperatorsInput>;
+};
+
+export type FilterFindOnevideotap_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterUpdateManypinCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterUpdateManypinInput = {
+  AND?: InputMaybe<Array<FilterUpdateManypinInput>>;
+  OR?: InputMaybe<Array<FilterUpdateManypinInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterUpdateManypinOperatorsInput>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<FilterUpdateManypinCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  sparkLibrary?: InputMaybe<Scalars['String']['input']>;
+  times?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  video?: InputMaybe<FilterUpdateManypinVideoInput>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterUpdateManypinOperatorsInput = {
+  _id?: InputMaybe<FilterUpdateManypin_idOperatorsInput>;
+};
+
+export type FilterUpdateManypinVideoInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterUpdateManypin_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterUpdateOnecheckinquestionInput = {
+  AND?: InputMaybe<Array<FilterUpdateOnecheckinquestionInput>>;
+  OR?: InputMaybe<Array<FilterUpdateOnecheckinquestionInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterUpdateOnecheckinquestionOperatorsInput>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  start?: InputMaybe<Scalars['Boolean']['input']>;
+  teacher?: InputMaybe<Scalars['Boolean']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterUpdateOnecheckinquestionOperatorsInput = {
+  _id?: InputMaybe<FilterUpdateOnecheckinquestion_idOperatorsInput>;
+};
+
+export type FilterUpdateOnecheckinquestion_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterUpdateOnecheckinuseranswerInput = {
+  AND?: InputMaybe<Array<FilterUpdateOnecheckinuseranswerInput>>;
+  OR?: InputMaybe<Array<FilterUpdateOnecheckinuseranswerInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterUpdateOnecheckinuseranswerOperatorsInput>;
+  answer?: InputMaybe<Scalars['String']['input']>;
+  checkinQuestion?: InputMaybe<Scalars['String']['input']>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  group?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  scale?: InputMaybe<Scalars['Float']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterUpdateOnecheckinuseranswerOperatorsInput = {
+  _id?: InputMaybe<FilterUpdateOnecheckinuseranswer_idOperatorsInput>;
+};
+
+export type FilterUpdateOnecheckinuseranswer_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterUpdateOnecurriculumcategoryInput = {
+  AND?: InputMaybe<Array<FilterUpdateOnecurriculumcategoryInput>>;
+  OR?: InputMaybe<Array<FilterUpdateOnecurriculumcategoryInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterUpdateOnecurriculumcategoryOperatorsInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterUpdateOnecurriculumcategoryOperatorsInput = {
+  _id?: InputMaybe<FilterUpdateOnecurriculumcategory_idOperatorsInput>;
+};
+
+export type FilterUpdateOnecurriculumcategory_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterUpdateOneresourcecategoryIconInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterUpdateOneresourcecategoryInput = {
+  AND?: InputMaybe<Array<FilterUpdateOneresourcecategoryInput>>;
+  OR?: InputMaybe<Array<FilterUpdateOneresourcecategoryInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterUpdateOneresourcecategoryOperatorsInput>;
+  color?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  icon?: InputMaybe<FilterUpdateOneresourcecategoryIconInput>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterUpdateOneresourcecategoryOperatorsInput = {
+  _id?: InputMaybe<FilterUpdateOneresourcecategory_idOperatorsInput>;
+};
+
+export type FilterUpdateOneresourcecategory_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterUpdateOnesparklibraryArticleInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterUpdateOnesparklibraryArticleQuestionInput = {
+  points?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterUpdateOnesparklibraryCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterUpdateOnesparklibraryFunFactInput = {
+  points?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterUpdateOnesparklibraryInput = {
+  AND?: InputMaybe<Array<FilterUpdateOnesparklibraryInput>>;
+  OR?: InputMaybe<Array<FilterUpdateOnesparklibraryInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterUpdateOnesparklibraryOperatorsInput>;
+  article?: InputMaybe<FilterUpdateOnesparklibraryArticleInput>;
+  articleBody?: InputMaybe<Scalars['String']['input']>;
+  articleQuestion?: InputMaybe<Array<InputMaybe<FilterUpdateOnesparklibraryArticleQuestionInput>>>;
+  articleTitle?: InputMaybe<Scalars['String']['input']>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<FilterUpdateOnesparklibraryCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  funFact?: InputMaybe<Array<InputMaybe<FilterUpdateOnesparklibraryFunFactInput>>>;
+  journals?: InputMaybe<Array<InputMaybe<FilterUpdateOnesparklibraryJournalsInput>>>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  mindfulMoment?: InputMaybe<Array<InputMaybe<FilterUpdateOnesparklibraryMindfulMomentInput>>>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  slug?: InputMaybe<Scalars['String']['input']>;
+  takeAwayDescription?: InputMaybe<Scalars['String']['input']>;
+  takeAwayLabel?: InputMaybe<Scalars['String']['input']>;
+  times?: InputMaybe<Array<InputMaybe<Scalars['Date']['input']>>>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  video?: InputMaybe<FilterUpdateOnesparklibraryVideoInput>;
+  videoQuestions?: InputMaybe<Array<InputMaybe<FilterUpdateOnesparklibraryVideoQuestionsInput>>>;
+};
+
+export type FilterUpdateOnesparklibraryJournalsInput = {
+  points?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterUpdateOnesparklibraryMindfulMomentInput = {
+  points?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterUpdateOnesparklibraryOperatorsInput = {
+  _id?: InputMaybe<FilterUpdateOnesparklibrary_idOperatorsInput>;
+};
+
+export type FilterUpdateOnesparklibraryVideoCaptionsFileInput = {
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterUpdateOnesparklibraryVideoCaptionsInput = {
+  available?: InputMaybe<Scalars['Boolean']['input']>;
+  file?: InputMaybe<FilterUpdateOnesparklibraryVideoCaptionsFileInput>;
+  language?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterUpdateOnesparklibraryVideoInput = {
+  captions?: InputMaybe<Array<InputMaybe<FilterUpdateOnesparklibraryVideoCaptionsInput>>>;
+  thumbnail?: InputMaybe<FilterUpdateOnesparklibraryVideoThumbnailInput>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterUpdateOnesparklibraryVideoQuestionsInput = {
+  points?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterUpdateOnesparklibraryVideoThumbnailInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterUpdateOnesparklibrary_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type JournalProgressCheck = {
+  __typename?: 'JournalProgressCheck';
+  badge?: Maybe<badgeMedia>;
+  journal?: Maybe<journals>;
+};
+
+export type MoodRecord = {
+  __typename?: 'MoodRecord';
+  record?: Maybe<mood>;
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type Mutation = {
+  __typename?: 'Mutation';
+  AdminGroupDeleteOne?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  AnimalsCategoriesCreateOne?: Maybe<CreateOneanimalscategoriesPayload>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  AnimalsCategoriesUpdateById?: Maybe<UpdateByIdanimalscategoriesPayload>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  AnimalsCreateOne?: Maybe<CreateOneanimalsPayload>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  AnimalsUpdateById?: Maybe<UpdateByIdanimalsPayload>;
+  AssignPointsExtracurricular?: Maybe<Scalars['String']['output']>;
+  AvatarCreateOne?: Maybe<avatar>;
+  AvatarDeleteOne: Scalars['String']['output'];
+  AvatarPurchase?: Maybe<Scalars['String']['output']>;
+  AvatarSetProfilePicture?: Maybe<Scalars['String']['output']>;
+  AvatarUpdateOne: Scalars['String']['output'];
+  BadgeClaimOne?: Maybe<badges>;
+  BadgesCreateOne?: Maybe<badges>;
+  BadgesDeleteOne?: Maybe<Scalars['String']['output']>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  BadgesUpdateOne?: Maybe<UpdateByIdbadgesPayload>;
+  CardCreateDelete?: Maybe<Card>;
+  CardCreateOne?: Maybe<Card>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  CategoriesCreateOne?: Maybe<CreateOnecategoriesPayload>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  CheckInQuestionCreateOne?: Maybe<CreateOnecheckinquestionPayload>;
+  CheckInQuestionDeleteOne?: Maybe<Scalars['String']['output']>;
+  /** Update one document: 1) Retrieve one document via findOne. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  CheckInQuestionUpdateOne?: Maybe<UpdateOnecheckinquestionPayload>;
+  CheckInUserAnswerCreateOne?: Maybe<checkinuseranswer>;
+  CheckInUserAnswerDeleteOne?: Maybe<Scalars['String']['output']>;
+  /** Update one document: 1) Retrieve one document via findOne. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  CheckInUserAnswerUpdateOne?: Maybe<UpdateOnecheckinuseranswerPayload>;
+  ClassLinkStudentImport?: Maybe<Scalars['String']['output']>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  ClassesCreateOne?: Maybe<CreateOneclassesPayload>;
+  ClassesDeleteOne?: Maybe<Scalars['String']['output']>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  ClassesUpdateOne?: Maybe<UpdateByIdclassesPayload>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  ClassificationTypeCreateOne?: Maybe<CreateOneclassificationtypePayload>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  ClassificationTypeUpdateOne?: Maybe<UpdateByIdclassificationtypePayload>;
+  CleverSchoolImport?: Maybe<Scalars['String']['output']>;
+  CleverSchoolTeacherImport?: Maybe<Scalars['String']['output']>;
+  CleverStaffImport?: Maybe<Scalars['String']['output']>;
+  CleverStudentImport?: Maybe<Scalars['String']['output']>;
+  CleverTeacherImport?: Maybe<Scalars['String']['output']>;
+  CollectiblesCreateOne?: Maybe<collectible>;
+  CollectiblesDeleteOne: Scalars['String']['output'];
+  CollectiblesPurchase?: Maybe<Scalars['String']['output']>;
+  CollectiblesUpdateOne: Scalars['String']['output'];
+  CreateUser?: Maybe<Scalars['String']['output']>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  CurriculumCategoryCreateOne?: Maybe<CreateOnecurriculumcategoryPayload>;
+  CurriculumCategoryDeleteOne?: Maybe<Scalars['String']['output']>;
+  /** Update one document: 1) Retrieve one document via findOne. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  CurriculumCategoryUpdateOne?: Maybe<UpdateOnecurriculumcategoryPayload>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  CurriculumsCreateOne?: Maybe<CreateOnecurriculumsPayload>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  CurriculumsUpdateOne?: Maybe<UpdateByIdcurriculumsPayload>;
+  DeleteUsersMany?: Maybe<Scalars['String']['output']>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  DistrictCreateOne?: Maybe<CreateOnedistrictPayload>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  DistrictUpdateOne?: Maybe<UpdateByIddistrictPayload>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  FavoritesCreateOne?: Maybe<CreateOnefavoritesPayload>;
+  GroupAddCurriculum?: Maybe<Scalars['String']['output']>;
+  GroupCreateOne?: Maybe<groups>;
+  GroupDeleteOne?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  GroupDisableClassOne?: Maybe<Scalars['String']['output']>;
+  GroupEnableClassOne?: Maybe<usergroups>;
+  GroupFinishedClass?: Maybe<Scalars['Boolean']['output']>;
+  GroupFinishedLesson?: Maybe<Scalars['Boolean']['output']>;
+  GroupLockOrUnLockClassesMany?: Maybe<Scalars['String']['output']>;
+  GroupNextChapter?: Maybe<Scalars['Boolean']['output']>;
+  GroupUpdateOne?: Maybe<Scalars['String']['output']>;
+  InfluenceCreateOne?: Maybe<user>;
+  InsertUserInGroupOne?: Maybe<usergroups>;
+  JournalsCreateOne?: Maybe<JournalProgressCheck>;
+  JournalsUpdateOne?: Maybe<Scalars['String']['output']>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  LessonCreateOne?: Maybe<CreateOnelessonPayload>;
+  LessonDeleteOne?: Maybe<Scalars['String']['output']>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  LessonUpdateOne?: Maybe<UpdateByIdlessonPayload>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  LifeSkillCreateOne?: Maybe<CreateOnelifeskillPayload>;
+  LifeSkillDeleteOne?: Maybe<Scalars['String']['output']>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  LifeSkillUpdateOne?: Maybe<UpdateByIdlifeskillPayload>;
+  MoodCreateOne?: Maybe<MoodRecord>;
+  MoodDeleteOne?: Maybe<Scalars['String']['output']>;
+  MoodUpdateOne?: Maybe<MoodRecord>;
+  OneRosterSchoolImport?: Maybe<Scalars['String']['output']>;
+  OneRosterTeacherImport?: Maybe<Scalars['String']['output']>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  OrganizationTokenCreateOne?: Maybe<CreateOneorganizationtokenPayload>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  OrganizationTokenUpdateOne?: Maybe<UpdateByIdorganizationtokenPayload>;
+  ParentChildApprove?: Maybe<Scalars['String']['output']>;
+  ParentChildRequestCreate?: Maybe<Scalars['String']['output']>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  PinCreateOne?: Maybe<CreateOnepinPayload>;
+  /** Update many documents without returning them: Use Query.update mongoose method. Do not apply mongoose defaults, setters, hooks and validation. */
+  PinUpdateOne?: Maybe<UpdateManypinPayload>;
+  QuestionTest?: Maybe<Scalars['String']['output']>;
+  QuestionnairesCreateOne?: Maybe<QuestionnaireProgressCheck>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  QuestionsCreateOne?: Maybe<CreateOnequestionsPayload>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  QuestionsUpdateOne?: Maybe<UpdateByIdquestionsPayload>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  RegionCreateOne?: Maybe<CreateOneregionPayload>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  RegionUpdateOne?: Maybe<UpdateByIdregionPayload>;
+  RemoveGroupOne?: Maybe<Scalars['String']['output']>;
+  RemoveUserInGroupOne?: Maybe<Scalars['String']['output']>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  ReportsCreateOne?: Maybe<CreateOnereportsPayload>;
+  ReportsDeleteOne?: Maybe<Scalars['String']['output']>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  ReportsUpdateOne?: Maybe<UpdateByIdreportsPayload>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  ResourcesCategoryCreateOne?: Maybe<CreateOneresourcecategoryPayload>;
+  ResourcesCategoryDeleteOne?: Maybe<Scalars['String']['output']>;
+  /** Update one document: 1) Retrieve one document via findOne. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  ResourcesCategoryUpdateOne?: Maybe<UpdateOneresourcecategoryPayload>;
+  ResourcesCreateOne?: Maybe<resource>;
+  ResourcesDeleteOne?: Maybe<Scalars['String']['output']>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  ResourcesUpdateOne?: Maybe<UpdateByIdresourcePayload>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  ResponsesCreateOne?: Maybe<CreateOneresponsesPayload>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  ResponsesUpdateOne?: Maybe<UpdateByIdresponsesPayload>;
+  SchoolAssignGroups: Scalars['String']['output'];
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  SchoolCodeCreateOne?: Maybe<CreateOneschoolcodePayload>;
+  SchoolCodeDeleteOne?: Maybe<Scalars['String']['output']>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  SchoolCodeUpdateOne?: Maybe<UpdateByIdschoolcodePayload>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  SchoolCreateOne?: Maybe<CreateOneschoolsDataPayload>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  SchoolLevelCreateOne?: Maybe<CreateOneschoollevelPayload>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  SchoolLevelUpdateOne?: Maybe<UpdateByIdschoollevelPayload>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  SchoolSettingsUpdateOne?: Maybe<UpdateByIdschoolsettingsPayload>;
+  SchoolTeachersSendInvitation?: Maybe<Scalars['String']['output']>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  SchoolUpdateOne?: Maybe<UpdateByIdschoolsDataPayload>;
+  SchoolUserDeleteOne: Scalars['String']['output'];
+  SetUserOrganization?: Maybe<Scalars['String']['output']>;
+  SetUserSchool?: Maybe<Scalars['Boolean']['output']>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  SkillSetCreateOne?: Maybe<CreateOneskillsetPayload>;
+  SkillSetDeleteOne?: Maybe<Scalars['String']['output']>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  SkillSetUpdateOne?: Maybe<UpdateByIdskillsetPayload>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  SparkLibraryCreateOne?: Maybe<CreateOnesparklibraryPayload>;
+  SparkLibraryQuestionnairesCreateOne?: Maybe<SparkResponseResultTC>;
+  /** Update one document: 1) Retrieve one document via findOne. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  SparkLibraryUpdateOne?: Maybe<UpdateOnesparklibraryPayload>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  StickerCreateOne?: Maybe<CreateOnestickerPayload>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  StickerUpdateOne?: Maybe<UpdateByIdstickerPayload>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  SubCategoriesCreateOne?: Maybe<CreateOnesubcategoriesPayload>;
+  SubscriptionsCreateOne?: Maybe<subscription>;
+  SubscriptionsUpdateOne?: Maybe<subscription>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  TapCreateOne?: Maybe<CreateOnetapPayload>;
+  TapDeleteOne?: Maybe<Scalars['String']['output']>;
+  TapStudentUpdateOne?: Maybe<Scalars['String']['output']>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  TapUpdateOne?: Maybe<UpdateByIdtapPayload>;
+  TeacherAcceptTerms?: Maybe<Scalars['String']['output']>;
+  TeacherClassLinkSync?: Maybe<Scalars['Boolean']['output']>;
+  TeacherCleverLinkSync?: Maybe<Scalars['Boolean']['output']>;
+  TeacherCleverSyncClass?: Maybe<Scalars['Boolean']['output']>;
+  TeacherJoinByCode?: Maybe<Scalars['String']['output']>;
+  TeacherJoinSchool?: Maybe<Scalars['String']['output']>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  ThemeCreateOne?: Maybe<CreateOnethemePayload>;
+  ThemeDeleteOne?: Maybe<Scalars['String']['output']>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  ThemeUpdateOne?: Maybe<UpdateByIdthemePayload>;
+  TimesStudentUpdateOne?: Maybe<Scalars['String']['output']>;
+  UpdateUserOrganizationMany?: Maybe<Scalars['String']['output']>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  UserAnimalsCreateOne?: Maybe<CreateOneuseranimalsPayload>;
+  UserDonateOne?: Maybe<sticker>;
+  UserForgotPassword?: Maybe<Scalars['String']['output']>;
+  UserMoodCreateOne?: Maybe<Scalars['String']['output']>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  UserOrganizationSendInvitation?: Maybe<CreateOneuserorganizationPayload>;
+  UserOrganizationUpdateInvitation?: Maybe<Scalars['Boolean']['output']>;
+  UserPinClaimOne?: Maybe<pin>;
+  UserResetPassword?: Maybe<Scalars['String']['output']>;
+  UserResetToken?: Maybe<Scalars['String']['output']>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  UserUpdateOne?: Maybe<UpdateByIduserPayload>;
+  UserUpdateUserType?: Maybe<Scalars['Boolean']['output']>;
+  UsersDelete?: Maybe<user>;
+  UsersSetPassword?: Maybe<Scalars['String']['output']>;
+  UsersSetPasswordAdmin?: Maybe<Scalars['String']['output']>;
+  VideoSparksCreateOne?: Maybe<videosparks>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  VideoTapsCreateOne?: Maybe<CreateOnevideotapPayload>;
+  VideoTapsDeleteOne?: Maybe<Scalars['String']['output']>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  VideoTapsUpdateOne?: Maybe<UpdateByIdvideotapPayload>;
+  joinByCodeOne?: Maybe<usergroups>;
+  sendInvitation?: Maybe<Scalars['String']['output']>;
+  setUserProgressOne?: Maybe<ProgressCheck>;
+  startClassOne: Scalars['String']['output'];
+  userSparkLibraryArticleQuestionsResponseOne?: Maybe<SparkResponseResultTC>;
+  userSparkLibraryFoundOne?: Maybe<sparklibrary>;
+  userSparkLibraryFunFactQuestionsResponseOne?: Maybe<SparkResponseResultTC>;
+  userSparkLibraryJournalResponseOne?: Maybe<SparkResponseResultTC>;
+  userSparkLibraryMindfulMomentResponseOne?: Maybe<SparkResponseResultTC>;
+};
+
+
+export type MutationAdminGroupDeleteOneArgs = {
+  _id: Scalars['String']['input'];
+};
+
+
+export type MutationAnimalsCategoriesCreateOneArgs = {
+  record: CreateOneanimalscategoriesInput;
+};
+
+
+export type MutationAnimalsCategoriesUpdateByIdArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdanimalscategoriesInput;
+};
+
+
+export type MutationAnimalsCreateOneArgs = {
+  record: CreateOneanimalsInput;
+};
+
+
+export type MutationAnimalsUpdateByIdArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdanimalsInput;
+};
+
+
+export type MutationAssignPointsExtracurricularArgs = {
+  _id: Scalars['String']['input'];
+  group: Scalars['String']['input'];
+  user: Scalars['String']['input'];
+};
+
+
+export type MutationAvatarCreateOneArgs = {
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  identifier: Scalars['String']['input'];
+  label: Scalars['String']['input'];
+  price: Scalars['Int']['input'];
+  type: Scalars['String']['input'];
+};
+
+
+export type MutationAvatarDeleteOneArgs = {
+  _id: Scalars['String']['input'];
+};
+
+
+export type MutationAvatarPurchaseArgs = {
+  _id: Scalars['String']['input'];
+};
+
+
+export type MutationAvatarSetProfilePictureArgs = {
+  _id: Scalars['String']['input'];
+};
+
+
+export type MutationAvatarUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  identifier: Scalars['String']['input'];
+  label: Scalars['String']['input'];
+  price: Scalars['Int']['input'];
+  type: Scalars['String']['input'];
+};
+
+
+export type MutationBadgeClaimOneArgs = {
+  curriculum: Scalars['String']['input'];
+};
+
+
+export type MutationBadgesCreateOneArgs = {
+  curriculum: Scalars['String']['input'];
+  identifier: Scalars['String']['input'];
+  label: Scalars['String']['input'];
+};
+
+
+export type MutationBadgesDeleteOneArgs = {
+  badge: Scalars['String']['input'];
+};
+
+
+export type MutationBadgesUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdbadgesInput;
+};
+
+
+export type MutationCardCreateDeleteArgs = {
+  id: Scalars['String']['input'];
+};
+
+
+export type MutationCardCreateOneArgs = {
+  expirationMonth: Scalars['Int']['input'];
+  expirationYear: Scalars['Int']['input'];
+  name: Scalars['String']['input'];
+  number: Scalars['String']['input'];
+  securityCode: Scalars['Int']['input'];
+};
+
+
+export type MutationCategoriesCreateOneArgs = {
+  record: CreateOnecategoriesInput;
+};
+
+
+export type MutationCheckInQuestionCreateOneArgs = {
+  record: CreateOnecheckinquestionInput;
+};
+
+
+export type MutationCheckInQuestionDeleteOneArgs = {
+  _id: Scalars['String']['input'];
+};
+
+
+export type MutationCheckInQuestionUpdateOneArgs = {
+  filter?: InputMaybe<FilterUpdateOnecheckinquestionInput>;
+  record: UpdateOnecheckinquestionInput;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortUpdateOnecheckinquestionInput>;
+};
+
+
+export type MutationCheckInUserAnswerCreateOneArgs = {
+  answer: Scalars['String']['input'];
+  checkinQuestion: Scalars['String']['input'];
+  class: Scalars['String']['input'];
+  group?: InputMaybe<Scalars['String']['input']>;
+  scale: Scalars['Int']['input'];
+};
+
+
+export type MutationCheckInUserAnswerDeleteOneArgs = {
+  _id: Scalars['String']['input'];
+};
+
+
+export type MutationCheckInUserAnswerUpdateOneArgs = {
+  filter?: InputMaybe<FilterUpdateOnecheckinuseranswerInput>;
+  record: UpdateOnecheckinuseranswerInput;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortUpdateOnecheckinuseranswerInput>;
+};
+
+
+export type MutationClassLinkStudentImportArgs = {
+  onlyNewUsers?: InputMaybe<Scalars['Boolean']['input']>;
+  organization?: InputMaybe<Scalars['String']['input']>;
+  password?: InputMaybe<Scalars['String']['input']>;
+  school?: InputMaybe<Scalars['String']['input']>;
+  section?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationClassesCreateOneArgs = {
+  record: CreateOneclassesInput;
+};
+
+
+export type MutationClassesDeleteOneArgs = {
+  _id: Scalars['String']['input'];
+};
+
+
+export type MutationClassesUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdclassesInput;
+};
+
+
+export type MutationClassificationTypeCreateOneArgs = {
+  record: CreateOneclassificationtypeInput;
+};
+
+
+export type MutationClassificationTypeUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdclassificationtypeInput;
+};
+
+
+export type MutationCleverSchoolImportArgs = {
+  organization: Scalars['String']['input'];
+};
+
+
+export type MutationCleverSchoolTeacherImportArgs = {
+  password?: InputMaybe<Scalars['String']['input']>;
+  school: Scalars['String']['input'];
+  userType?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationCleverStaffImportArgs = {
+  organization: Scalars['String']['input'];
+  password?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationCleverStudentImportArgs = {
+  onlyNewUsers?: InputMaybe<Scalars['Boolean']['input']>;
+  organization?: InputMaybe<Scalars['String']['input']>;
+  password?: InputMaybe<Scalars['String']['input']>;
+  school?: InputMaybe<Scalars['String']['input']>;
+  sectionName?: InputMaybe<Scalars['String']['input']>;
+  sectionSubject?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationCleverTeacherImportArgs = {
+  onlyNewUsers?: InputMaybe<Scalars['Boolean']['input']>;
+  organization: Scalars['String']['input'];
+  password?: InputMaybe<Scalars['String']['input']>;
+  userType?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationCollectiblesCreateOneArgs = {
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  description: Scalars['String']['input'];
+  editions: Scalars['Int']['input'];
+  price: Scalars['Int']['input'];
+  title: Scalars['String']['input'];
+};
+
+
+export type MutationCollectiblesDeleteOneArgs = {
+  _id: Scalars['String']['input'];
+};
+
+
+export type MutationCollectiblesPurchaseArgs = {
+  _id: Scalars['String']['input'];
+};
+
+
+export type MutationCollectiblesUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  description: Scalars['String']['input'];
+  editions: Scalars['Int']['input'];
+  price: Scalars['Int']['input'];
+  title: Scalars['String']['input'];
+};
+
+
+export type MutationCreateUserArgs = {
+  email: Scalars['String']['input'];
+  firstName: Scalars['String']['input'];
+  lastName: Scalars['String']['input'];
+  organization?: InputMaybe<Scalars['String']['input']>;
+  password?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  sendEmail?: InputMaybe<Scalars['Boolean']['input']>;
+  type: Scalars['String']['input'];
+};
+
+
+export type MutationCurriculumCategoryCreateOneArgs = {
+  record: CreateOnecurriculumcategoryInput;
+};
+
+
+export type MutationCurriculumCategoryDeleteOneArgs = {
+  _id: Scalars['String']['input'];
+};
+
+
+export type MutationCurriculumCategoryUpdateOneArgs = {
+  filter?: InputMaybe<FilterUpdateOnecurriculumcategoryInput>;
+  record: UpdateOnecurriculumcategoryInput;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortUpdateOnecurriculumcategoryInput>;
+};
+
+
+export type MutationCurriculumsCreateOneArgs = {
+  record: CreateOnecurriculumsInput;
+};
+
+
+export type MutationCurriculumsUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdcurriculumsInput;
+};
+
+
+export type MutationDeleteUsersManyArgs = {
+  organization?: InputMaybe<Scalars['String']['input']>;
+  school?: InputMaybe<Scalars['String']['input']>;
+  users?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+};
+
+
+export type MutationDistrictCreateOneArgs = {
+  extraCourse?: InputMaybe<Scalars['Boolean']['input']>;
+  record: CreateOnedistrictInput;
+};
+
+
+export type MutationDistrictUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIddistrictInput;
+};
+
+
+export type MutationFavoritesCreateOneArgs = {
+  record: CreateOnefavoritesInput;
+};
+
+
+export type MutationGroupAddCurriculumArgs = {
+  curriculum: Scalars['String']['input'];
+  group: Scalars['String']['input'];
+};
+
+
+export type MutationGroupCreateOneArgs = {
+  curriculums?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  grade?: InputMaybe<Scalars['String']['input']>;
+  name: Scalars['String']['input'];
+  organization?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  school?: InputMaybe<Scalars['String']['input']>;
+  teacher?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationGroupDeleteOneArgs = {
+  _id: Scalars['String']['input'];
+};
+
+
+export type MutationGroupDisableClassOneArgs = {
+  group: Scalars['String']['input'];
+  user: Scalars['String']['input'];
+};
+
+
+export type MutationGroupEnableClassOneArgs = {
+  group: Scalars['String']['input'];
+  user: Scalars['String']['input'];
+};
+
+
+export type MutationGroupFinishedClassArgs = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  class?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationGroupFinishedLessonArgs = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationGroupLockOrUnLockClassesManyArgs = {
+  group?: InputMaybe<Scalars['String']['input']>;
+  lessons?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+
+export type MutationGroupNextChapterArgs = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationGroupUpdateOneArgs = {
+  curriculums?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  group: Scalars['String']['input'];
+  name?: InputMaybe<Scalars['String']['input']>;
+  organization?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  teacher?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationInfluenceCreateOneArgs = {
+  email: Scalars['String']['input'];
+  firstName: Scalars['String']['input'];
+  lastName: Scalars['String']['input'];
+  userName: Scalars['String']['input'];
+};
+
+
+export type MutationInsertUserInGroupOneArgs = {
+  group: Scalars['String']['input'];
+  user: Scalars['String']['input'];
+};
+
+
+export type MutationJournalsCreateOneArgs = {
+  body: Scalars['String']['input'];
+  class?: InputMaybe<Scalars['String']['input']>;
+  group?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  question: Scalars['String']['input'];
+  tap: Scalars['String']['input'];
+};
+
+
+export type MutationJournalsUpdateOneArgs = {
+  body: Scalars['String']['input'];
+  class?: InputMaybe<Scalars['String']['input']>;
+  group?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  question: Scalars['String']['input'];
+  tap: Scalars['String']['input'];
+};
+
+
+export type MutationLessonCreateOneArgs = {
+  record: CreateOnelessonInput;
+};
+
+
+export type MutationLessonDeleteOneArgs = {
+  _id: Scalars['String']['input'];
+};
+
+
+export type MutationLessonUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdlessonInput;
+};
+
+
+export type MutationLifeSkillCreateOneArgs = {
+  record: CreateOnelifeskillInput;
+};
+
+
+export type MutationLifeSkillDeleteOneArgs = {
+  lifeSkill: Scalars['String']['input'];
+};
+
+
+export type MutationLifeSkillUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdlifeskillInput;
+};
+
+
+export type MutationMoodCreateOneArgs = {
+  record?: InputMaybe<moodInput>;
+};
+
+
+export type MutationMoodDeleteOneArgs = {
+  mood: Scalars['String']['input'];
+};
+
+
+export type MutationMoodUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record?: InputMaybe<moodInput>;
+};
+
+
+export type MutationOneRosterSchoolImportArgs = {
+  organization?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationOneRosterTeacherImportArgs = {
+  onlyNewUsers?: InputMaybe<Scalars['Boolean']['input']>;
+  organization?: InputMaybe<Scalars['String']['input']>;
+  password?: InputMaybe<Scalars['String']['input']>;
+  userType?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationOrganizationTokenCreateOneArgs = {
+  record: CreateOneorganizationtokenInput;
+};
+
+
+export type MutationOrganizationTokenUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdorganizationtokenInput;
+};
+
+
+export type MutationParentChildApproveArgs = {
+  _id: Scalars['String']['input'];
+  approved: Scalars['Boolean']['input'];
+};
+
+
+export type MutationParentChildRequestCreateArgs = {
+  code: Scalars['String']['input'];
+};
+
+
+export type MutationPinCreateOneArgs = {
+  record: CreateOnepinInput;
+};
+
+
+export type MutationPinUpdateOneArgs = {
+  filter?: InputMaybe<FilterUpdateManypinInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  record: UpdateManypinInput;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortUpdateManypinInput>;
+};
+
+
+export type MutationQuestionTestArgs = {
+  id: Scalars['String']['input'];
+};
+
+
+export type MutationQuestionnairesCreateOneArgs = {
+  answer?: InputMaybe<Array<Scalars['String']['input']>>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  question: Scalars['String']['input'];
+  tap: Scalars['String']['input'];
+};
+
+
+export type MutationQuestionsCreateOneArgs = {
+  record: CreateOnequestionsInput;
+};
+
+
+export type MutationQuestionsUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdquestionsInput;
+};
+
+
+export type MutationRegionCreateOneArgs = {
+  record: CreateOneregionInput;
+};
+
+
+export type MutationRegionUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdregionInput;
+};
+
+
+export type MutationRemoveGroupOneArgs = {
+  group: Scalars['String']['input'];
+};
+
+
+export type MutationRemoveUserInGroupOneArgs = {
+  group: Scalars['String']['input'];
+  user: Scalars['String']['input'];
+};
+
+
+export type MutationReportsCreateOneArgs = {
+  record: CreateOnereportsInput;
+};
+
+
+export type MutationReportsDeleteOneArgs = {
+  report: Scalars['String']['input'];
+};
+
+
+export type MutationReportsUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdreportsInput;
+};
+
+
+export type MutationResourcesCategoryCreateOneArgs = {
+  record: CreateOneresourcecategoryInput;
+};
+
+
+export type MutationResourcesCategoryDeleteOneArgs = {
+  _id: Scalars['String']['input'];
+};
+
+
+export type MutationResourcesCategoryUpdateOneArgs = {
+  filter?: InputMaybe<FilterUpdateOneresourcecategoryInput>;
+  record: UpdateOneresourcecategoryInput;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortUpdateOneresourcecategoryInput>;
+};
+
+
+export type MutationResourcesCreateOneArgs = {
+  record?: InputMaybe<resourceInput>;
+};
+
+
+export type MutationResourcesDeleteOneArgs = {
+  _id: Scalars['String']['input'];
+};
+
+
+export type MutationResourcesUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdresourceInput;
+};
+
+
+export type MutationResponsesCreateOneArgs = {
+  record: CreateOneresponsesInput;
+};
+
+
+export type MutationResponsesUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdresponsesInput;
+};
+
+
+export type MutationSchoolAssignGroupsArgs = {
+  curriculums?: InputMaybe<Array<Scalars['String']['input']>>;
+  schools?: InputMaybe<Array<Scalars['String']['input']>>;
+  userType?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationSchoolCodeCreateOneArgs = {
+  record: CreateOneschoolcodeInput;
+};
+
+
+export type MutationSchoolCodeDeleteOneArgs = {
+  schoolCode: Scalars['String']['input'];
+};
+
+
+export type MutationSchoolCodeUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdschoolcodeInput;
+};
+
+
+export type MutationSchoolCreateOneArgs = {
+  record: CreateOneschoolsDataInput;
+};
+
+
+export type MutationSchoolLevelCreateOneArgs = {
+  record: CreateOneschoollevelInput;
+};
+
+
+export type MutationSchoolLevelUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdschoollevelInput;
+};
+
+
+export type MutationSchoolSettingsUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdschoolsettingsInput;
+};
+
+
+export type MutationSchoolTeachersSendInvitationArgs = {
+  schoolCode: Scalars['String']['input'];
+  teacherEmails?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+
+export type MutationSchoolUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdschoolsDataInput;
+};
+
+
+export type MutationSchoolUserDeleteOneArgs = {
+  school: Scalars['String']['input'];
+  user: Scalars['String']['input'];
+};
+
+
+export type MutationSetUserOrganizationArgs = {
+  organization: Scalars['String']['input'];
+  user: Scalars['String']['input'];
+};
+
+
+export type MutationSetUserSchoolArgs = {
+  school?: InputMaybe<Scalars['String']['input']>;
+  user: Scalars['String']['input'];
+};
+
+
+export type MutationSkillSetCreateOneArgs = {
+  record: CreateOneskillsetInput;
+};
+
+
+export type MutationSkillSetDeleteOneArgs = {
+  skillSet: Scalars['String']['input'];
+};
+
+
+export type MutationSkillSetUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdskillsetInput;
+};
+
+
+export type MutationSparkLibraryCreateOneArgs = {
+  record: CreateOnesparklibraryInput;
+};
+
+
+export type MutationSparkLibraryQuestionnairesCreateOneArgs = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  questions?: InputMaybe<Array<InputMaybe<QuestionInput>>>;
+};
+
+
+export type MutationSparkLibraryUpdateOneArgs = {
+  filter?: InputMaybe<FilterUpdateOnesparklibraryInput>;
+  record: UpdateOnesparklibraryInput;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortUpdateOnesparklibraryInput>;
+};
+
+
+export type MutationStickerCreateOneArgs = {
+  record: CreateOnestickerInput;
+};
+
+
+export type MutationStickerUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdstickerInput;
+};
+
+
+export type MutationSubCategoriesCreateOneArgs = {
+  record: CreateOnesubcategoriesInput;
+};
+
+
+export type MutationSubscriptionsCreateOneArgs = {
+  numberTeachers?: InputMaybe<Scalars['Int']['input']>;
+  type: Scalars['String']['input'];
+};
+
+
+export type MutationSubscriptionsUpdateOneArgs = {
+  usersId: Scalars['String']['input'];
+};
+
+
+export type MutationTapCreateOneArgs = {
+  record: CreateOnetapInput;
+};
+
+
+export type MutationTapDeleteOneArgs = {
+  _id: Scalars['String']['input'];
+};
+
+
+export type MutationTapStudentUpdateOneArgs = {
+  class?: InputMaybe<Scalars['String']['input']>;
+  group?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  tap: Scalars['String']['input'];
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationTapUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdtapInput;
+};
+
+
+export type MutationTeacherClassLinkSyncArgs = {
+  user: Scalars['String']['input'];
+};
+
+
+export type MutationTeacherCleverLinkSyncArgs = {
+  user: Scalars['String']['input'];
+};
+
+
+export type MutationTeacherCleverSyncClassArgs = {
+  cleverId: Scalars['String']['input'];
+  groupId: Scalars['String']['input'];
+};
+
+
+export type MutationTeacherJoinByCodeArgs = {
+  schoolCode: Scalars['String']['input'];
+  user: Scalars['String']['input'];
+};
+
+
+export type MutationTeacherJoinSchoolArgs = {
+  email: Scalars['String']['input'];
+  firstName: Scalars['String']['input'];
+  lastName: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+  schoolCode: Scalars['String']['input'];
+};
+
+
+export type MutationThemeCreateOneArgs = {
+  record: CreateOnethemeInput;
+};
+
+
+export type MutationThemeDeleteOneArgs = {
+  theme: Scalars['String']['input'];
+};
+
+
+export type MutationThemeUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdthemeInput;
+};
+
+
+export type MutationTimesStudentUpdateOneArgs = {
+  class: Scalars['String']['input'];
+  field: Scalars['String']['input'];
+  group?: InputMaybe<Scalars['String']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationUpdateUserOrganizationManyArgs = {
+  group: Scalars['String']['input'];
+  organization: Scalars['String']['input'];
+  school: Scalars['String']['input'];
+  users: Array<Scalars['String']['input']>;
+};
+
+
+export type MutationUserAnimalsCreateOneArgs = {
+  record: CreateOneuseranimalsInput;
+};
+
+
+export type MutationUserDonateOneArgs = {
+  points: Scalars['Int']['input'];
+  vault: Scalars['String']['input'];
+};
+
+
+export type MutationUserForgotPasswordArgs = {
+  email: Scalars['String']['input'];
+};
+
+
+export type MutationUserMoodCreateOneArgs = {
+  mood: Scalars['String']['input'];
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationUserOrganizationSendInvitationArgs = {
+  record: CreateOneuserorganizationInput;
+};
+
+
+export type MutationUserOrganizationUpdateInvitationArgs = {
+  _id: Scalars['String']['input'];
+  response?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+
+export type MutationUserPinClaimOneArgs = {
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  sparkLibrary?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationUserResetPasswordArgs = {
+  password: Scalars['String']['input'];
+  token: Scalars['String']['input'];
+};
+
+
+export type MutationUserUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIduserInput;
+};
+
+
+export type MutationUserUpdateUserTypeArgs = {
+  type: Scalars['String']['input'];
+  user: Scalars['String']['input'];
+};
+
+
+export type MutationUsersDeleteArgs = {
+  _id: Scalars['MongoID']['input'];
+};
+
+
+export type MutationUsersSetPasswordArgs = {
+  password: Scalars['String']['input'];
+  user: Scalars['String']['input'];
+};
+
+
+export type MutationUsersSetPasswordAdminArgs = {
+  password: Scalars['String']['input'];
+  user: Scalars['String']['input'];
+};
+
+
+export type MutationVideoSparksCreateOneArgs = {
+  _id: Scalars['MongoID']['input'];
+};
+
+
+export type MutationVideoTapsCreateOneArgs = {
+  record: CreateOnevideotapInput;
+};
+
+
+export type MutationVideoTapsDeleteOneArgs = {
+  videotap: Scalars['String']['input'];
+};
+
+
+export type MutationVideoTapsUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdvideotapInput;
+};
+
+
+export type MutationjoinByCodeOneArgs = {
+  code: Scalars['String']['input'];
+  user: Scalars['String']['input'];
+};
+
+
+export type MutationsendInvitationArgs = {
+  email: Scalars['String']['input'];
+  firstName: Scalars['String']['input'];
+  lastName: Scalars['String']['input'];
+  type: Scalars['String']['input'];
+};
+
+
+export type MutationsetUserProgressOneArgs = {
+  _id: Scalars['String']['input'];
+  time: Scalars['Int']['input'];
+};
+
+
+export type MutationstartClassOneArgs = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  group?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationuserSparkLibraryArticleQuestionsResponseOneArgs = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  questions?: InputMaybe<Array<InputMaybe<QuestionInput>>>;
+};
+
+
+export type MutationuserSparkLibraryFoundOneArgs = {
+  _id: Scalars['String']['input'];
+  time?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationuserSparkLibraryFunFactQuestionsResponseOneArgs = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  questions?: InputMaybe<Array<InputMaybe<QuestionInput>>>;
+};
+
+
+export type MutationuserSparkLibraryJournalResponseOneArgs = {
+  _id: Scalars['String']['input'];
+  body: Scalars['String']['input'];
+  journal: Scalars['String']['input'];
+};
+
+
+export type MutationuserSparkLibraryMindfulMomentResponseOneArgs = {
+  _id: Scalars['String']['input'];
+  body: Scalars['String']['input'];
+  journal: Scalars['String']['input'];
+};
+
+export type ProgressByCurriculum = {
+  __typename?: 'ProgressByCurriculum';
+  _id?: Maybe<Scalars['String']['output']>;
+  check?: Maybe<Scalars['Boolean']['output']>;
+  explore?: Maybe<Scalars['Boolean']['output']>;
+  slug?: Maybe<Scalars['String']['output']>;
+  watched?: Maybe<Scalars['Boolean']['output']>;
+};
+
+export type ProgressByUser = {
+  __typename?: 'ProgressByUser';
+  ended?: Maybe<Scalars['Boolean']['output']>;
+  journals?: Maybe<Scalars['Float']['output']>;
+  numberOfClassEnded?: Maybe<Scalars['Float']['output']>;
+  user?: Maybe<ProgressByUser_User>;
+};
+
+export type ProgressByUser_User = {
+  __typename?: 'ProgressByUser_User';
+  _id?: Maybe<Scalars['String']['output']>;
+  firstName?: Maybe<Scalars['String']['output']>;
+  lastLogin?: Maybe<Scalars['String']['output']>;
+  lastName?: Maybe<Scalars['String']['output']>;
+  points?: Maybe<Scalars['Float']['output']>;
+  profilePicture?: Maybe<ProgressByUser_User_ProfilePicture>;
+};
+
+export type ProgressByUser_User_ProfilePicture = {
+  __typename?: 'ProgressByUser_User_ProfilePicture';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type ProgressCheck = {
+  __typename?: 'ProgressCheck';
+  badge?: Maybe<badgeMedia>;
+  id: Scalars['String']['output'];
+};
+
+export type Query = {
+  __typename?: 'Query';
+  AnimalsFindMany: Array<animals>;
+  AnimalsFindOne?: Maybe<animals>;
+  AvatarFindMany: Array<avatar>;
+  AvatarFindOne?: Maybe<avatar>;
+  AvatarPurchasedFindMany?: Maybe<Array<Maybe<avatar>>>;
+  AvatarTypesFindMany: Array<avatartypes>;
+  BadgesFindMany: Array<badges>;
+  BadgesFindOne?: Maybe<badges>;
+  BillingTypesFindMany: Array<billingtypes>;
+  CardFindMany?: Maybe<Array<Maybe<Card>>>;
+  CategoriesFindMany: Array<categories>;
+  CategoriesFindOne?: Maybe<categories>;
+  CheckInQuestionFindMany: Array<checkinquestion>;
+  CheckInQuestionFindOne?: Maybe<checkinquestion>;
+  CheckInUserAnswerFindMany?: Maybe<Array<Maybe<checkinuseranswer>>>;
+  CheckInUserAnswerFindOne?: Maybe<checkinuseranswer>;
+  ClassJournalsFindMany?: Maybe<Array<Maybe<journals>>>;
+  ClassesAdminFindMany: Array<classes>;
+  ClassesAdminFindOne?: Maybe<classes>;
+  ClassesByCurriculumFindOne?: Maybe<Array<Maybe<classes>>>;
+  ClassesFindOne?: Maybe<classes>;
+  ClassificationTypeFindMany: Array<classificationtype>;
+  ClassificationTypeFindOne?: Maybe<classificationtype>;
+  CollectiblesByCurriculumFindMany?: Maybe<Array<Maybe<collectible>>>;
+  CollectiblesFindMany?: Maybe<Array<Maybe<collectible>>>;
+  CollectiblesFindOne?: Maybe<collectible>;
+  CoursesInProgress?: Maybe<Array<Maybe<curriculums>>>;
+  CurriculumCategoryFindMany: Array<curriculumcategory>;
+  CurriculumCategoryFindOne?: Maybe<curriculumcategory>;
+  CurriculumsByUser?: Maybe<Array<Maybe<curriculums>>>;
+  CurriculumsFindMany?: Maybe<Array<Maybe<curriculums>>>;
+  CurriculumsFindOne?: Maybe<curriculums>;
+  DistrictFindMany: Array<district>;
+  DistrictFindOne?: Maybe<district>;
+  FavoritesFindMany?: Maybe<favorites>;
+  GlobalProgressGenerateOne?: Maybe<groupprogress>;
+  GradesFindMany: Array<grade>;
+  GradesFindOne?: Maybe<grade>;
+  GroupFindMany?: Maybe<Array<Maybe<groups>>>;
+  GroupFindOne?: Maybe<groups>;
+  GroupJournalsFindMany?: Maybe<Array<Maybe<journals>>>;
+  GroupProgressByOrganizationFindMany?: Maybe<Array<Maybe<groupprogress>>>;
+  GroupProgressFindMany?: Maybe<Array<Maybe<groupprogress>>>;
+  GroupProgressFindOne?: Maybe<groupprogress>;
+  GroupUserFindOne?: Maybe<groups>;
+  InfluencesFindOne?: Maybe<user>;
+  JournalsFindMany: Array<journals>;
+  JournalsFindOne?: Maybe<journals>;
+  LessonFindMany?: Maybe<Array<Maybe<lesson>>>;
+  LessonFindOne?: Maybe<lesson>;
+  LifeSkillFindMany: Array<lifeskill>;
+  LifeSkillFindOne?: Maybe<lifeskill>;
+  MoodFindMany: Array<mood>;
+  MoodFindOne?: Maybe<mood>;
+  OrganizationTokenFindMany: Array<organizationtoken>;
+  OrganizationTokenFindOne?: Maybe<organizationtoken>;
+  OrganizationUserHistoryFindMany?: Maybe<Array<Maybe<DateUserCount>>>;
+  OrganizationsFindMany: Array<organization>;
+  ParentChildFindMany: Array<parentchildren>;
+  PinFindMany: Array<pin>;
+  PinFindOne?: Maybe<pin>;
+  ProgressByCurriculum?: Maybe<Array<Maybe<ProgressByCurriculum>>>;
+  ProgressByUser?: Maybe<Array<Maybe<ProgressByUser>>>;
+  ProgressFindMany: Array<progress>;
+  ProgressFindOne?: Maybe<progress>;
+  QuestionnairesFindByClass?: Maybe<Array<Maybe<questionnaires>>>;
+  QuestionsFindMany?: Maybe<Array<Maybe<questions>>>;
+  QuestionsFindOne?: Maybe<questions>;
+  RegionFindMany: Array<region>;
+  RegionFindOne?: Maybe<region>;
+  ReportsFindMany: Array<reports>;
+  ReportsFindOne?: Maybe<reports>;
+  ResourcesCategoryCount?: Maybe<Array<Maybe<CategoryCount>>>;
+  ResourcesCategoryFindMany: Array<resourcecategory>;
+  ResourcesCategoryFindOne?: Maybe<resourcecategory>;
+  ResourcesFindMany?: Maybe<Array<Maybe<resource>>>;
+  ResourcesFindOne?: Maybe<resource>;
+  ResourcesSearch?: Maybe<Array<Maybe<resource>>>;
+  ResponsesFindMany: Array<responses>;
+  ResponsesFindOne?: Maybe<responses>;
+  SchoolByUsersFindMany?: Maybe<Array<Maybe<schoolsData>>>;
+  SchoolCodeFindMany: Array<schoolcode>;
+  SchoolCodeFindOne?: Maybe<schoolcode>;
+  SchoolFindMany?: Maybe<Array<Maybe<schoolsData>>>;
+  SchoolFindOne?: Maybe<schoolsData>;
+  SchoolLevelFindMany: Array<schoollevel>;
+  SchoolLevelFindOne?: Maybe<schoollevel>;
+  SchoolSettingsFindMany: Array<schoolsettings>;
+  SchoolSettingsFindOne?: Maybe<schoolsettings>;
+  SchoolUserFindOne?: Maybe<schoolusers>;
+  SchoolUserHistoryFindMany?: Maybe<Array<Maybe<DateUserCount>>>;
+  SchoolUsersFindMany?: Maybe<Array<Maybe<UserShort>>>;
+  ScoreFindOne?: Maybe<Score>;
+  ScoreLessonFindOne?: Maybe<Score>;
+  SkillSetFindMany: Array<skillset>;
+  SkillSetFindOne?: Maybe<skillset>;
+  StickerFindMany: Array<sticker>;
+  StickerFindOne?: Maybe<sticker>;
+  SubCategoriesFindMany: Array<subcategories>;
+  SubCategoriesFindOne?: Maybe<subcategories>;
+  SubscriptionsFindOne?: Maybe<subscription>;
+  TapFindMany: Array<tap>;
+  TapFindOne?: Maybe<tap>;
+  TapTypeFindMany: Array<taptype>;
+  TeacherClassAndStudents?: Maybe<ClassAndStudents>;
+  TeacherCleverClassFindMany?: Maybe<Array<Maybe<CleverGroup>>>;
+  ThemeFindMany: Array<theme>;
+  ThemeFindOne?: Maybe<theme>;
+  TotalUserMoodFindMany?: Maybe<TotalUserMood>;
+  UserAnimalsFindOne?: Maybe<useranimals>;
+  UserBadgesFindMany?: Maybe<Array<Maybe<userbadge>>>;
+  UserBadgesFindOne?: Maybe<userbadge>;
+  UserCollectiblesByCurriculumFindMany?: Maybe<Array<Maybe<collectible>>>;
+  UserCollectiblesFindMany?: Maybe<Array<Maybe<usercollectibles>>>;
+  UserDistrictFindOne?: Maybe<district>;
+  UserInGroupsFindMany?: Maybe<Array<Maybe<usergroups>>>;
+  UserMoodFindMany?: Maybe<Array<Maybe<usermood>>>;
+  UserPinFindMany?: Maybe<Array<Maybe<userpin>>>;
+  UserProgressByCurriculum?: Maybe<Array<Maybe<UserProgressByCurriculum>>>;
+  UserSearch?: Maybe<UsersSearch>;
+  UserStickerFindMany?: Maybe<Array<Maybe<usersticker>>>;
+  UserTotalsDonationsFindMany?: Maybe<UsersTotalDonations>;
+  UserTotalsFindMany?: Maybe<UsersTotal>;
+  UserTypesFindMany: Array<usertypes>;
+  UsersByOrganizationFindMany?: Maybe<UsersTotalObj>;
+  UsersBySchoolFindMany?: Maybe<UsersTotalObj>;
+  UsersFindMany?: Maybe<Array<Maybe<user>>>;
+  UsersFindOne?: Maybe<user>;
+  UsersSparksTotals?: Maybe<Array<Maybe<Sparks>>>;
+  VaultByUserFindMany?: Maybe<VaultUserDonations>;
+  VaultDonationTotal?: Maybe<VaultDonationTotal>;
+  VaultFindMany?: Maybe<VaultDonations>;
+  VideoSparkFindOne?: Maybe<videosparks>;
+  VideoTapsFindMany: Array<videotap>;
+  VideoTapsFindOne?: Maybe<videotap>;
+  sparkLibraryFindMany: Array<sparklibrary>;
+  userSparkLibraryFindMany: Array<sparklibraryuser>;
+};
+
+
+export type QueryAnimalsFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyanimalsInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManyanimalsInput>;
+};
+
+
+export type QueryAnimalsFindOneArgs = {
+  filter?: InputMaybe<FilterFindOneanimalsInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOneanimalsInput>;
+};
+
+
+export type QueryAvatarFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyavatarInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManyavatarInput>;
+};
+
+
+export type QueryAvatarFindOneArgs = {
+  filter?: InputMaybe<FilterFindOneavatarInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOneavatarInput>;
+};
+
+
+export type QueryAvatarTypesFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyavatartypesInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManyavatartypesInput>;
+};
+
+
+export type QueryBadgesFindManyArgs = {
+  filter?: InputMaybe<FilterFindManybadgesInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManybadgesInput>;
+};
+
+
+export type QueryBadgesFindOneArgs = {
+  filter?: InputMaybe<FilterFindOnebadgesInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOnebadgesInput>;
+};
+
+
+export type QueryBillingTypesFindManyArgs = {
+  filter?: InputMaybe<FilterFindManybillingtypesInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManybillingtypesInput>;
+};
+
+
+export type QueryCardFindManyArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type QueryCategoriesFindManyArgs = {
+  filter?: InputMaybe<FilterFindManycategoriesInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManycategoriesInput>;
+};
+
+
+export type QueryCategoriesFindOneArgs = {
+  filter?: InputMaybe<FilterFindOnecategoriesInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOnecategoriesInput>;
+};
+
+
+export type QueryCheckInQuestionFindManyArgs = {
+  filter?: InputMaybe<FilterFindManycheckinquestionInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManycheckinquestionInput>;
+};
+
+
+export type QueryCheckInQuestionFindOneArgs = {
+  filter?: InputMaybe<FilterFindOnecheckinquestionInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOnecheckinquestionInput>;
+};
+
+
+export type QueryCheckInUserAnswerFindManyArgs = {
+  filter?: InputMaybe<checkinuseranswerInput>;
+};
+
+
+export type QueryCheckInUserAnswerFindOneArgs = {
+  filter?: InputMaybe<checkinuseranswerInput>;
+};
+
+
+export type QueryClassJournalsFindManyArgs = {
+  class: Scalars['String']['input'];
+  scale?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryClassesAdminFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyclassesInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<Array<SortFindManyclassesInput>>;
+};
+
+
+export type QueryClassesAdminFindOneArgs = {
+  filter?: InputMaybe<FilterFindOneclassesInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOneclassesInput>;
+};
+
+
+export type QueryClassesByCurriculumFindOneArgs = {
+  curriculum: Scalars['String']['input'];
+};
+
+
+export type QueryClassesFindOneArgs = {
+  _id: Scalars['String']['input'];
+};
+
+
+export type QueryClassificationTypeFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyclassificationtypeInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManyclassificationtypeInput>;
+};
+
+
+export type QueryClassificationTypeFindOneArgs = {
+  filter?: InputMaybe<FilterFindOneclassificationtypeInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOneclassificationtypeInput>;
+};
+
+
+export type QueryCollectiblesByCurriculumFindManyArgs = {
+  curriculum: Scalars['String']['input'];
+};
+
+
+export type QueryCollectiblesFindManyArgs = {
+  filter?: InputMaybe<collectibleInput>;
+};
+
+
+export type QueryCollectiblesFindOneArgs = {
+  filter?: InputMaybe<collectibleInput>;
+};
+
+
+export type QueryCurriculumCategoryFindManyArgs = {
+  filter?: InputMaybe<FilterFindManycurriculumcategoryInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManycurriculumcategoryInput>;
+};
+
+
+export type QueryCurriculumCategoryFindOneArgs = {
+  filter?: InputMaybe<FilterFindOnecurriculumcategoryInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOnecurriculumcategoryInput>;
+};
+
+
+export type QueryCurriculumsByUserArgs = {
+  user: Scalars['String']['input'];
+};
+
+
+export type QueryCurriculumsFindManyArgs = {
+  filter?: InputMaybe<curriculumsInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<curriculumsSortEnum>;
+};
+
+
+export type QueryCurriculumsFindOneArgs = {
+  filter?: InputMaybe<curriculumsInput>;
+};
+
+
+export type QueryDistrictFindManyArgs = {
+  filter?: InputMaybe<FilterFindManydistrictInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManydistrictInput>;
+};
+
+
+export type QueryDistrictFindOneArgs = {
+  filter?: InputMaybe<FilterFindOnedistrictInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOnedistrictInput>;
+};
+
+
+export type QueryFavoritesFindManyArgs = {
+  filter?: InputMaybe<favoritesInput>;
+};
+
+
+export type QueryGlobalProgressGenerateOneArgs = {
+  curriculum: Scalars['String']['input'];
+  group: Scalars['String']['input'];
+};
+
+
+export type QueryGradesFindManyArgs = {
+  filter?: InputMaybe<FilterFindManygradeInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManygradeInput>;
+};
+
+
+export type QueryGradesFindOneArgs = {
+  filter?: InputMaybe<FilterFindOnegradeInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOnegradeInput>;
+};
+
+
+export type QueryGroupFindManyArgs = {
+  filter?: InputMaybe<groupsInput>;
+};
+
+
+export type QueryGroupFindOneArgs = {
+  filter?: InputMaybe<groupsInput>;
+};
+
+
+export type QueryGroupJournalsFindManyArgs = {
+  group: Scalars['String']['input'];
+  lesson: Scalars['String']['input'];
+};
+
+
+export type QueryGroupProgressByOrganizationFindManyArgs = {
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  organization: Scalars['String']['input'];
+  startDate?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryGroupProgressFindManyArgs = {
+  filter?: InputMaybe<groupprogressInput>;
+};
+
+
+export type QueryGroupProgressFindOneArgs = {
+  filter?: InputMaybe<groupprogressInput>;
+};
+
+
+export type QueryInfluencesFindOneArgs = {
+  filter?: InputMaybe<userInput>;
+};
+
+
+export type QueryJournalsFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyjournalsInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManyjournalsInput>;
+};
+
+
+export type QueryJournalsFindOneArgs = {
+  filter?: InputMaybe<FilterFindOnejournalsInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOnejournalsInput>;
+};
+
+
+export type QueryLessonFindManyArgs = {
+  filter?: InputMaybe<lessonInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<lessonSortEnumTC>;
+};
+
+
+export type QueryLessonFindOneArgs = {
+  filter?: InputMaybe<lessonInput>;
+};
+
+
+export type QueryLifeSkillFindManyArgs = {
+  filter?: InputMaybe<FilterFindManylifeskillInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManylifeskillInput>;
+};
+
+
+export type QueryLifeSkillFindOneArgs = {
+  filter?: InputMaybe<FilterFindOnelifeskillInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOnelifeskillInput>;
+};
+
+
+export type QueryMoodFindManyArgs = {
+  filter?: InputMaybe<FilterFindManymoodInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManymoodInput>;
+};
+
+
+export type QueryMoodFindOneArgs = {
+  filter?: InputMaybe<FilterFindOnemoodInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOnemoodInput>;
+};
+
+
+export type QueryOrganizationTokenFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyorganizationtokenInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManyorganizationtokenInput>;
+};
+
+
+export type QueryOrganizationTokenFindOneArgs = {
+  filter?: InputMaybe<FilterFindOneorganizationtokenInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOneorganizationtokenInput>;
+};
+
+
+export type QueryOrganizationUserHistoryFindManyArgs = {
+  dateField: Scalars['String']['input'];
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  organization?: InputMaybe<Scalars['String']['input']>;
+  startDate?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryOrganizationsFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyorganizationInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManyorganizationInput>;
+};
+
+
+export type QueryParentChildFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyparentchildrenInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManyparentchildrenInput>;
+};
+
+
+export type QueryPinFindManyArgs = {
+  filter?: InputMaybe<FilterFindManypinInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManypinInput>;
+};
+
+
+export type QueryPinFindOneArgs = {
+  filter?: InputMaybe<FilterFindOnepinInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOnepinInput>;
+};
+
+
+export type QueryProgressByCurriculumArgs = {
+  _id: Scalars['String']['input'];
+};
+
+
+export type QueryProgressByUserArgs = {
+  code: Scalars['String']['input'];
+  user: Scalars['String']['input'];
+};
+
+
+export type QueryProgressFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyprogressInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManyprogressInput>;
+};
+
+
+export type QueryProgressFindOneArgs = {
+  filter?: InputMaybe<FilterFindOneprogressInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOneprogressInput>;
+};
+
+
+export type QueryQuestionnairesFindByClassArgs = {
+  class: Scalars['String']['input'];
+};
+
+
+export type QueryQuestionsFindManyArgs = {
+  filter?: InputMaybe<questionsInput>;
+  sort?: InputMaybe<questionsSortEnum>;
+};
+
+
+export type QueryQuestionsFindOneArgs = {
+  filter?: InputMaybe<questionsInput>;
+  sort?: InputMaybe<questionsSortEnum>;
+};
+
+
+export type QueryRegionFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyregionInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManyregionInput>;
+};
+
+
+export type QueryRegionFindOneArgs = {
+  filter?: InputMaybe<FilterFindOneregionInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOneregionInput>;
+};
+
+
+export type QueryReportsFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyreportsInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManyreportsInput>;
+};
+
+
+export type QueryReportsFindOneArgs = {
+  filter?: InputMaybe<FilterFindOnereportsInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOnereportsInput>;
+};
+
+
+export type QueryResourcesCategoryFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyresourcecategoryInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManyresourcecategoryInput>;
+};
+
+
+export type QueryResourcesCategoryFindOneArgs = {
+  filter?: InputMaybe<FilterFindOneresourcecategoryInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOneresourcecategoryInput>;
+};
+
+
+export type QueryResourcesFindManyArgs = {
+  filter?: InputMaybe<resourceInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type QueryResourcesFindOneArgs = {
+  filter?: InputMaybe<resourceInput>;
+};
+
+
+export type QueryResourcesSearchArgs = {
+  category?: InputMaybe<Scalars['String']['input']>;
+  limit: Scalars['Int']['input'];
+  query: Scalars['String']['input'];
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryResponsesFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyresponsesInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManyresponsesInput>;
+};
+
+
+export type QueryResponsesFindOneArgs = {
+  filter?: InputMaybe<FilterFindOneresponsesInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOneresponsesInput>;
+};
+
+
+export type QuerySchoolByUsersFindManyArgs = {
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QuerySchoolCodeFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyschoolcodeInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManyschoolcodeInput>;
+};
+
+
+export type QuerySchoolCodeFindOneArgs = {
+  filter?: InputMaybe<FilterFindOneschoolcodeInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOneschoolcodeInput>;
+};
+
+
+export type QuerySchoolFindManyArgs = {
+  filter?: InputMaybe<schoolsDataInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type QuerySchoolFindOneArgs = {
+  filter?: InputMaybe<schoolsDataInput>;
+};
+
+
+export type QuerySchoolLevelFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyschoollevelInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManyschoollevelInput>;
+};
+
+
+export type QuerySchoolLevelFindOneArgs = {
+  filter?: InputMaybe<FilterFindOneschoollevelInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOneschoollevelInput>;
+};
+
+
+export type QuerySchoolSettingsFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyschoolsettingsInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManyschoolsettingsInput>;
+};
+
+
+export type QuerySchoolSettingsFindOneArgs = {
+  filter?: InputMaybe<FilterFindOneschoolsettingsInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOneschoolsettingsInput>;
+};
+
+
+export type QuerySchoolUserFindOneArgs = {
+  filter?: InputMaybe<schoolusersInput>;
+};
+
+
+export type QuerySchoolUserHistoryFindManyArgs = {
+  dateField: Scalars['String']['input'];
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  school: Scalars['String']['input'];
+  startDate?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QuerySchoolUsersFindManyArgs = {
+  pending?: InputMaybe<Scalars['Boolean']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryScoreFindOneArgs = {
+  class: Scalars['String']['input'];
+};
+
+
+export type QueryScoreLessonFindOneArgs = {
+  lesson: Scalars['String']['input'];
+};
+
+
+export type QuerySkillSetFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyskillsetInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManyskillsetInput>;
+};
+
+
+export type QuerySkillSetFindOneArgs = {
+  filter?: InputMaybe<FilterFindOneskillsetInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOneskillsetInput>;
+};
+
+
+export type QueryStickerFindManyArgs = {
+  filter?: InputMaybe<FilterFindManystickerInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManystickerInput>;
+};
+
+
+export type QueryStickerFindOneArgs = {
+  filter?: InputMaybe<FilterFindOnestickerInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOnestickerInput>;
+};
+
+
+export type QuerySubCategoriesFindManyArgs = {
+  filter?: InputMaybe<FilterFindManysubcategoriesInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManysubcategoriesInput>;
+};
+
+
+export type QuerySubCategoriesFindOneArgs = {
+  filter?: InputMaybe<FilterFindOnesubcategoriesInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOnesubcategoriesInput>;
+};
+
+
+export type QuerySubscriptionsFindOneArgs = {
+  filter?: InputMaybe<FilterFindOnesubscriptionInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOnesubscriptionInput>;
+};
+
+
+export type QueryTapFindManyArgs = {
+  filter?: InputMaybe<FilterFindManytapInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManytapInput>;
+};
+
+
+export type QueryTapFindOneArgs = {
+  filter?: InputMaybe<tapInput>;
+};
+
+
+export type QueryTapTypeFindManyArgs = {
+  filter?: InputMaybe<FilterFindManytaptypeInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManytaptypeInput>;
+};
+
+
+export type QueryTeacherClassAndStudentsArgs = {
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryThemeFindManyArgs = {
+  filter?: InputMaybe<FilterFindManythemeInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManythemeInput>;
+};
+
+
+export type QueryThemeFindOneArgs = {
+  filter?: InputMaybe<FilterFindOnethemeInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOnethemeInput>;
+};
+
+
+export type QueryTotalUserMoodFindManyArgs = {
+  group?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryUserAnimalsFindOneArgs = {
+  filter: FilterFindOneuseranimalsInput;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOneuseranimalsInput>;
+};
+
+
+export type QueryUserBadgesFindManyArgs = {
+  filter?: InputMaybe<userbadgeInput>;
+};
+
+
+export type QueryUserBadgesFindOneArgs = {
+  filter?: InputMaybe<userbadgeInput>;
+};
+
+
+export type QueryUserCollectiblesByCurriculumFindManyArgs = {
+  curriculum: Scalars['String']['input'];
+};
+
+
+export type QueryUserCollectiblesFindManyArgs = {
+  collectible?: InputMaybe<Scalars['String']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryUserInGroupsFindManyArgs = {
+  filter?: InputMaybe<usergroupsInput>;
+};
+
+
+export type QueryUserMoodFindManyArgs = {
+  endTime?: InputMaybe<Scalars['String']['input']>;
+  mood?: InputMaybe<Scalars['String']['input']>;
+  startTime?: InputMaybe<Scalars['String']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryUserPinFindManyArgs = {
+  filter?: InputMaybe<userpinInput>;
+};
+
+
+export type QueryUserProgressByCurriculumArgs = {
+  _id: Scalars['String']['input'];
+};
+
+
+export type QueryUserSearchArgs = {
+  districtId?: InputMaybe<Scalars['String']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  organizationId?: InputMaybe<Scalars['String']['input']>;
+  platformId?: InputMaybe<Scalars['String']['input']>;
+  region?: InputMaybe<Scalars['String']['input']>;
+  schoolId?: InputMaybe<Scalars['String']['input']>;
+  search?: InputMaybe<Scalars['String']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sortBy?: InputMaybe<Scalars['String']['input']>;
+  sortOrder?: InputMaybe<Scalars['Int']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryUserStickerFindManyArgs = {
+  filter?: InputMaybe<userstickerInput>;
+};
+
+
+export type QueryUserTotalsDonationsFindManyArgs = {
+  group?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryUserTotalsFindManyArgs = {
+  district?: InputMaybe<Scalars['String']['input']>;
+  global?: InputMaybe<Scalars['Boolean']['input']>;
+  school?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryUserTypesFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyusertypesInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManyusertypesInput>;
+};
+
+
+export type QueryUsersByOrganizationFindManyArgs = {
+  lastLogin?: InputMaybe<Scalars['Boolean']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  organization: Scalars['String']['input'];
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryUsersBySchoolFindManyArgs = {
+  lastLogin?: InputMaybe<Scalars['Boolean']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  school: Scalars['String']['input'];
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryUsersFindManyArgs = {
+  filter?: InputMaybe<userInput>;
+};
+
+
+export type QueryUsersFindOneArgs = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryUsersSparksTotalsArgs = {
+  district?: InputMaybe<Scalars['String']['input']>;
+  endDate?: InputMaybe<Scalars['String']['input']>;
+  global?: InputMaybe<Scalars['Boolean']['input']>;
+  group?: InputMaybe<Scalars['String']['input']>;
+  school?: InputMaybe<Scalars['String']['input']>;
+  startDate?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryVaultByUserFindManyArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type QueryVaultDonationTotalArgs = {
+  id?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryVaultFindManyArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type QueryVideoSparkFindOneArgs = {
+  filter?: InputMaybe<FilterFindOnevideosparksInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOnevideosparksInput>;
+};
+
+
+export type QueryVideoTapsFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyvideotapInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManyvideotapInput>;
+};
+
+
+export type QueryVideoTapsFindOneArgs = {
+  filter?: InputMaybe<FilterFindOnevideotapInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOnevideotapInput>;
+};
+
+
+export type QuerysparkLibraryFindManyArgs = {
+  filter?: InputMaybe<FilterFindManysparklibraryInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManysparklibraryInput>;
+};
+
+
+export type QueryuserSparkLibraryFindManyArgs = {
+  filter?: InputMaybe<FilterFindManysparklibraryuserInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManysparklibraryuserInput>;
+};
+
+export type Question = {
+  __typename?: 'Question';
+  group?: Maybe<Scalars['String']['output']>;
+  lesson?: Maybe<Scalars['String']['output']>;
+  user?: Maybe<Scalars['String']['output']>;
+};
+
+export type QuestionInput = {
+  /** The answer _id */
+  answer?: InputMaybe<Scalars['String']['input']>;
+  /** The question _id */
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type QuestionnaireProgressCheck = {
+  __typename?: 'QuestionnaireProgressCheck';
+  badge?: Maybe<badgeMedia>;
+  questionnaire?: Maybe<questionnaires>;
+};
+
+export type QuestionsObjTC = {
+  __typename?: 'QuestionsObjTC';
+  _id: Scalars['String']['output'];
+  identifier: Scalars['String']['output'];
+  label: Scalars['String']['output'];
+  labelHtml: Scalars['String']['output'];
+  language?: Maybe<languageTC>;
+  responses?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  rightAnswers?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+};
+
+export type ResponseResult = {
+  __typename?: 'ResponseResult';
+  _id?: Maybe<Scalars['String']['output']>;
+  error?: Maybe<Scalars['String']['output']>;
+};
+
+export type SchoolLevelObjTC = {
+  __typename?: 'SchoolLevelObjTC';
+  _id?: Maybe<Scalars['String']['output']>;
+  color?: Maybe<Scalars['String']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+};
+
+export type Score = {
+  __typename?: 'Score';
+  check?: Maybe<Array<Maybe<Score_Check>>>;
+  explore?: Maybe<Array<Maybe<Score_Explore>>>;
+};
+
+export type Score_Check = {
+  __typename?: 'Score_Check';
+  done?: Maybe<Scalars['Boolean']['output']>;
+  question?: Maybe<Scalars['String']['output']>;
+  right?: Maybe<Scalars['Boolean']['output']>;
+};
+
+export type Score_Explore = {
+  __typename?: 'Score_Explore';
+  done?: Maybe<Scalars['Boolean']['output']>;
+  question?: Maybe<Scalars['String']['output']>;
+};
+
+export enum SortFindManyanimalsInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManyavatarInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManyavatartypesInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManybadgesInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManybillingtypesInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManycategoriesInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManycheckinquestionInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManyclassesInput {
+  ORDER_ASC = 'ORDER_ASC',
+  ORDER_DESC = 'ORDER_DESC',
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManyclassificationtypeInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManycurriculumcategoryInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManydistrictInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManygradeInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManyjournalsInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManylifeskillInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManymoodInput {
+  ORDER_ASC = 'ORDER_ASC',
+  ORDER_DESC = 'ORDER_DESC',
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManyorganizationInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManyorganizationtokenInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManyparentchildrenInput {
+  CHILD_ASC = 'CHILD_ASC',
+  CHILD_DESC = 'CHILD_DESC',
+  CHILD__SLOT_ASC = 'CHILD__SLOT_ASC',
+  CHILD__SLOT_DESC = 'CHILD__SLOT_DESC',
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManypinInput {
+  ORDER_ASC = 'ORDER_ASC',
+  ORDER_DESC = 'ORDER_DESC',
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManyprogressInput {
+  DELETEDAT_ASC = 'DELETEDAT_ASC',
+  DELETEDAT_DESC = 'DELETEDAT_DESC',
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManyregionInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManyreportsInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManyresourcecategoryInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManyresponsesInput {
+  CREATEDAT_ASC = 'CREATEDAT_ASC',
+  CREATEDAT_DESC = 'CREATEDAT_DESC',
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManyschoolcodeInput {
+  CREATEDAT_ASC = 'CREATEDAT_ASC',
+  CREATEDAT_DESC = 'CREATEDAT_DESC',
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManyschoollevelInput {
+  ORDER_ASC = 'ORDER_ASC',
+  ORDER_DESC = 'ORDER_DESC',
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManyschoolsettingsInput {
+  SCHOOL_ASC = 'SCHOOL_ASC',
+  SCHOOL_DESC = 'SCHOOL_DESC',
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManyskillsetInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManysparklibraryInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManysparklibraryuserInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManystickerInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManysubcategoriesInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManytapInput {
+  CLASS_ASC = 'CLASS_ASC',
+  CLASS_DESC = 'CLASS_DESC',
+  LESSON_ASC = 'LESSON_ASC',
+  LESSON_DESC = 'LESSON_DESC',
+  ORDER_ASC = 'ORDER_ASC',
+  ORDER_DESC = 'ORDER_DESC',
+  SLUG_ASC = 'SLUG_ASC',
+  SLUG_DESC = 'SLUG_DESC',
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManytaptypeInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManythemeInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManyusertypesInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindManyvideotapInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOneanimalsInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOneavatarInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOnebadgesInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOnecategoriesInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOnecheckinquestionInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOneclassesInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOneclassificationtypeInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOnecurriculumcategoryInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOnedistrictInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOnegradeInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOnejournalsInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOnelifeskillInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOnemoodInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOneorganizationtokenInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOnepinInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOneprogressInput {
+  DELETEDAT_ASC = 'DELETEDAT_ASC',
+  DELETEDAT_DESC = 'DELETEDAT_DESC',
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOneregionInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOnereportsInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOneresourcecategoryInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOneresponsesInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOneschoolcodeInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOneschoollevelInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOneschoolsettingsInput {
+  SCHOOL_ASC = 'SCHOOL_ASC',
+  SCHOOL_DESC = 'SCHOOL_DESC',
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOneskillsetInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOnestickerInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOnesubcategoriesInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOnesubscriptionInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOnethemeInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOneuseranimalsInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOnevideosparksInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOnevideotapInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortUpdateManypinInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortUpdateOnecheckinquestionInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortUpdateOnecheckinuseranswerInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortUpdateOnecurriculumcategoryInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortUpdateOneresourcecategoryInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortUpdateOnesparklibraryInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export type SparkResponseResultTC = {
+  __typename?: 'SparkResponseResultTC';
+  pin?: Maybe<Scalars['String']['output']>;
+  responses?: Maybe<Array<Maybe<ResponseResult>>>;
+};
+
+export type Sparks = {
+  __typename?: 'Sparks';
+  dailyPoints?: Maybe<Scalars['Float']['output']>;
+  date?: Maybe<Scalars['String']['output']>;
+  month?: Maybe<Scalars['Float']['output']>;
+  monthlyPoints?: Maybe<Scalars['Float']['output']>;
+  total?: Maybe<Scalars['Float']['output']>;
+  week?: Maybe<Scalars['Float']['output']>;
+  weeklyPoints?: Maybe<Scalars['Float']['output']>;
+  year?: Maybe<Scalars['Float']['output']>;
+};
+
+export type Subscription = {
+  __typename?: 'Subscription';
+  newJournalResponse?: Maybe<Question>;
+  newQuestionResponse?: Maybe<Question>;
+};
+
+
+export type SubscriptionnewJournalResponseArgs = {
+  group?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type SubscriptionnewQuestionResponseArgs = {
+  group?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type TotalUserMood = {
+  __typename?: 'TotalUserMood';
+  total?: Maybe<Scalars['Float']['output']>;
+  users?: Maybe<Array<Maybe<TotalUserMood_Users>>>;
+};
+
+export type TotalUserMood_Users = {
+  __typename?: 'TotalUserMood_Users';
+  mood?: Maybe<TotalUserMood_Users_Mood>;
+  total?: Maybe<Scalars['Float']['output']>;
+};
+
+export type TotalUserMood_Users_Mood = {
+  __typename?: 'TotalUserMood_Users_Mood';
+  _id?: Maybe<Scalars['String']['output']>;
+  color?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  order?: Maybe<Scalars['String']['output']>;
+  tips?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+};
+
+export type UpdateByIdanimalsInput = {
+  categories?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  levels?: InputMaybe<Array<InputMaybe<UpdateByIdanimalsLevelsInput>>>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateByIdanimalsLevelsImageInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdanimalsLevelsInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  image?: InputMaybe<UpdateByIdanimalsLevelsImageInput>;
+  level?: InputMaybe<Scalars['Float']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  points?: InputMaybe<Scalars['Float']['input']>;
+};
+
+export type UpdateByIdanimalsPayload = {
+  __typename?: 'UpdateByIdanimalsPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<animals>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdanimalscategoriesInput = {
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateByIdanimalscategoriesPayload = {
+  __typename?: 'UpdateByIdanimalscategoriesPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<animalscategories>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdbadgesCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdbadgesInput = {
+  cover?: InputMaybe<UpdateByIdbadgesCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  video?: InputMaybe<UpdateByIdbadgesVideoInput>;
+};
+
+export type UpdateByIdbadgesPayload = {
+  __typename?: 'UpdateByIdbadgesPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<badges>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdbadgesVideoInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdclassesActivityInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdclassesCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdclassesDiscussionInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdclassesDocumentsInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdclassesExtendInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdclassesExtracurricularInput = {
+  available?: InputMaybe<Scalars['Boolean']['input']>;
+  points?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdclassesInput = {
+  activity?: InputMaybe<Array<InputMaybe<UpdateByIdclassesActivityInput>>>;
+  bigIdea?: InputMaybe<Scalars['String']['input']>;
+  categories?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  classLength?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<UpdateByIdclassesCoverInput>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  discussion?: InputMaybe<Array<InputMaybe<UpdateByIdclassesDiscussionInput>>>;
+  documents?: InputMaybe<Array<InputMaybe<UpdateByIdclassesDocumentsInput>>>;
+  extend?: InputMaybe<Array<InputMaybe<UpdateByIdclassesExtendInput>>>;
+  extra?: InputMaybe<Scalars['Boolean']['input']>;
+  extraActivities?: InputMaybe<Scalars['String']['input']>;
+  extracurricular?: InputMaybe<UpdateByIdclassesExtracurricularInput>;
+  free?: InputMaybe<Scalars['Boolean']['input']>;
+  learningGoal?: InputMaybe<Scalars['String']['input']>;
+  lifeSkill?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  overview?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  prefix?: InputMaybe<Scalars['String']['input']>;
+  reflection?: InputMaybe<Array<InputMaybe<UpdateByIdclassesReflectionInput>>>;
+  skillSet?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  skills?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  subcategories?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  tags?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  theme?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  trailer?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+export type UpdateByIdclassesPayload = {
+  __typename?: 'UpdateByIdclassesPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<classes>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdclassesReflectionInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdclassificationtypeInput = {
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateByIdclassificationtypePayload = {
+  __typename?: 'UpdateByIdclassificationtypePayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<classificationtype>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdcurriculumsCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdcurriculumsDocumentsInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdcurriculumsInput = {
+  active?: InputMaybe<Scalars['Boolean']['input']>;
+  animalCategory?: InputMaybe<Scalars['String']['input']>;
+  category?: InputMaybe<Scalars['String']['input']>;
+  classLength?: InputMaybe<Scalars['String']['input']>;
+  courseDuration?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<UpdateByIdcurriculumsCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  documents?: InputMaybe<Array<InputMaybe<UpdateByIdcurriculumsDocumentsInput>>>;
+  donation?: InputMaybe<Scalars['Boolean']['input']>;
+  grade?: InputMaybe<Scalars['String']['input']>;
+  hidden?: InputMaybe<Scalars['Boolean']['input']>;
+  language?: InputMaybe<UpdateByIdcurriculumsLanguageInput>;
+  leaderBio?: InputMaybe<Scalars['String']['input']>;
+  leaderName?: InputMaybe<Scalars['String']['input']>;
+  learningGoal?: InputMaybe<Scalars['String']['input']>;
+  lifeSkill?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  logo?: InputMaybe<UpdateByIdcurriculumsLogoInput>;
+  loop?: InputMaybe<UpdateByIdcurriculumsLoopInput>;
+  mini?: InputMaybe<Scalars['Boolean']['input']>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  pacingGuide?: InputMaybe<UpdateByIdcurriculumsPacingGuideInput>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  resources?: InputMaybe<Array<InputMaybe<UpdateByIdcurriculumsResourcesInput>>>;
+  schoolLevel?: InputMaybe<Scalars['String']['input']>;
+  skillSet?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  slug?: InputMaybe<Scalars['String']['input']>;
+  teacher?: InputMaybe<Scalars['String']['input']>;
+  theme?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  totalClass?: InputMaybe<Scalars['Float']['input']>;
+  totalLesson?: InputMaybe<Scalars['Float']['input']>;
+  totalLessonRestricted?: InputMaybe<Scalars['Float']['input']>;
+  trailer?: InputMaybe<UpdateByIdcurriculumsTrailerInput>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateByIdcurriculumsLanguageEnglishInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdcurriculumsLanguageFrenchInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdcurriculumsLanguageInput = {
+  _id?: InputMaybe<Scalars['MongoID']['input']>;
+  english?: InputMaybe<UpdateByIdcurriculumsLanguageEnglishInput>;
+  french?: InputMaybe<UpdateByIdcurriculumsLanguageFrenchInput>;
+  spanish?: InputMaybe<UpdateByIdcurriculumsLanguageSpanishInput>;
+};
+
+export type UpdateByIdcurriculumsLanguageSpanishInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdcurriculumsLogoInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdcurriculumsLoopInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdcurriculumsPacingGuideInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdcurriculumsPayload = {
+  __typename?: 'UpdateByIdcurriculumsPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<curriculums>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdcurriculumsResourcesInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdcurriculumsTrailerCaptionsFileInput = {
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdcurriculumsTrailerCaptionsInput = {
+  available?: InputMaybe<Scalars['Boolean']['input']>;
+  file?: InputMaybe<UpdateByIdcurriculumsTrailerCaptionsFileInput>;
+  language?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdcurriculumsTrailerInput = {
+  captions?: InputMaybe<Array<InputMaybe<UpdateByIdcurriculumsTrailerCaptionsInput>>>;
+  skip?: InputMaybe<Scalars['Float']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIddistrictInput = {
+  country?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  exemptionDates?: InputMaybe<Array<InputMaybe<Scalars['Date']['input']>>>;
+  extraCourse?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  organization?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  state?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateByIddistrictPayload = {
+  __typename?: 'UpdateByIddistrictPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<district>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdlessonCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdlessonInput = {
+  class?: InputMaybe<Scalars['String']['input']>;
+  classificationType?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  cover?: InputMaybe<UpdateByIdlessonCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  lifeSkill?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateByIdlessonPayload = {
+  __typename?: 'UpdateByIdlessonPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<lesson>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdlifeskillIconInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdlifeskillInput = {
+  color?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  icon?: InputMaybe<UpdateByIdlifeskillIconInput>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateByIdlifeskillPayload = {
+  __typename?: 'UpdateByIdlifeskillPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<lifeskill>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdorganizationtokenInput = {
+  cleverDistrictId?: InputMaybe<Scalars['String']['input']>;
+  cleverToken?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  oneRosterAppId?: InputMaybe<Scalars['String']['input']>;
+  oneRosterToken?: InputMaybe<Scalars['String']['input']>;
+  organization?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateByIdorganizationtokenPayload = {
+  __typename?: 'UpdateByIdorganizationtokenPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<organizationtoken>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdquestionsInput = {
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  labelHtml?: InputMaybe<Scalars['String']['input']>;
+  language?: InputMaybe<UpdateByIdquestionsLanguageInput>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  responses?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  rightAnswers?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateByIdquestionsLanguageEnglishInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdquestionsLanguageFrenchInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdquestionsLanguageInput = {
+  _id?: InputMaybe<Scalars['MongoID']['input']>;
+  english?: InputMaybe<UpdateByIdquestionsLanguageEnglishInput>;
+  french?: InputMaybe<UpdateByIdquestionsLanguageFrenchInput>;
+  spanish?: InputMaybe<UpdateByIdquestionsLanguageSpanishInput>;
+};
+
+export type UpdateByIdquestionsLanguageSpanishInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdquestionsPayload = {
+  __typename?: 'UpdateByIdquestionsPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<questions>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdregionInput = {
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  district?: InputMaybe<Scalars['String']['input']>;
+  exemptionDates?: InputMaybe<Array<InputMaybe<Scalars['Date']['input']>>>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateByIdregionPayload = {
+  __typename?: 'UpdateByIdregionPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<region>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdreportsInput = {
+  body?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  scale?: InputMaybe<Scalars['Float']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateByIdreportsPayload = {
+  __typename?: 'UpdateByIdreportsPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<reports>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdresourceFileInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdresourceInput = {
+  category?: InputMaybe<Scalars['String']['input']>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  file?: InputMaybe<UpdateByIdresourceFileInput>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  link?: InputMaybe<Scalars['String']['input']>;
+  metaKey?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  tap?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateByIdresourcePayload = {
+  __typename?: 'UpdateByIdresourcePayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<resource>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdresponsesInput = {
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  language?: InputMaybe<UpdateByIdresponsesLanguageInput>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateByIdresponsesLanguageEnglishInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdresponsesLanguageFrenchInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdresponsesLanguageInput = {
+  _id?: InputMaybe<Scalars['MongoID']['input']>;
+  english?: InputMaybe<UpdateByIdresponsesLanguageEnglishInput>;
+  french?: InputMaybe<UpdateByIdresponsesLanguageFrenchInput>;
+  spanish?: InputMaybe<UpdateByIdresponsesLanguageSpanishInput>;
+};
+
+export type UpdateByIdresponsesLanguageSpanishInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdresponsesPayload = {
+  __typename?: 'UpdateByIdresponsesPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<responses>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdschoolcodeInput = {
+  classes?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  code?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculums?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  district?: InputMaybe<Scalars['String']['input']>;
+  expirationDate?: InputMaybe<Scalars['Date']['input']>;
+  limit?: InputMaybe<Scalars['Float']['input']>;
+  mini?: InputMaybe<Scalars['Boolean']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  school?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateByIdschoolcodePayload = {
+  __typename?: 'UpdateByIdschoolcodePayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<schoolcode>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdschoollevelInput = {
+  color?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  survey?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateByIdschoollevelPayload = {
+  __typename?: 'UpdateByIdschoollevelPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<schoollevel>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdschoolsDataInput = {
+  city?: InputMaybe<Scalars['String']['input']>;
+  cleverId?: InputMaybe<Scalars['String']['input']>;
+  cleverSync?: InputMaybe<Scalars['Boolean']['input']>;
+  country?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  district?: InputMaybe<Scalars['String']['input']>;
+  extraCourse?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  oneRosterId?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  region?: InputMaybe<Scalars['String']['input']>;
+  settings?: InputMaybe<Scalars['String']['input']>;
+  slug?: InputMaybe<Scalars['String']['input']>;
+  state?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateByIdschoolsDataPayload = {
+  __typename?: 'UpdateByIdschoolsDataPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<schoolsData>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdschoolsettingsInput = {
+  accessWithClassLink?: InputMaybe<Scalars['Boolean']['input']>;
+  accessWithClever?: InputMaybe<Scalars['Boolean']['input']>;
+  accessWithEmail?: InputMaybe<Scalars['Boolean']['input']>;
+  accessWithGoogle?: InputMaybe<Scalars['Boolean']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  restrictions?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  school?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateByIdschoolsettingsPayload = {
+  __typename?: 'UpdateByIdschoolsettingsPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<schoolsettings>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdskillsetIconInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdskillsetInput = {
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  icon?: InputMaybe<UpdateByIdskillsetIconInput>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateByIdskillsetPayload = {
+  __typename?: 'UpdateByIdskillsetPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<skillset>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdstickerCoverInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdstickerInput = {
+  cover?: InputMaybe<UpdateByIdstickerCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deedlyVault?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  video?: InputMaybe<UpdateByIdstickerVideoInput>;
+};
+
+export type UpdateByIdstickerPayload = {
+  __typename?: 'UpdateByIdstickerPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<sticker>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdstickerVideoInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdtapCanvaInput = {
+  ratio?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdtapCoverInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdtapExtraQuestionsInput = {
+  points?: InputMaybe<Scalars['Float']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdtapInput = {
+  additional?: InputMaybe<Scalars['String']['input']>;
+  canva?: InputMaybe<Array<InputMaybe<UpdateByIdtapCanvaInput>>>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<UpdateByIdtapCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  donation?: InputMaybe<Scalars['Float']['input']>;
+  donationVault?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  extraQuestions?: InputMaybe<Array<InputMaybe<UpdateByIdtapExtraQuestionsInput>>>;
+  intro?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  lifeSkills?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  points?: InputMaybe<Scalars['Float']['input']>;
+  questions?: InputMaybe<Array<InputMaybe<UpdateByIdtapQuestionsInput>>>;
+  resources?: InputMaybe<Array<InputMaybe<UpdateByIdtapResourcesInput>>>;
+  slug?: InputMaybe<Scalars['String']['input']>;
+  sparkLibrary?: InputMaybe<Scalars['String']['input']>;
+  survey?: InputMaybe<Scalars['String']['input']>;
+  themes?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  time?: InputMaybe<Scalars['Float']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  videos?: InputMaybe<Array<InputMaybe<UpdateByIdtapVideosInput>>>;
+};
+
+export type UpdateByIdtapPayload = {
+  __typename?: 'UpdateByIdtapPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<tap>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdtapQuestionsInput = {
+  points?: InputMaybe<Scalars['Float']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdtapResourcesInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdtapVideosCaptionsFileInput = {
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdtapVideosCaptionsInput = {
+  available?: InputMaybe<Scalars['Boolean']['input']>;
+  file?: InputMaybe<UpdateByIdtapVideosCaptionsFileInput>;
+  language?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdtapVideosInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  captions?: InputMaybe<Array<InputMaybe<UpdateByIdtapVideosCaptionsInput>>>;
+  skip?: InputMaybe<Scalars['Float']['input']>;
+  thumbnail?: InputMaybe<UpdateByIdtapVideosThumbnailInput>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdtapVideosThumbnailInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdthemeIconInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdthemeInput = {
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  icon?: InputMaybe<UpdateByIdthemeIconInput>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateByIdthemePayload = {
+  __typename?: 'UpdateByIdthemePayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<theme>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIduserInput = {
+  bio?: InputMaybe<Scalars['String']['input']>;
+  birthday?: InputMaybe<Scalars['Date']['input']>;
+  classLinkId?: InputMaybe<Scalars['String']['input']>;
+  classLinkSync?: InputMaybe<Scalars['Boolean']['input']>;
+  cleverId?: InputMaybe<Scalars['String']['input']>;
+  cleverSync?: InputMaybe<Scalars['Boolean']['input']>;
+  cleverToken?: InputMaybe<Scalars['String']['input']>;
+  code?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deedlyAuthenticationToken?: InputMaybe<Scalars['String']['input']>;
+  deedlyUserId?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  email?: InputMaybe<Scalars['String']['input']>;
+  firstName?: InputMaybe<Scalars['String']['input']>;
+  lastLogin?: InputMaybe<Scalars['Date']['input']>;
+  lastName?: InputMaybe<Scalars['String']['input']>;
+  mfaCode?: InputMaybe<Scalars['String']['input']>;
+  mfaCodeExpiry?: InputMaybe<Scalars['Date']['input']>;
+  oneRosterId?: InputMaybe<Scalars['String']['input']>;
+  organization?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  profilePicture?: InputMaybe<UpdateByIduserProfilePictureInput>;
+  schoolCode?: InputMaybe<Scalars['String']['input']>;
+  tag?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  userName?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIduserPayload = {
+  __typename?: 'UpdateByIduserPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<user>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIduserProfilePictureInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdvideotapInput = {
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  end?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  sparkLibrary?: InputMaybe<Scalars['String']['input']>;
+  start?: InputMaybe<Scalars['Float']['input']>;
+  tag?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateByIdvideotapPayload = {
+  __typename?: 'UpdateByIdvideotapPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<videotap>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateManypinCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateManypinInput = {
+  class?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<UpdateManypinCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  sparkLibrary?: InputMaybe<Scalars['String']['input']>;
+  times?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  video?: InputMaybe<UpdateManypinVideoInput>;
+};
+
+export type UpdateManypinPayload = {
+  __typename?: 'UpdateManypinPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Affected documents number */
+  numAffected?: Maybe<Scalars['Int']['output']>;
+};
+
+export type UpdateManypinVideoInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateOnecheckinquestionInput = {
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  start?: InputMaybe<Scalars['Boolean']['input']>;
+  teacher?: InputMaybe<Scalars['Boolean']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateOnecheckinquestionPayload = {
+  __typename?: 'UpdateOnecheckinquestionPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<checkinquestion>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateOnecheckinuseranswerInput = {
+  answer?: InputMaybe<Scalars['String']['input']>;
+  checkinQuestion?: InputMaybe<Scalars['String']['input']>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  group?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  scale?: InputMaybe<Scalars['Float']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateOnecheckinuseranswerPayload = {
+  __typename?: 'UpdateOnecheckinuseranswerPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<checkinuseranswer>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateOnecurriculumcategoryInput = {
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateOnecurriculumcategoryPayload = {
+  __typename?: 'UpdateOnecurriculumcategoryPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<curriculumcategory>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateOneresourcecategoryIconInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateOneresourcecategoryInput = {
+  color?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  icon?: InputMaybe<UpdateOneresourcecategoryIconInput>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type UpdateOneresourcecategoryPayload = {
+  __typename?: 'UpdateOneresourcecategoryPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<resourcecategory>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateOnesparklibraryArticleInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateOnesparklibraryArticleQuestionInput = {
+  points?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateOnesparklibraryCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateOnesparklibraryFunFactInput = {
+  points?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateOnesparklibraryInput = {
+  article?: InputMaybe<UpdateOnesparklibraryArticleInput>;
+  articleBody?: InputMaybe<Scalars['String']['input']>;
+  articleQuestion?: InputMaybe<Array<InputMaybe<UpdateOnesparklibraryArticleQuestionInput>>>;
+  articleTitle?: InputMaybe<Scalars['String']['input']>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<UpdateOnesparklibraryCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  funFact?: InputMaybe<Array<InputMaybe<UpdateOnesparklibraryFunFactInput>>>;
+  journals?: InputMaybe<Array<InputMaybe<UpdateOnesparklibraryJournalsInput>>>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  mindfulMoment?: InputMaybe<Array<InputMaybe<UpdateOnesparklibraryMindfulMomentInput>>>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  slug?: InputMaybe<Scalars['String']['input']>;
+  takeAwayDescription?: InputMaybe<Scalars['String']['input']>;
+  takeAwayLabel?: InputMaybe<Scalars['String']['input']>;
+  times?: InputMaybe<Array<InputMaybe<Scalars['Date']['input']>>>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  video?: InputMaybe<UpdateOnesparklibraryVideoInput>;
+  videoQuestions?: InputMaybe<Array<InputMaybe<UpdateOnesparklibraryVideoQuestionsInput>>>;
+};
+
+export type UpdateOnesparklibraryJournalsInput = {
+  points?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateOnesparklibraryMindfulMomentInput = {
+  points?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateOnesparklibraryPayload = {
+  __typename?: 'UpdateOnesparklibraryPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<sparklibrary>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateOnesparklibraryVideoCaptionsFileInput = {
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateOnesparklibraryVideoCaptionsInput = {
+  available?: InputMaybe<Scalars['Boolean']['input']>;
+  file?: InputMaybe<UpdateOnesparklibraryVideoCaptionsFileInput>;
+  language?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateOnesparklibraryVideoInput = {
+  captions?: InputMaybe<Array<InputMaybe<UpdateOnesparklibraryVideoCaptionsInput>>>;
+  thumbnail?: InputMaybe<UpdateOnesparklibraryVideoThumbnailInput>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateOnesparklibraryVideoQuestionsInput = {
+  points?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateOnesparklibraryVideoThumbnailInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UserMedia = {
+  __typename?: 'UserMedia';
+  _id?: Maybe<Scalars['String']['output']>;
+  email?: Maybe<Scalars['String']['output']>;
+  firstName?: Maybe<Scalars['String']['output']>;
+  lastName?: Maybe<Scalars['String']['output']>;
+  organization?: Maybe<Scalars['String']['output']>;
+  password?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  userName?: Maybe<Scalars['String']['output']>;
+};
+
+export type UserProgressByCurriculum = {
+  __typename?: 'UserProgressByCurriculum';
+  count?: Maybe<Scalars['String']['output']>;
+  user?: Maybe<UserProgressByCurriculum_User>;
+};
+
+export type UserProgressByCurriculum_User = {
+  __typename?: 'UserProgressByCurriculum_User';
+  _id?: Maybe<Scalars['String']['output']>;
+  firstName?: Maybe<Scalars['String']['output']>;
+  lastName?: Maybe<Scalars['String']['output']>;
+};
+
+export type UserShort = {
+  __typename?: 'UserShort';
+  _id: Scalars['String']['output'];
+  email: Scalars['String']['output'];
+  firstName: Scalars['String']['output'];
+  lastLogin: Scalars['String']['output'];
+  lastName: Scalars['String']['output'];
+  type: Scalars['String']['output'];
+};
+
+export type UserWithSchool = {
+  __typename?: 'UserWithSchool';
+  _id?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['String']['output']>;
+  curriculums?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  email?: Maybe<Scalars['String']['output']>;
+  firstName?: Maybe<Scalars['String']['output']>;
+  groups?: Maybe<Array<Maybe<UserWithSchool_Groups>>>;
+  lastLogin?: Maybe<Scalars['String']['output']>;
+  lastName?: Maybe<Scalars['String']['output']>;
+  organization_id?: Maybe<Scalars['String']['output']>;
+  organization_name?: Maybe<Scalars['String']['output']>;
+  platform_id?: Maybe<Scalars['String']['output']>;
+  platform_name?: Maybe<Scalars['String']['output']>;
+  schools?: Maybe<Array<Maybe<UserWithSchool_Schools>>>;
+  type_id?: Maybe<Scalars['String']['output']>;
+  type_name?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['String']['output']>;
+  userId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UserWithSchool_Groups = {
+  __typename?: 'UserWithSchool_Groups';
+  group_id?: Maybe<Scalars['String']['output']>;
+  group_name?: Maybe<Scalars['String']['output']>;
+};
+
+export type UserWithSchool_Schools = {
+  __typename?: 'UserWithSchool_Schools';
+  region_id?: Maybe<Scalars['String']['output']>;
+  region_name?: Maybe<Scalars['String']['output']>;
+  school_id?: Maybe<Scalars['String']['output']>;
+  school_name?: Maybe<Scalars['String']['output']>;
+};
+
+export type UsersSearch = {
+  __typename?: 'UsersSearch';
+  data?: Maybe<Array<Maybe<UserWithSchool>>>;
+  total: Scalars['Int']['output'];
+};
+
+export type UsersTotal = {
+  __typename?: 'UsersTotal';
+  districts?: Maybe<Scalars['Float']['output']>;
+  groups?: Maybe<Scalars['Float']['output']>;
+  schools?: Maybe<Scalars['Float']['output']>;
+  students?: Maybe<Scalars['Float']['output']>;
+  teachers?: Maybe<Scalars['Float']['output']>;
+};
+
+export type UsersTotalDonations = {
+  __typename?: 'UsersTotalDonations';
+  total?: Maybe<Scalars['Float']['output']>;
+  users?: Maybe<Scalars['Float']['output']>;
+};
+
+export type UsersTotalObj = {
+  __typename?: 'UsersTotalObj';
+  total: Scalars['Int']['output'];
+  users?: Maybe<Array<Maybe<user>>>;
+};
+
+export type VaultDonationTotal = {
+  __typename?: 'VaultDonationTotal';
+  result?: Maybe<Scalars['Float']['output']>;
+};
+
+export type VaultDonations = {
+  __typename?: 'VaultDonations';
+  charityVaults?: Maybe<Array<Maybe<VaultDonations_CharityVaults>>>;
+};
+
+export type VaultDonations_CharityVaults = {
+  __typename?: 'VaultDonations_CharityVaults';
+  charity?: Maybe<VaultDonations_CharityVaults_Charity>;
+  cover?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['String']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  goalDeedcoin?: Maybe<Scalars['Float']['output']>;
+  goalUsd?: Maybe<Scalars['Float']['output']>;
+  id?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type VaultDonations_CharityVaults_Charity = {
+  __typename?: 'VaultDonations_CharityVaults_Charity';
+  category?: Maybe<VaultDonations_CharityVaults_Charity_Category>;
+  description?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['String']['output']>;
+  intro?: Maybe<Scalars['String']['output']>;
+  link?: Maybe<Scalars['String']['output']>;
+  logo?: Maybe<Scalars['String']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+};
+
+export type VaultDonations_CharityVaults_Charity_Category = {
+  __typename?: 'VaultDonations_CharityVaults_Charity_Category';
+  color?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  logo?: Maybe<Scalars['String']['output']>;
+};
+
+export type VaultUserDonations = {
+  __typename?: 'VaultUserDonations';
+  charityVaultDonations?: Maybe<Array<Maybe<VaultUserDonations_CharityVaultDonations>>>;
+};
+
+export type VaultUserDonations_CharityVaultDonations = {
+  __typename?: 'VaultUserDonations_CharityVaultDonations';
+  amount?: Maybe<Scalars['Float']['output']>;
+  charityVault?: Maybe<VaultUserDonations_CharityVaultDonations_CharityVault>;
+  createdAt?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['String']['output']>;
+  partnerOrganization?: Maybe<VaultUserDonations_CharityVaultDonations_PartnerOrganization>;
+};
+
+export type VaultUserDonations_CharityVaultDonations_CharityVault = {
+  __typename?: 'VaultUserDonations_CharityVaultDonations_CharityVault';
+  charity?: Maybe<VaultUserDonations_CharityVaultDonations_CharityVault_Charity>;
+  createdAt?: Maybe<Scalars['String']['output']>;
+  goalDeedcoin?: Maybe<Scalars['Float']['output']>;
+  goalUsd?: Maybe<Scalars['Float']['output']>;
+  id?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type VaultUserDonations_CharityVaultDonations_CharityVault_Charity = {
+  __typename?: 'VaultUserDonations_CharityVaultDonations_CharityVault_Charity';
+  category?: Maybe<VaultUserDonations_CharityVaultDonations_CharityVault_Charity_Category>;
+  description?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['String']['output']>;
+  intro?: Maybe<Scalars['String']['output']>;
+  link?: Maybe<Scalars['String']['output']>;
+  logo?: Maybe<Scalars['String']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+};
+
+export type VaultUserDonations_CharityVaultDonations_CharityVault_Charity_Category = {
+  __typename?: 'VaultUserDonations_CharityVaultDonations_CharityVault_Charity_Category';
+  color?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  logo?: Maybe<Scalars['String']['output']>;
+};
+
+export type VaultUserDonations_CharityVaultDonations_PartnerOrganization = {
+  __typename?: 'VaultUserDonations_CharityVaultDonations_PartnerOrganization';
+  id?: Maybe<Scalars['String']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+};
+
+export type animals = {
+  __typename?: 'animals';
+  _id: Scalars['String']['output'];
+  categories?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  levels?: Maybe<Array<Maybe<animalsLevels>>>;
+  platform?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type animalsLevels = {
+  __typename?: 'animalsLevels';
+  description?: Maybe<Scalars['String']['output']>;
+  image?: Maybe<animalsLevelsImage>;
+  level?: Maybe<Scalars['Float']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+  points?: Maybe<Scalars['Float']['output']>;
+};
+
+export type animalsLevelsImage = {
+  __typename?: 'animalsLevelsImage';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type animalsLevelsImageInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type animalsLevelsInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  image?: InputMaybe<animalsLevelsImageInput>;
+  level?: InputMaybe<Scalars['Float']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  points?: InputMaybe<Scalars['Float']['input']>;
+};
+
+export type animalscategories = {
+  __typename?: 'animalscategories';
+  _id: Scalars['String']['output'];
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type avatar = {
+  __typename?: 'avatar';
+  _id: Scalars['String']['output'];
+  artwork?: Maybe<avatarArtwork>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  curriculum?: Maybe<Scalars['String']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  price?: Maybe<Scalars['Float']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type avatarArtwork = {
+  __typename?: 'avatarArtwork';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type avatartypes = {
+  __typename?: 'avatartypes';
+  _id: Scalars['String']['output'];
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type badgeMedia = {
+  __typename?: 'badgeMedia';
+  _id: Scalars['String']['output'];
+  cover?: Maybe<badgeMediaCover>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  curriculum?: Maybe<Scalars['String']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  video?: Maybe<badgeMediaVideo>;
+};
+
+export type badgeMediaCover = {
+  __typename?: 'badgeMediaCover';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type badgeMediaVideo = {
+  __typename?: 'badgeMediaVideo';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type badges = {
+  __typename?: 'badges';
+  _id?: Maybe<Scalars['String']['output']>;
+  cover?: Maybe<badgesCover>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  curriculum?: Maybe<Scalars['String']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  video?: Maybe<badgesVideo>;
+};
+
+export type badgesCover = {
+  __typename?: 'badgesCover';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type badgesVideo = {
+  __typename?: 'badgesVideo';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type billingtypes = {
+  __typename?: 'billingtypes';
+  _id: Scalars['String']['output'];
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  dateRenews?: Maybe<Scalars['Date']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  licenses?: Maybe<Scalars['Float']['output']>;
+  price?: Maybe<Scalars['Float']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type categories = {
+  __typename?: 'categories';
+  _id: Scalars['String']['output'];
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type checkinquestion = {
+  __typename?: 'checkinquestion';
+  _id: Scalars['String']['output'];
+  class?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  curriculum?: Maybe<Scalars['String']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  lesson?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  start?: Maybe<Scalars['Boolean']['output']>;
+  teacher?: Maybe<Scalars['Boolean']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type checkinuseranswer = {
+  __typename?: 'checkinuseranswer';
+  _id: Scalars['String']['output'];
+  answer?: Maybe<Scalars['String']['output']>;
+  checkinQuestion?: Maybe<Scalars['String']['output']>;
+  class?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  group?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  questionObj?: Maybe<QuestionsObjTC>;
+  scale?: Maybe<Scalars['Float']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  user?: Maybe<Scalars['String']['output']>;
+};
+
+export type checkinuseranswerInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  answer?: InputMaybe<Scalars['String']['input']>;
+  checkinQuestion?: InputMaybe<Scalars['String']['input']>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  group?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  scale?: InputMaybe<Scalars['Float']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type classes = {
+  __typename?: 'classes';
+  _id?: Maybe<Scalars['String']['output']>;
+  activity?: Maybe<Array<Maybe<classesActivity>>>;
+  bigIdea?: Maybe<Scalars['String']['output']>;
+  categories?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  classLength?: Maybe<Scalars['String']['output']>;
+  cover?: Maybe<classesCover>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  curriculum?: Maybe<Scalars['String']['output']>;
+  deleted?: Maybe<Scalars['Boolean']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  discussion?: Maybe<Array<Maybe<classesDiscussion>>>;
+  documents?: Maybe<Array<Maybe<classesDocuments>>>;
+  extend?: Maybe<Array<Maybe<classesExtend>>>;
+  extra?: Maybe<Scalars['Boolean']['output']>;
+  extraActivities?: Maybe<Scalars['String']['output']>;
+  extracurricular?: Maybe<classesExtracurricular>;
+  free?: Maybe<Scalars['Boolean']['output']>;
+  learningGoal?: Maybe<Scalars['String']['output']>;
+  lifeSkill?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  lifeSkillObj?: Maybe<Array<Maybe<lifeskill>>>;
+  order?: Maybe<Scalars['Float']['output']>;
+  overview?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  prefix?: Maybe<Scalars['String']['output']>;
+  reflection?: Maybe<Array<Maybe<classesReflection>>>;
+  skillSet?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  skillSetObj?: Maybe<Array<Maybe<skillset>>>;
+  skills?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  slug?: Maybe<Scalars['String']['output']>;
+  students?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  subcategories?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  tags?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  theme?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  themeObj?: Maybe<Array<Maybe<theme>>>;
+  title?: Maybe<Scalars['String']['output']>;
+  trailer?: Maybe<Scalars['Boolean']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type classesActivity = {
+  __typename?: 'classesActivity';
+  description?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type classesActivityInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type classesCover = {
+  __typename?: 'classesCover';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type classesCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type classesDiscussion = {
+  __typename?: 'classesDiscussion';
+  description?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type classesDiscussionInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type classesDocuments = {
+  __typename?: 'classesDocuments';
+  title?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type classesDocumentsInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type classesExtend = {
+  __typename?: 'classesExtend';
+  description?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type classesExtendInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type classesExtracurricular = {
+  __typename?: 'classesExtracurricular';
+  available?: Maybe<Scalars['Boolean']['output']>;
+  points?: Maybe<Scalars['String']['output']>;
+};
+
+export type classesExtracurricularInput = {
+  available?: InputMaybe<Scalars['Boolean']['input']>;
+  points?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type classesReflection = {
+  __typename?: 'classesReflection';
+  description?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type classesReflectionInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type classificationtype = {
+  __typename?: 'classificationtype';
+  _id: Scalars['String']['output'];
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type collectible = {
+  __typename?: 'collectible';
+  _id: Scalars['String']['output'];
+  artwork?: Maybe<collectibleArtwork>;
+  cover?: Maybe<collectibleCover>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  curriculum?: Maybe<Scalars['String']['output']>;
+  curriculumObj?: Maybe<CurriculumObj>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  editions?: Maybe<Scalars['Float']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  price?: Maybe<Scalars['Float']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  video?: Maybe<collectibleVideo>;
+};
+
+export type collectibleArtwork = {
+  __typename?: 'collectibleArtwork';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type collectibleArtworkInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type collectibleCover = {
+  __typename?: 'collectibleCover';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type collectibleCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type collectibleInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  artwork?: InputMaybe<collectibleArtworkInput>;
+  cover?: InputMaybe<collectibleCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  editions?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  price?: InputMaybe<Scalars['Float']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  video?: InputMaybe<collectibleVideoInput>;
+};
+
+export type collectibleVideo = {
+  __typename?: 'collectibleVideo';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type collectibleVideoInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type curriculumcategory = {
+  __typename?: 'curriculumcategory';
+  _id: Scalars['String']['output'];
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type curriculums = {
+  __typename?: 'curriculums';
+  _id: Scalars['String']['output'];
+  active?: Maybe<Scalars['Boolean']['output']>;
+  animalCategory?: Maybe<Scalars['String']['output']>;
+  category?: Maybe<Scalars['String']['output']>;
+  classLength?: Maybe<Scalars['String']['output']>;
+  courseDuration?: Maybe<Scalars['String']['output']>;
+  cover?: Maybe<curriculumsCover>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  documents?: Maybe<Array<Maybe<curriculumsDocuments>>>;
+  donation?: Maybe<Scalars['Boolean']['output']>;
+  grade?: Maybe<Scalars['String']['output']>;
+  hidden?: Maybe<Scalars['Boolean']['output']>;
+  language?: Maybe<curriculumsLanguage>;
+  leaderBio?: Maybe<Scalars['String']['output']>;
+  leaderName?: Maybe<Scalars['String']['output']>;
+  learningGoal?: Maybe<Scalars['String']['output']>;
+  lifeSkill?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  lifeSkillObj?: Maybe<Array<Maybe<lifeskill>>>;
+  logo?: Maybe<curriculumsLogo>;
+  loop?: Maybe<curriculumsLoop>;
+  mini?: Maybe<Scalars['Boolean']['output']>;
+  order?: Maybe<Scalars['Float']['output']>;
+  pacingGuide?: Maybe<curriculumsPacingGuide>;
+  platform?: Maybe<Scalars['String']['output']>;
+  resources?: Maybe<Array<Maybe<curriculumsResources>>>;
+  schoolLevel?: Maybe<Scalars['String']['output']>;
+  schoolLevelObj?: Maybe<SchoolLevelObjTC>;
+  skillSet?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  skillSetObj?: Maybe<Array<Maybe<skillset>>>;
+  slug?: Maybe<Scalars['String']['output']>;
+  teacher?: Maybe<Scalars['String']['output']>;
+  theme?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  themeObj?: Maybe<Array<Maybe<theme>>>;
+  title?: Maybe<Scalars['String']['output']>;
+  totalClass?: Maybe<Scalars['Float']['output']>;
+  totalLesson?: Maybe<Scalars['Float']['output']>;
+  totalLessonRestricted?: Maybe<Scalars['Float']['output']>;
+  trailer?: Maybe<curriculumsTrailer>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type curriculumsCover = {
+  __typename?: 'curriculumsCover';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type curriculumsDocuments = {
+  __typename?: 'curriculumsDocuments';
+  title?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsDocumentsInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type curriculumsInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  active?: InputMaybe<Scalars['Boolean']['input']>;
+  animalCategory?: InputMaybe<Scalars['String']['input']>;
+  category?: InputMaybe<Scalars['String']['input']>;
+  classLength?: InputMaybe<Scalars['String']['input']>;
+  courseDuration?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<curriculumsCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  documents?: InputMaybe<Array<InputMaybe<curriculumsDocumentsInput>>>;
+  donation?: InputMaybe<Scalars['Boolean']['input']>;
+  grade?: InputMaybe<Scalars['String']['input']>;
+  hidden?: InputMaybe<Scalars['Boolean']['input']>;
+  language?: InputMaybe<curriculumsLanguageInput>;
+  leaderBio?: InputMaybe<Scalars['String']['input']>;
+  leaderName?: InputMaybe<Scalars['String']['input']>;
+  learningGoal?: InputMaybe<Scalars['String']['input']>;
+  lifeSkill?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  logo?: InputMaybe<curriculumsLogoInput>;
+  loop?: InputMaybe<curriculumsLoopInput>;
+  mini?: InputMaybe<Scalars['Boolean']['input']>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  pacingGuide?: InputMaybe<curriculumsPacingGuideInput>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  resources?: InputMaybe<Array<InputMaybe<curriculumsResourcesInput>>>;
+  schoolLevel?: InputMaybe<Scalars['String']['input']>;
+  skillSet?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  slug?: InputMaybe<Scalars['String']['input']>;
+  teacher?: InputMaybe<Scalars['String']['input']>;
+  theme?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  totalClass?: InputMaybe<Scalars['Float']['input']>;
+  totalLesson?: InputMaybe<Scalars['Float']['input']>;
+  totalLessonRestricted?: InputMaybe<Scalars['Float']['input']>;
+  trailer?: InputMaybe<curriculumsTrailerInput>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type curriculumsLanguage = {
+  __typename?: 'curriculumsLanguage';
+  _id?: Maybe<Scalars['MongoID']['output']>;
+  english?: Maybe<curriculumsLanguageEnglish>;
+  french?: Maybe<curriculumsLanguageFrench>;
+  spanish?: Maybe<curriculumsLanguageSpanish>;
+};
+
+export type curriculumsLanguageEnglish = {
+  __typename?: 'curriculumsLanguageEnglish';
+  description?: Maybe<Scalars['String']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsLanguageEnglishInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type curriculumsLanguageFrench = {
+  __typename?: 'curriculumsLanguageFrench';
+  description?: Maybe<Scalars['String']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsLanguageFrenchInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type curriculumsLanguageInput = {
+  _id?: InputMaybe<Scalars['MongoID']['input']>;
+  english?: InputMaybe<curriculumsLanguageEnglishInput>;
+  french?: InputMaybe<curriculumsLanguageFrenchInput>;
+  spanish?: InputMaybe<curriculumsLanguageSpanishInput>;
+};
+
+export type curriculumsLanguageSpanish = {
+  __typename?: 'curriculumsLanguageSpanish';
+  description?: Maybe<Scalars['String']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsLanguageSpanishInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type curriculumsLogo = {
+  __typename?: 'curriculumsLogo';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsLogoInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type curriculumsLoop = {
+  __typename?: 'curriculumsLoop';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsLoopInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type curriculumsPacingGuide = {
+  __typename?: 'curriculumsPacingGuide';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsPacingGuideInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type curriculumsPayment = {
+  __typename?: 'curriculumsPayment';
+  _id: Scalars['String']['output'];
+  active?: Maybe<Scalars['Boolean']['output']>;
+  animalCategory?: Maybe<Scalars['String']['output']>;
+  category?: Maybe<Scalars['String']['output']>;
+  classLength?: Maybe<Scalars['String']['output']>;
+  courseDuration?: Maybe<Scalars['String']['output']>;
+  cover?: Maybe<curriculumsPaymentCover>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  documents?: Maybe<Array<Maybe<curriculumsPaymentDocuments>>>;
+  donation?: Maybe<Scalars['Boolean']['output']>;
+  grade?: Maybe<Scalars['String']['output']>;
+  hidden?: Maybe<Scalars['Boolean']['output']>;
+  language?: Maybe<curriculumsPaymentLanguage>;
+  leaderBio?: Maybe<Scalars['String']['output']>;
+  leaderName?: Maybe<Scalars['String']['output']>;
+  learningGoal?: Maybe<Scalars['String']['output']>;
+  lifeSkill?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  logo?: Maybe<curriculumsPaymentLogo>;
+  loop?: Maybe<curriculumsPaymentLoop>;
+  mini?: Maybe<Scalars['Boolean']['output']>;
+  order?: Maybe<Scalars['Float']['output']>;
+  pacingGuide?: Maybe<curriculumsPaymentPacingGuide>;
+  platform?: Maybe<Scalars['String']['output']>;
+  resources?: Maybe<Array<Maybe<curriculumsPaymentResources>>>;
+  schoolLevel?: Maybe<Scalars['String']['output']>;
+  skillSet?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  slug?: Maybe<Scalars['String']['output']>;
+  teacher?: Maybe<Scalars['String']['output']>;
+  theme?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  title?: Maybe<Scalars['String']['output']>;
+  totalClass?: Maybe<Scalars['Float']['output']>;
+  totalLesson?: Maybe<Scalars['Float']['output']>;
+  totalLessonRestricted?: Maybe<Scalars['Float']['output']>;
+  trailer?: Maybe<curriculumsPaymentTrailer>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type curriculumsPaymentCover = {
+  __typename?: 'curriculumsPaymentCover';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsPaymentDocuments = {
+  __typename?: 'curriculumsPaymentDocuments';
+  title?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsPaymentLanguage = {
+  __typename?: 'curriculumsPaymentLanguage';
+  _id?: Maybe<Scalars['MongoID']['output']>;
+  english?: Maybe<curriculumsPaymentLanguageEnglish>;
+  french?: Maybe<curriculumsPaymentLanguageFrench>;
+  spanish?: Maybe<curriculumsPaymentLanguageSpanish>;
+};
+
+export type curriculumsPaymentLanguageEnglish = {
+  __typename?: 'curriculumsPaymentLanguageEnglish';
+  description?: Maybe<Scalars['String']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsPaymentLanguageFrench = {
+  __typename?: 'curriculumsPaymentLanguageFrench';
+  description?: Maybe<Scalars['String']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsPaymentLanguageSpanish = {
+  __typename?: 'curriculumsPaymentLanguageSpanish';
+  description?: Maybe<Scalars['String']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsPaymentLogo = {
+  __typename?: 'curriculumsPaymentLogo';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsPaymentLoop = {
+  __typename?: 'curriculumsPaymentLoop';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsPaymentPacingGuide = {
+  __typename?: 'curriculumsPaymentPacingGuide';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsPaymentResources = {
+  __typename?: 'curriculumsPaymentResources';
+  _id?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsPaymentTrailer = {
+  __typename?: 'curriculumsPaymentTrailer';
+  captions?: Maybe<Array<Maybe<curriculumsPaymentTrailerCaptions>>>;
+  skip?: Maybe<Scalars['Float']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsPaymentTrailerCaptions = {
+  __typename?: 'curriculumsPaymentTrailerCaptions';
+  available?: Maybe<Scalars['Boolean']['output']>;
+  file?: Maybe<curriculumsPaymentTrailerCaptionsFile>;
+  language?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsPaymentTrailerCaptionsFile = {
+  __typename?: 'curriculumsPaymentTrailerCaptionsFile';
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsResources = {
+  __typename?: 'curriculumsResources';
+  _id?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsResourcesInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export enum curriculumsSortEnum {
+  CREATEDAT_ASC = 'CREATEDAT_ASC',
+  CREATEDAT_DESC = 'CREATEDAT_DESC',
+  ORDER_ASC = 'ORDER_ASC',
+  ORDER_DESC = 'ORDER_DESC'
+}
+
+export type curriculumsTrailer = {
+  __typename?: 'curriculumsTrailer';
+  captions?: Maybe<Array<Maybe<curriculumsTrailerCaptions>>>;
+  skip?: Maybe<Scalars['Float']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsTrailerCaptions = {
+  __typename?: 'curriculumsTrailerCaptions';
+  available?: Maybe<Scalars['Boolean']['output']>;
+  file?: Maybe<curriculumsTrailerCaptionsFile>;
+  language?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsTrailerCaptionsFile = {
+  __typename?: 'curriculumsTrailerCaptionsFile';
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type curriculumsTrailerCaptionsFileInput = {
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type curriculumsTrailerCaptionsInput = {
+  available?: InputMaybe<Scalars['Boolean']['input']>;
+  file?: InputMaybe<curriculumsTrailerCaptionsFileInput>;
+  language?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type curriculumsTrailerInput = {
+  captions?: InputMaybe<Array<InputMaybe<curriculumsTrailerCaptionsInput>>>;
+  skip?: InputMaybe<Scalars['Float']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type district = {
+  __typename?: 'district';
+  _id: Scalars['String']['output'];
+  country?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  exemptionDates?: Maybe<Array<Maybe<Scalars['Date']['output']>>>;
+  extraCourse?: Maybe<Scalars['Boolean']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+  organization?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  state?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type favorites = {
+  __typename?: 'favorites';
+  _id: Scalars['String']['output'];
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  curriculum?: Maybe<Scalars['String']['output']>;
+  curriculumObj?: Maybe<curriculums>;
+  platform?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  user?: Maybe<Scalars['String']['output']>;
+};
+
+export type favoritesInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type grade = {
+  __typename?: 'grade';
+  _id: Scalars['String']['output'];
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type groupprogress = {
+  __typename?: 'groupprogress';
+  _id: Scalars['String']['output'];
+  class?: Maybe<Scalars['String']['output']>;
+  classObj?: Maybe<classes>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  curriculum?: Maybe<Scalars['String']['output']>;
+  finishedClasses?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  finishedLesson?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  group?: Maybe<Scalars['String']['output']>;
+  groupObj?: Maybe<groupprogress>;
+  lesson?: Maybe<Scalars['String']['output']>;
+  lessonObj?: Maybe<classes>;
+  nextClass?: Maybe<Scalars['String']['output']>;
+  nextClassObj?: Maybe<classes>;
+  nextLesson?: Maybe<Scalars['String']['output']>;
+  nextLessonObj?: Maybe<classes>;
+  platform?: Maybe<Scalars['String']['output']>;
+  progress?: Maybe<Scalars['Float']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type groupprogressInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  finishedClasses?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  finishedLesson?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  group?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  nextClass?: InputMaybe<Scalars['String']['input']>;
+  nextLesson?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  progress?: InputMaybe<Scalars['Float']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type groups = {
+  __typename?: 'groups';
+  _id: Scalars['String']['output'];
+  classLink?: Maybe<Scalars['Boolean']['output']>;
+  classes?: Maybe<Array<Maybe<groupsClasses>>>;
+  cleverId?: Maybe<Scalars['String']['output']>;
+  code?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  curriculums?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  curriculumsObj?: Maybe<Array<Maybe<curriculumsPayment>>>;
+  deleted?: Maybe<Scalars['Boolean']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  grade?: Maybe<Scalars['String']['output']>;
+  leaderName?: Maybe<Scalars['String']['output']>;
+  manager?: Maybe<Scalars['String']['output']>;
+  managerObj?: Maybe<userPayment>;
+  name?: Maybe<Scalars['String']['output']>;
+  oneRosterId?: Maybe<Scalars['String']['output']>;
+  organization?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  school?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type groupsClasses = {
+  __typename?: 'groupsClasses';
+  id?: Maybe<Scalars['String']['output']>;
+  unLock?: Maybe<Scalars['Boolean']['output']>;
+};
+
+export type groupsClassesInput = {
+  id?: InputMaybe<Scalars['String']['input']>;
+  unLock?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+export type groupsInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  classLink?: InputMaybe<Scalars['Boolean']['input']>;
+  classes?: InputMaybe<Array<InputMaybe<groupsClassesInput>>>;
+  cleverId?: InputMaybe<Scalars['String']['input']>;
+  code?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculums?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  grade?: InputMaybe<Scalars['String']['input']>;
+  leaderName?: InputMaybe<Scalars['String']['input']>;
+  manager?: InputMaybe<Scalars['String']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  oneRosterId?: InputMaybe<Scalars['String']['input']>;
+  organization?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  school?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type journals = {
+  __typename?: 'journals';
+  _id: Scalars['String']['output'];
+  analyze?: Maybe<Scalars['String']['output']>;
+  body?: Maybe<Scalars['String']['output']>;
+  class?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  documents?: Maybe<Array<Maybe<journalsDocuments>>>;
+  group?: Maybe<Scalars['String']['output']>;
+  lesson?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  question?: Maybe<Scalars['String']['output']>;
+  scale?: Maybe<Scalars['Float']['output']>;
+  teacher?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  user?: Maybe<Scalars['String']['output']>;
+  userObj?: Maybe<UserMedia>;
+};
+
+export type journalsDocuments = {
+  __typename?: 'journalsDocuments';
+  title?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type languageObjTC = {
+  __typename?: 'languageObjTC';
+  description: Scalars['String']['output'];
+  identifier: Scalars['String']['output'];
+  label: Scalars['String']['output'];
+  title: Scalars['String']['output'];
+};
+
+export type languageTC = {
+  __typename?: 'languageTC';
+  english?: Maybe<languageObjTC>;
+  french?: Maybe<languageObjTC>;
+  spanish?: Maybe<languageObjTC>;
+};
+
+export type lesson = {
+  __typename?: 'lesson';
+  _id?: Maybe<Scalars['String']['output']>;
+  class?: Maybe<Scalars['String']['output']>;
+  classificationType?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  cover?: Maybe<lessonCover>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  curriculum?: Maybe<Scalars['String']['output']>;
+  deleted?: Maybe<Scalars['Boolean']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  lifeSkill?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  lifeSkillObj?: Maybe<Array<Maybe<lifeskill>>>;
+  order?: Maybe<Scalars['Float']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type lessonCover = {
+  __typename?: 'lessonCover';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type lessonCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type lessonInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  classificationType?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  cover?: InputMaybe<lessonCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  lifeSkill?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export enum lessonSortEnumTC {
+  CLASS_ASC = 'CLASS_ASC',
+  CLASS_DESC = 'CLASS_DESC',
+  CREATEDAT_ASC = 'CREATEDAT_ASC',
+  CREATEDAT_DESC = 'CREATEDAT_DESC',
+  ORDER_ASC = 'ORDER_ASC',
+  ORDER_DESC = 'ORDER_DESC',
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export type lifeskill = {
+  __typename?: 'lifeskill';
+  _id?: Maybe<Scalars['String']['output']>;
+  color?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  icon?: Maybe<lifeskillIcon>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type lifeskillIcon = {
+  __typename?: 'lifeskillIcon';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type lifeskillIconInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type mood = {
+  __typename?: 'mood';
+  _id: Scalars['String']['output'];
+  category?: Maybe<Scalars['String']['output']>;
+  color?: Maybe<Scalars['String']['output']>;
+  cover?: Maybe<moodCover>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  order?: Maybe<Scalars['Float']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  textColor?: Maybe<Scalars['String']['output']>;
+  tips?: Maybe<Array<Maybe<moodTips>>>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  video?: Maybe<moodVideo>;
+};
+
+export type moodCover = {
+  __typename?: 'moodCover';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type moodCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type moodInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  category?: InputMaybe<Scalars['String']['input']>;
+  color?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<moodCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  textColor?: InputMaybe<Scalars['String']['input']>;
+  tips?: InputMaybe<Array<InputMaybe<moodTipsInput>>>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  video?: InputMaybe<moodVideoInput>;
+};
+
+export type moodTips = {
+  __typename?: 'moodTips';
+  description?: Maybe<Scalars['String']['output']>;
+  link?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type moodTipsInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  link?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type moodVideo = {
+  __typename?: 'moodVideo';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type moodVideoInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type organization = {
+  __typename?: 'organization';
+  _id: Scalars['String']['output'];
+  code?: Maybe<Scalars['String']['output']>;
+  cover?: Maybe<organizationCover>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  extraCourse?: Maybe<Scalars['Boolean']['output']>;
+  lockedAt?: Maybe<Scalars['Date']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type organizationCover = {
+  __typename?: 'organizationCover';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type organizationtoken = {
+  __typename?: 'organizationtoken';
+  _id: Scalars['String']['output'];
+  cleverDistrictId?: Maybe<Scalars['String']['output']>;
+  cleverToken?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  oneRosterAppId?: Maybe<Scalars['String']['output']>;
+  oneRosterToken?: Maybe<Scalars['String']['output']>;
+  organization?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type parentchildren = {
+  __typename?: 'parentchildren';
+  _id: Scalars['String']['output'];
+  approved?: Maybe<Scalars['Boolean']['output']>;
+  approvedAt?: Maybe<Scalars['Date']['output']>;
+  child: Scalars['String']['output'];
+  code: Scalars['String']['output'];
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  parent: Scalars['String']['output'];
+  slot: Scalars['Float']['output'];
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type pin = {
+  __typename?: 'pin';
+  _id: Scalars['String']['output'];
+  class?: Maybe<Scalars['String']['output']>;
+  cover?: Maybe<pinCover>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  curriculum?: Maybe<Scalars['String']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  order?: Maybe<Scalars['Float']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  sparkLibrary?: Maybe<Scalars['String']['output']>;
+  times?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  video?: Maybe<pinVideo>;
+};
+
+export type pinCover = {
+  __typename?: 'pinCover';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type pinCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type pinVideo = {
+  __typename?: 'pinVideo';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type pinVideoInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type progress = {
+  __typename?: 'progress';
+  _id: Scalars['String']['output'];
+  answerResponse?: Maybe<Scalars['Float']['output']>;
+  class?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  ended?: Maybe<Scalars['Boolean']['output']>;
+  extraAnswerResponse?: Maybe<Scalars['Float']['output']>;
+  group?: Maybe<Scalars['String']['output']>;
+  lesson?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  taps?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  time?: Maybe<Scalars['Float']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  user?: Maybe<Scalars['String']['output']>;
+};
+
+export type questionnaires = {
+  __typename?: 'questionnaires';
+  _id: Scalars['String']['output'];
+  answer?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  approved?: Maybe<Scalars['Boolean']['output']>;
+  class?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  lesson?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  question?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  user?: Maybe<Scalars['String']['output']>;
+};
+
+export type questions = {
+  __typename?: 'questions';
+  _id: Scalars['String']['output'];
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  labelHtml?: Maybe<Scalars['String']['output']>;
+  language?: Maybe<questionsLanguage>;
+  platform?: Maybe<Scalars['String']['output']>;
+  responses?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  responsesObj?: Maybe<Array<Maybe<responses>>>;
+  rightAnswers?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  rightAnswersObj?: Maybe<responses>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type questionsInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  labelHtml?: InputMaybe<Scalars['String']['input']>;
+  language?: InputMaybe<questionsLanguageInput>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  responses?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  rightAnswers?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type questionsLanguage = {
+  __typename?: 'questionsLanguage';
+  _id?: Maybe<Scalars['MongoID']['output']>;
+  english?: Maybe<questionsLanguageEnglish>;
+  french?: Maybe<questionsLanguageFrench>;
+  spanish?: Maybe<questionsLanguageSpanish>;
+};
+
+export type questionsLanguageEnglish = {
+  __typename?: 'questionsLanguageEnglish';
+  description?: Maybe<Scalars['String']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type questionsLanguageEnglishInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type questionsLanguageFrench = {
+  __typename?: 'questionsLanguageFrench';
+  description?: Maybe<Scalars['String']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type questionsLanguageFrenchInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type questionsLanguageInput = {
+  _id?: InputMaybe<Scalars['MongoID']['input']>;
+  english?: InputMaybe<questionsLanguageEnglishInput>;
+  french?: InputMaybe<questionsLanguageFrenchInput>;
+  spanish?: InputMaybe<questionsLanguageSpanishInput>;
+};
+
+export type questionsLanguageSpanish = {
+  __typename?: 'questionsLanguageSpanish';
+  description?: Maybe<Scalars['String']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type questionsLanguageSpanishInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export enum questionsSortEnum {
+  CREATEDAT_ASC = 'CREATEDAT_ASC',
+  CREATEDAT_DESC = 'CREATEDAT_DESC'
+}
+
+export type region = {
+  __typename?: 'region';
+  _id: Scalars['String']['output'];
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  district?: Maybe<Scalars['String']['output']>;
+  exemptionDates?: Maybe<Array<Maybe<Scalars['Date']['output']>>>;
+  name?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type reports = {
+  __typename?: 'reports';
+  _id: Scalars['String']['output'];
+  body?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deleted?: Maybe<Scalars['Boolean']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  scale?: Maybe<Scalars['Float']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type resource = {
+  __typename?: 'resource';
+  _id: Scalars['String']['output'];
+  category?: Maybe<Scalars['String']['output']>;
+  class?: Maybe<Scalars['String']['output']>;
+  classObj?: Maybe<classes>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  curriculum?: Maybe<Scalars['String']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  file?: Maybe<resourceFile>;
+  lesson?: Maybe<Scalars['String']['output']>;
+  lessonObj?: Maybe<lesson>;
+  link?: Maybe<Scalars['String']['output']>;
+  metaKey?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  platform?: Maybe<Scalars['String']['output']>;
+  tap?: Maybe<Scalars['String']['output']>;
+  tapObj?: Maybe<tap>;
+  title?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type resourceFile = {
+  __typename?: 'resourceFile';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type resourceFileInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type resourceInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  category?: InputMaybe<Scalars['String']['input']>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  file?: InputMaybe<resourceFileInput>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  link?: InputMaybe<Scalars['String']['input']>;
+  metaKey?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  tap?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type resourcecategory = {
+  __typename?: 'resourcecategory';
+  _id: Scalars['String']['output'];
+  color?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  icon?: Maybe<resourcecategoryIcon>;
+  platform?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type resourcecategoryIcon = {
+  __typename?: 'resourcecategoryIcon';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type resourcecategoryIconInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type responses = {
+  __typename?: 'responses';
+  _id?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  language?: Maybe<responsesLanguage>;
+  platform?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type responsesLanguage = {
+  __typename?: 'responsesLanguage';
+  _id?: Maybe<Scalars['MongoID']['output']>;
+  english?: Maybe<responsesLanguageEnglish>;
+  french?: Maybe<responsesLanguageFrench>;
+  spanish?: Maybe<responsesLanguageSpanish>;
+};
+
+export type responsesLanguageEnglish = {
+  __typename?: 'responsesLanguageEnglish';
+  description?: Maybe<Scalars['String']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type responsesLanguageEnglishInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type responsesLanguageFrench = {
+  __typename?: 'responsesLanguageFrench';
+  description?: Maybe<Scalars['String']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type responsesLanguageFrenchInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type responsesLanguageInput = {
+  _id?: InputMaybe<Scalars['MongoID']['input']>;
+  english?: InputMaybe<responsesLanguageEnglishInput>;
+  french?: InputMaybe<responsesLanguageFrenchInput>;
+  spanish?: InputMaybe<responsesLanguageSpanishInput>;
+};
+
+export type responsesLanguageSpanish = {
+  __typename?: 'responsesLanguageSpanish';
+  description?: Maybe<Scalars['String']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+};
+
+export type responsesLanguageSpanishInput = {
+  description?: InputMaybe<Scalars['String']['input']>;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  label?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type schoolcode = {
+  __typename?: 'schoolcode';
+  _id?: Maybe<Scalars['String']['output']>;
+  classes?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  code?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  curriculums?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  district?: Maybe<Scalars['String']['output']>;
+  expirationDate?: Maybe<Scalars['Date']['output']>;
+  limit?: Maybe<Scalars['Float']['output']>;
+  mini?: Maybe<Scalars['Boolean']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  school?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type schoollevel = {
+  __typename?: 'schoollevel';
+  _id: Scalars['String']['output'];
+  color?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  order?: Maybe<Scalars['Float']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  survey?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type schoolsData = {
+  __typename?: 'schoolsData';
+  _id: Scalars['String']['output'];
+  city?: Maybe<Scalars['String']['output']>;
+  cleverId?: Maybe<Scalars['String']['output']>;
+  cleverSync?: Maybe<Scalars['Boolean']['output']>;
+  country?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  district?: Maybe<Scalars['String']['output']>;
+  extraCourse?: Maybe<Scalars['Boolean']['output']>;
+  name?: Maybe<Scalars['String']['output']>;
+  oneRosterId?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  region?: Maybe<Scalars['String']['output']>;
+  settings?: Maybe<Scalars['String']['output']>;
+  settingsObj?: Maybe<schoolsettings>;
+  slug?: Maybe<Scalars['String']['output']>;
+  state?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type schoolsDataInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  city?: InputMaybe<Scalars['String']['input']>;
+  cleverId?: InputMaybe<Scalars['String']['input']>;
+  cleverSync?: InputMaybe<Scalars['Boolean']['input']>;
+  country?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  district?: InputMaybe<Scalars['String']['input']>;
+  extraCourse?: InputMaybe<Scalars['Boolean']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
+  oneRosterId?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  region?: InputMaybe<Scalars['String']['input']>;
+  settings?: InputMaybe<Scalars['String']['input']>;
+  slug?: InputMaybe<Scalars['String']['input']>;
+  state?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type schoolsettings = {
+  __typename?: 'schoolsettings';
+  _id: Scalars['String']['output'];
+  accessWithClassLink?: Maybe<Scalars['Boolean']['output']>;
+  accessWithClever?: Maybe<Scalars['Boolean']['output']>;
+  accessWithEmail?: Maybe<Scalars['Boolean']['output']>;
+  accessWithGoogle?: Maybe<Scalars['Boolean']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deleted?: Maybe<Scalars['Boolean']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  restrictions?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  school?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type schoolusers = {
+  __typename?: 'schoolusers';
+  _id: Scalars['String']['output'];
+  classLink?: Maybe<Scalars['Boolean']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deleted?: Maybe<Scalars['Boolean']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  organization?: Maybe<Scalars['String']['output']>;
+  pending?: Maybe<Scalars['Boolean']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  school?: Maybe<Scalars['String']['output']>;
+  schoolObj?: Maybe<schoolsData>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  user?: Maybe<Scalars['String']['output']>;
+};
+
+export type schoolusersInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  classLink?: InputMaybe<Scalars['Boolean']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  organization?: InputMaybe<Scalars['String']['input']>;
+  pending?: InputMaybe<Scalars['Boolean']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  school?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type skillset = {
+  __typename?: 'skillset';
+  _id?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  icon?: Maybe<skillsetIcon>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type skillsetIcon = {
+  __typename?: 'skillsetIcon';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type skillsetIconInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type sparklibrary = {
+  __typename?: 'sparklibrary';
+  _id: Scalars['String']['output'];
+  article?: Maybe<sparklibraryArticle>;
+  articleBody?: Maybe<Scalars['String']['output']>;
+  articleQuestion?: Maybe<Array<Maybe<sparklibraryArticleQuestion>>>;
+  articleTitle?: Maybe<Scalars['String']['output']>;
+  class?: Maybe<Scalars['String']['output']>;
+  cover?: Maybe<sparklibraryCover>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  curriculum?: Maybe<Scalars['String']['output']>;
+  deleted?: Maybe<Scalars['Boolean']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  funFact?: Maybe<Array<Maybe<sparklibraryFunFact>>>;
+  journals?: Maybe<Array<Maybe<sparklibraryJournals>>>;
+  lesson?: Maybe<Scalars['String']['output']>;
+  mindfulMoment?: Maybe<Array<Maybe<sparklibraryMindfulMoment>>>;
+  order?: Maybe<Scalars['Float']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  slug?: Maybe<Scalars['String']['output']>;
+  takeAwayDescription?: Maybe<Scalars['String']['output']>;
+  takeAwayLabel?: Maybe<Scalars['String']['output']>;
+  times?: Maybe<Array<Maybe<Scalars['Date']['output']>>>;
+  title?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  video?: Maybe<sparklibraryVideo>;
+  videoQuestions?: Maybe<Array<Maybe<sparklibraryVideoQuestions>>>;
+};
+
+export type sparklibraryArticle = {
+  __typename?: 'sparklibraryArticle';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type sparklibraryArticleInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type sparklibraryArticleQuestion = {
+  __typename?: 'sparklibraryArticleQuestion';
+  points?: Maybe<Scalars['String']['output']>;
+  question?: Maybe<Scalars['String']['output']>;
+};
+
+export type sparklibraryArticleQuestionInput = {
+  points?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type sparklibraryCover = {
+  __typename?: 'sparklibraryCover';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type sparklibraryCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type sparklibraryFunFact = {
+  __typename?: 'sparklibraryFunFact';
+  points?: Maybe<Scalars['String']['output']>;
+  question?: Maybe<Scalars['String']['output']>;
+};
+
+export type sparklibraryFunFactInput = {
+  points?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type sparklibraryJournals = {
+  __typename?: 'sparklibraryJournals';
+  points?: Maybe<Scalars['String']['output']>;
+  question?: Maybe<Scalars['String']['output']>;
+};
+
+export type sparklibraryJournalsInput = {
+  points?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type sparklibraryMindfulMoment = {
+  __typename?: 'sparklibraryMindfulMoment';
+  points?: Maybe<Scalars['String']['output']>;
+  question?: Maybe<Scalars['String']['output']>;
+};
+
+export type sparklibraryMindfulMomentInput = {
+  points?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type sparklibraryVideo = {
+  __typename?: 'sparklibraryVideo';
+  captions?: Maybe<Array<Maybe<sparklibraryVideoCaptions>>>;
+  thumbnail?: Maybe<sparklibraryVideoThumbnail>;
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type sparklibraryVideoCaptions = {
+  __typename?: 'sparklibraryVideoCaptions';
+  available?: Maybe<Scalars['Boolean']['output']>;
+  file?: Maybe<sparklibraryVideoCaptionsFile>;
+  language?: Maybe<Scalars['String']['output']>;
+};
+
+export type sparklibraryVideoCaptionsFile = {
+  __typename?: 'sparklibraryVideoCaptionsFile';
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type sparklibraryVideoCaptionsFileInput = {
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type sparklibraryVideoCaptionsInput = {
+  available?: InputMaybe<Scalars['Boolean']['input']>;
+  file?: InputMaybe<sparklibraryVideoCaptionsFileInput>;
+  language?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type sparklibraryVideoInput = {
+  captions?: InputMaybe<Array<InputMaybe<sparklibraryVideoCaptionsInput>>>;
+  thumbnail?: InputMaybe<sparklibraryVideoThumbnailInput>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type sparklibraryVideoQuestions = {
+  __typename?: 'sparklibraryVideoQuestions';
+  points?: Maybe<Scalars['String']['output']>;
+  question?: Maybe<Scalars['String']['output']>;
+};
+
+export type sparklibraryVideoQuestionsInput = {
+  points?: InputMaybe<Scalars['String']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type sparklibraryVideoThumbnail = {
+  __typename?: 'sparklibraryVideoThumbnail';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type sparklibraryVideoThumbnailInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type sparklibraryuser = {
+  __typename?: 'sparklibraryuser';
+  _id: Scalars['String']['output'];
+  articleResponses?: Maybe<Array<Maybe<sparklibraryuserArticleResponses>>>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  finished?: Maybe<Scalars['Boolean']['output']>;
+  found?: Maybe<Scalars['Boolean']['output']>;
+  funFact?: Maybe<Array<Maybe<sparklibraryuserFunFact>>>;
+  journals?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  mindfulMoment?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  platform?: Maybe<Scalars['String']['output']>;
+  sparkLibrary?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  user?: Maybe<Scalars['String']['output']>;
+  videoResponses?: Maybe<Array<Maybe<sparklibraryuserVideoResponses>>>;
+};
+
+export type sparklibraryuserArticleResponses = {
+  __typename?: 'sparklibraryuserArticleResponses';
+  _id?: Maybe<Scalars['String']['output']>;
+  assert?: Maybe<Scalars['Boolean']['output']>;
+};
+
+export type sparklibraryuserFunFact = {
+  __typename?: 'sparklibraryuserFunFact';
+  _id?: Maybe<Scalars['String']['output']>;
+  assert?: Maybe<Scalars['Boolean']['output']>;
+};
+
+export type sparklibraryuserVideoResponses = {
+  __typename?: 'sparklibraryuserVideoResponses';
+  _id?: Maybe<Scalars['String']['output']>;
+  assert?: Maybe<Scalars['Boolean']['output']>;
+};
+
+export type sticker = {
+  __typename?: 'sticker';
+  _id: Scalars['String']['output'];
+  cover?: Maybe<stickerCover>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deedlyVault?: Maybe<Scalars['String']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  video?: Maybe<stickerVideo>;
+};
+
+export type stickerCover = {
+  __typename?: 'stickerCover';
+  title?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type stickerCoverInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type stickerVideo = {
+  __typename?: 'stickerVideo';
+  title?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type stickerVideoInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type subcategories = {
+  __typename?: 'subcategories';
+  _id: Scalars['String']['output'];
+  categories?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type subscription = {
+  __typename?: 'subscription';
+  _id: Scalars['String']['output'];
+  appleLatestReceipt?: Maybe<Scalars['String']['output']>;
+  autoRenew?: Maybe<Scalars['Boolean']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  expirationDate?: Maybe<Scalars['Date']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  promoCodes?: Maybe<Scalars['String']['output']>;
+  stripeId?: Maybe<Scalars['String']['output']>;
+  transactionId?: Maybe<Scalars['String']['output']>;
+  types?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  user?: Maybe<Scalars['String']['output']>;
+  usersLeft?: Maybe<Scalars['Float']['output']>;
+};
+
+export type tap = {
+  __typename?: 'tap';
+  _id?: Maybe<Scalars['String']['output']>;
+  additional?: Maybe<Scalars['String']['output']>;
+  canva?: Maybe<Array<Maybe<tapCanva>>>;
+  class?: Maybe<Scalars['String']['output']>;
+  cover?: Maybe<tapCover>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deleted?: Maybe<Scalars['Boolean']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  donation?: Maybe<Scalars['Float']['output']>;
+  donationVault?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  extraQuestions?: Maybe<Array<Maybe<tapExtraQuestions>>>;
+  intro?: Maybe<Scalars['String']['output']>;
+  lesson?: Maybe<Scalars['String']['output']>;
+  lifeSkills?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  order?: Maybe<Scalars['Float']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  points?: Maybe<Scalars['Float']['output']>;
+  questions?: Maybe<Array<Maybe<tapQuestions>>>;
+  resources?: Maybe<Array<Maybe<tapResources>>>;
+  resourcesObj?: Maybe<Array<Maybe<resource>>>;
+  slug?: Maybe<Scalars['String']['output']>;
+  sparkLibrary?: Maybe<Scalars['String']['output']>;
+  survey?: Maybe<Scalars['String']['output']>;
+  themes?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  time?: Maybe<Scalars['Float']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  videos?: Maybe<Array<Maybe<tapVideos>>>;
+};
+
+export type tapCanva = {
+  __typename?: 'tapCanva';
+  ratio?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type tapCanvaInput = {
+  ratio?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type tapCover = {
+  __typename?: 'tapCover';
+  title?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type tapCoverInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type tapExtraQuestions = {
+  __typename?: 'tapExtraQuestions';
+  points?: Maybe<Scalars['Float']['output']>;
+  question?: Maybe<Scalars['String']['output']>;
+};
+
+export type tapExtraQuestionsInput = {
+  points?: InputMaybe<Scalars['Float']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type tapInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  additional?: InputMaybe<Scalars['String']['input']>;
+  canva?: InputMaybe<Array<InputMaybe<tapCanvaInput>>>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  cover?: InputMaybe<tapCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  donation?: InputMaybe<Scalars['Float']['input']>;
+  donationVault?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  extraQuestions?: InputMaybe<Array<InputMaybe<tapExtraQuestionsInput>>>;
+  intro?: InputMaybe<Scalars['String']['input']>;
+  lesson?: InputMaybe<Scalars['String']['input']>;
+  lifeSkills?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  points?: InputMaybe<Scalars['Float']['input']>;
+  questions?: InputMaybe<Array<InputMaybe<tapQuestionsInput>>>;
+  resources?: InputMaybe<Array<InputMaybe<tapResourcesInput>>>;
+  slug?: InputMaybe<Scalars['String']['input']>;
+  sparkLibrary?: InputMaybe<Scalars['String']['input']>;
+  survey?: InputMaybe<Scalars['String']['input']>;
+  themes?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  time?: InputMaybe<Scalars['Float']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  videos?: InputMaybe<Array<InputMaybe<tapVideosInput>>>;
+};
+
+export type tapQuestions = {
+  __typename?: 'tapQuestions';
+  points?: Maybe<Scalars['Float']['output']>;
+  question?: Maybe<Scalars['String']['output']>;
+};
+
+export type tapQuestionsInput = {
+  points?: InputMaybe<Scalars['Float']['input']>;
+  question?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type tapResources = {
+  __typename?: 'tapResources';
+  title?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type tapResourcesInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type tapVideos = {
+  __typename?: 'tapVideos';
+  _id?: Maybe<Scalars['String']['output']>;
+  captions?: Maybe<Array<Maybe<tapVideosCaptions>>>;
+  skip?: Maybe<Scalars['Float']['output']>;
+  thumbnail?: Maybe<tapVideosThumbnail>;
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type tapVideosCaptions = {
+  __typename?: 'tapVideosCaptions';
+  available?: Maybe<Scalars['Boolean']['output']>;
+  file?: Maybe<tapVideosCaptionsFile>;
+  language?: Maybe<Scalars['String']['output']>;
+};
+
+export type tapVideosCaptionsFile = {
+  __typename?: 'tapVideosCaptionsFile';
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type tapVideosCaptionsFileInput = {
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type tapVideosCaptionsInput = {
+  available?: InputMaybe<Scalars['Boolean']['input']>;
+  file?: InputMaybe<tapVideosCaptionsFileInput>;
+  language?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type tapVideosInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  captions?: InputMaybe<Array<InputMaybe<tapVideosCaptionsInput>>>;
+  skip?: InputMaybe<Scalars['Float']['input']>;
+  thumbnail?: InputMaybe<tapVideosThumbnailInput>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type tapVideosThumbnail = {
+  __typename?: 'tapVideosThumbnail';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type tapVideosThumbnailInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type taptype = {
+  __typename?: 'taptype';
+  _id: Scalars['String']['output'];
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type theme = {
+  __typename?: 'theme';
+  _id?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  icon?: Maybe<themeIcon>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type themeIcon = {
+  __typename?: 'themeIcon';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type themeIconInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type user = {
+  __typename?: 'user';
+  _id: Scalars['String']['output'];
+  acceptTerms?: Maybe<Scalars['Boolean']['output']>;
+  acceptTermsDate?: Maybe<Scalars['Date']['output']>;
+  bio?: Maybe<Scalars['String']['output']>;
+  birthday?: Maybe<Scalars['Date']['output']>;
+  classLinkId?: Maybe<Scalars['String']['output']>;
+  classLinkSync?: Maybe<Scalars['Boolean']['output']>;
+  cleverId?: Maybe<Scalars['String']['output']>;
+  cleverSync?: Maybe<Scalars['Boolean']['output']>;
+  cleverToken?: Maybe<Scalars['String']['output']>;
+  code?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deedlyAuthenticationToken?: Maybe<Scalars['String']['output']>;
+  deedlyUserId?: Maybe<Scalars['String']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  email?: Maybe<Scalars['String']['output']>;
+  firstName?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['String']['output']>;
+  lastLogin?: Maybe<Scalars['Date']['output']>;
+  lastName?: Maybe<Scalars['String']['output']>;
+  mfaCode?: Maybe<Scalars['String']['output']>;
+  mfaCodeExpiry?: Maybe<Scalars['Date']['output']>;
+  oneRosterId?: Maybe<Scalars['String']['output']>;
+  organization?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  points?: Maybe<Scalars['Float']['output']>;
+  profilePicture?: Maybe<userProfilePicture>;
+  schoolCode?: Maybe<Scalars['String']['output']>;
+  schoolCodeObj?: Maybe<schoolcode>;
+  tag?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  typeObj?: Maybe<usertypes>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  userName?: Maybe<Scalars['String']['output']>;
+};
+
+export type userInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  bio?: InputMaybe<Scalars['String']['input']>;
+  birthday?: InputMaybe<Scalars['Date']['input']>;
+  classLinkId?: InputMaybe<Scalars['String']['input']>;
+  classLinkSync?: InputMaybe<Scalars['Boolean']['input']>;
+  cleverId?: InputMaybe<Scalars['String']['input']>;
+  cleverSync?: InputMaybe<Scalars['Boolean']['input']>;
+  cleverToken?: InputMaybe<Scalars['String']['input']>;
+  code?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deedlyAuthenticationToken?: InputMaybe<Scalars['String']['input']>;
+  deedlyUserId?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  email?: InputMaybe<Scalars['String']['input']>;
+  firstName?: InputMaybe<Scalars['String']['input']>;
+  id?: InputMaybe<Scalars['String']['input']>;
+  lastLogin?: InputMaybe<Scalars['Date']['input']>;
+  lastName?: InputMaybe<Scalars['String']['input']>;
+  mfaCode?: InputMaybe<Scalars['String']['input']>;
+  mfaCodeExpiry?: InputMaybe<Scalars['Date']['input']>;
+  oneRosterId?: InputMaybe<Scalars['String']['input']>;
+  organization?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  profilePicture?: InputMaybe<userProfilePictureInput>;
+  schoolCode?: InputMaybe<Scalars['String']['input']>;
+  tag?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  userName?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type userPayment = {
+  __typename?: 'userPayment';
+  _id?: Maybe<Scalars['String']['output']>;
+  acceptTerms?: Maybe<Scalars['Boolean']['output']>;
+  acceptTermsDate?: Maybe<Scalars['Date']['output']>;
+  appleId?: Maybe<Scalars['String']['output']>;
+  bio?: Maybe<Scalars['String']['output']>;
+  birthday?: Maybe<Scalars['Date']['output']>;
+  classLinkId?: Maybe<Scalars['String']['output']>;
+  classLinkSync?: Maybe<Scalars['Boolean']['output']>;
+  cleverId?: Maybe<Scalars['String']['output']>;
+  cleverSync?: Maybe<Scalars['Boolean']['output']>;
+  cleverToken?: Maybe<Scalars['String']['output']>;
+  code?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deedlyAuthenticationToken?: Maybe<Scalars['String']['output']>;
+  deedlyUserId?: Maybe<Scalars['String']['output']>;
+  deleted?: Maybe<Scalars['Boolean']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  email?: Maybe<Scalars['String']['output']>;
+  firstName?: Maybe<Scalars['String']['output']>;
+  id?: Maybe<Scalars['String']['output']>;
+  lastLogin?: Maybe<Scalars['Date']['output']>;
+  lastName?: Maybe<Scalars['String']['output']>;
+  mfaCode?: Maybe<Scalars['String']['output']>;
+  mfaCodeExpiry?: Maybe<Scalars['Date']['output']>;
+  oneRosterId?: Maybe<Scalars['String']['output']>;
+  organization?: Maybe<Scalars['String']['output']>;
+  password?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  points?: Maybe<Scalars['Float']['output']>;
+  profilePicture?: Maybe<userPaymentProfilePicture>;
+  resetPasswordToken?: Maybe<Scalars['String']['output']>;
+  schoolCode?: Maybe<Scalars['String']['output']>;
+  settings?: Maybe<Scalars['String']['output']>;
+  stripeId?: Maybe<Scalars['String']['output']>;
+  tag?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  userName?: Maybe<Scalars['String']['output']>;
+};
+
+export type userPaymentProfilePicture = {
+  __typename?: 'userPaymentProfilePicture';
+  title?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type userProfilePicture = {
+  __typename?: 'userProfilePicture';
+  title?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type userProfilePictureInput = {
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type useranimals = {
+  __typename?: 'useranimals';
+  _id: Scalars['String']['output'];
+  animal?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  curriculum?: Maybe<Scalars['String']['output']>;
+  level?: Maybe<Scalars['Float']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  user?: Maybe<Scalars['String']['output']>;
+};
+
+export type userbadge = {
+  __typename?: 'userbadge';
+  _id: Scalars['String']['output'];
+  badge?: Maybe<Scalars['String']['output']>;
+  badgeObj?: Maybe<badges>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  curriculum?: Maybe<Scalars['String']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  user?: Maybe<Scalars['String']['output']>;
+};
+
+export type userbadgeInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  badge?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  curriculum?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type usercollectibles = {
+  __typename?: 'usercollectibles';
+  _id: Scalars['String']['output'];
+  collectible?: Maybe<Scalars['String']['output']>;
+  collectibleObj?: Maybe<collectible>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  user?: Maybe<Scalars['String']['output']>;
+};
+
+export type usergroups = {
+  __typename?: 'usergroups';
+  _id: Scalars['String']['output'];
+  classLink?: Maybe<Scalars['Boolean']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deleted?: Maybe<Scalars['Boolean']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  group?: Maybe<Scalars['String']['output']>;
+  groupObj?: Maybe<groups>;
+  manager?: Maybe<Scalars['String']['output']>;
+  organization?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  user?: Maybe<Scalars['String']['output']>;
+  userObj?: Maybe<userPayment>;
+};
+
+export type usergroupsInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  classLink?: InputMaybe<Scalars['Boolean']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  group?: InputMaybe<Scalars['String']['input']>;
+  manager?: InputMaybe<Scalars['String']['input']>;
+  organization?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type usermood = {
+  __typename?: 'usermood';
+  _id: Scalars['String']['output'];
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  moodObj?: Maybe<mood>;
+  moods?: Maybe<Array<Maybe<usermoodMoods>>>;
+  platform?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  user?: Maybe<Scalars['String']['output']>;
+};
+
+export type usermoodMoods = {
+  __typename?: 'usermoodMoods';
+  id?: Maybe<Scalars['String']['output']>;
+  intensity?: Maybe<Scalars['Float']['output']>;
+};
+
+export type userorganization = {
+  __typename?: 'userorganization';
+  _id: Scalars['String']['output'];
+  accepted?: Maybe<Scalars['Boolean']['output']>;
+  code?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  expiredIn?: Maybe<Scalars['Date']['output']>;
+  organization?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  user?: Maybe<Scalars['String']['output']>;
+  usertype?: Maybe<Scalars['String']['output']>;
+};
+
+export type userpin = {
+  __typename?: 'userpin';
+  _id: Scalars['String']['output'];
+  class?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  pin?: Maybe<Scalars['String']['output']>;
+  pinObj?: Maybe<pin>;
+  platform?: Maybe<Scalars['String']['output']>;
+  sparkLibrary?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  user?: Maybe<Scalars['String']['output']>;
+};
+
+export type userpinInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  class?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  pin?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  sparkLibrary?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type usersticker = {
+  __typename?: 'usersticker';
+  _id: Scalars['String']['output'];
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deedlyVault?: Maybe<Scalars['String']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  sticker?: Maybe<Scalars['String']['output']>;
+  stickerObj?: Maybe<sticker>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  user?: Maybe<Scalars['String']['output']>;
+};
+
+export type userstickerInput = {
+  _id?: InputMaybe<Scalars['String']['input']>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deedlyVault?: InputMaybe<Scalars['String']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
+  sticker?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type usertypes = {
+  __typename?: 'usertypes';
+  _id: Scalars['String']['output'];
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  identifier?: Maybe<Scalars['String']['output']>;
+  label?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  weight?: Maybe<Scalars['Float']['output']>;
+};
+
+export type videosparks = {
+  __typename?: 'videosparks';
+  _id: Scalars['String']['output'];
+  class?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  sparks?: Maybe<Scalars['Float']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  user?: Maybe<Scalars['String']['output']>;
+};
+
+export type videotap = {
+  __typename?: 'videotap';
+  _id: Scalars['String']['output'];
+  class?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  end?: Maybe<Scalars['Float']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
+  sparkLibrary?: Maybe<Scalars['String']['output']>;
+  start?: Maybe<Scalars['Float']['output']>;
+  tag?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+};
+
+export type PingQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type PingQuery = { __typename: 'Query' };
+
+
+export const PingDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Ping"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"__typename"}}]}}]} as unknown as DocumentNode<PingQuery, PingQueryVariables>;
