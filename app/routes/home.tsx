@@ -8,5 +8,5 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
-  return <main>ie</main>;
+  return <main className="min-h-screen p-8 text-2xl font-semibold">ie</main>;
 }
