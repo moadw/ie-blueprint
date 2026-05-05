@@ -15,9 +15,11 @@ import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-
  */
 type Documents = {
     "\n  query Ping {\n    __typename\n  }\n": typeof types.PingDocument,
+    "\n  query UsersFindOne {\n    UsersFindOne {\n      _id\n      firstName\n      lastName\n      email\n      userName\n      type\n      profilePicture {\n        url\n      }\n    }\n  }\n": typeof types.UsersFindOneDocument,
 };
 const documents: Documents = {
     "\n  query Ping {\n    __typename\n  }\n": types.PingDocument,
+    "\n  query UsersFindOne {\n    UsersFindOne {\n      _id\n      firstName\n      lastName\n      email\n      userName\n      type\n      profilePicture {\n        url\n      }\n    }\n  }\n": types.UsersFindOneDocument,
 };
 
 /**
@@ -38,6 +40,10 @@ export function graphql(source: string): unknown;
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  query Ping {\n    __typename\n  }\n"): (typeof documents)["\n  query Ping {\n    __typename\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query UsersFindOne {\n    UsersFindOne {\n      _id\n      firstName\n      lastName\n      email\n      userName\n      type\n      profilePicture {\n        url\n      }\n    }\n  }\n"): (typeof documents)["\n  query UsersFindOne {\n    UsersFindOne {\n      _id\n      firstName\n      lastName\n      email\n      userName\n      type\n      profilePicture {\n        url\n      }\n    }\n  }\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};
