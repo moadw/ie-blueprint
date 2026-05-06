@@ -16,7 +16,10 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
         <div className="flex-1 flex flex-col items-center justify-center px-8 lg:px-16">
           <div className="w-full max-w-[400px]">
             <Logo className="h-9 mb-8" />
-            <h1 className="font-serif italic text-[42px] leading-tight mb-3 text-foreground">
+            <h1
+              className="text-[42px] leading-tight mb-3 text-foreground"
+              style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}
+            >
               {title}
             </h1>
             <p className="text-muted-foreground text-[15px] mb-8">{subtitle}</p>
@@ -37,7 +40,9 @@ export function AuthLayout({ title, subtitle, children }: AuthLayoutProps) {
               <h2 className="text-white text-[40px] leading-[1.15]">
                 <span className="font-sans font-normal">Just</span>
                 <br />
-                <span className="font-serif italic">Press Play</span>
+                <span style={{ fontFamily: "'Instrument Serif', serif", fontStyle: "italic" }}>
+                  Press Play
+                </span>
               </h2>
             </div>
           </div>

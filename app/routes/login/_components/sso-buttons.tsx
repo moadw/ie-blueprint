@@ -1,4 +1,3 @@
-import { Button } from "~/components/ui/button";
 import { Divider } from "~/components/ui/divider";
 
 function GoogleIcon() {
@@ -50,22 +49,37 @@ function CleverIcon() {
   );
 }
 
+const ssoBase =
+  "w-full h-[52px] backdrop-blur-sm rounded-full text-[15px] font-medium flex items-center justify-center gap-3 transition-all shadow-sm cursor-not-allowed disabled:opacity-100";
+
 export function SSOButtons() {
   return (
     <>
       <div className="space-y-3 mb-6">
-        <Button variant="sso" disabled type="button" className="w-full">
+        <button
+          type="button"
+          disabled
+          className={`${ssoBase} bg-card/60 border border-border/50 text-foreground/50`}
+        >
           <GoogleIcon />
           Google Coming Soon
-        </Button>
-        <Button variant="sso" disabled type="button" className="w-full">
+        </button>
+        <button
+          type="button"
+          disabled
+          className={`${ssoBase} bg-[#0066CC]/30 text-white/50`}
+        >
           <ClassLinkIcon />
           ClassLink Coming Soon
-        </Button>
-        <Button variant="sso" disabled type="button" className="w-full">
+        </button>
+        <button
+          type="button"
+          disabled
+          className={`${ssoBase} bg-[#4274F6]/30 text-white/50`}
+        >
           <CleverIcon />
           Clever Coming Soon
-        </Button>
+        </button>
       </div>
       <Divider label="or" />
     </>

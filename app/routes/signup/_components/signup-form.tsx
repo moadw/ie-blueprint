@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Form, Link, useActionData, useNavigation } from "react-router";
+import { Form, Link, useActionData, useNavigation, useSubmit } from "react-router";
 import { Mail } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
@@ -23,7 +23,8 @@ export type SignupFormValues = z.infer<typeof signupSchema>;
 export function SignupForm() {
   const navigation = useNavigation();
   const actionData = useActionData() as SignupActionData;
-  const isSubmitting = navigation.state === "submitting";
+  const submit = useSubmit();
+  const isSubmitting = navigation.state !== "idle";
 
   const {
     register,
@@ -40,19 +41,14 @@ export function SignupForm() {
     }
   }, [actionData]);
 
+  const onValid = (values: SignupFormValues) => {
+    void submit(values, { method: "post" });
+  };
+
   return (
     <Form
       method="post"
-      onSubmit={(e) => {
-        void handleSubmit(
-          () => {
-            (e.target as HTMLFormElement).submit();
-          },
-          () => {
-            // invalid — already prevented by handleSubmit
-          },
-        )(e);
-      }}
+      onSubmit={handleSubmit(onValid)}
       className="space-y-4"
     >
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -98,7 +94,7 @@ export function SignupForm() {
         loading={isSubmitting}
         className="w-full"
       >
-        <Mail className="mr-2 h-4 w-4" />
+        {!isSubmitting && <Mail className="mr-2 h-4 w-4" />}
         Create Account
       </Button>
       <p className="text-center text-[14px] text-muted-foreground mt-8">

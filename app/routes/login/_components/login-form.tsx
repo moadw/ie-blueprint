@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Form, Link, useActionData, useNavigation } from "react-router";
+import { Form, Link, useActionData, useNavigation, useSubmit } from "react-router";
 import { Mail } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
@@ -21,7 +21,8 @@ export type LoginFormValues = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const navigation = useNavigation();
   const actionData = useActionData() as LoginActionData;
-  const isSubmitting = navigation.state === "submitting";
+  const submit = useSubmit();
+  const isSubmitting = navigation.state !== "idle";
 
   const {
     register,
@@ -38,24 +39,14 @@ export function LoginForm() {
     }
   }, [actionData]);
 
+  const onValid = (values: LoginFormValues) => {
+    void submit(values, { method: "post" });
+  };
+
   return (
     <Form
       method="post"
-      onSubmit={(e) => {
-        // Run RHF validation; if invalid, prevent native submit.
-        // handleSubmit returns a handler that calls preventDefault on errors.
-        void handleSubmit(
-          () => {
-            // valid — let native submission proceed by NOT preventing default.
-            // handleSubmit already called e.preventDefault() once; we need to
-            // re-submit the form natively.
-            (e.target as HTMLFormElement).submit();
-          },
-          () => {
-            // invalid — already prevented by handleSubmit
-          },
-        )(e);
-      }}
+      onSubmit={handleSubmit(onValid)}
       className="space-y-4"
     >
       <Input
@@ -79,7 +70,7 @@ export function LoginForm() {
         loading={isSubmitting}
         className="w-full"
       >
-        <Mail className="mr-2 h-4 w-4" />
+        {!isSubmitting && <Mail className="mr-2 h-4 w-4" />}
         Sign In
       </Button>
       <p className="text-center text-[14px] text-muted-foreground mt-8">

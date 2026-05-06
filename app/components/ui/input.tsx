@@ -30,8 +30,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         )}
         {...props}
       />
-      {/* TODO: replace text-red-600 with text-destructive once token is added */}
-      {error ? <p className="text-[13px] text-red-600 mt-1">{error}</p> : null}
+      {error ? <p className="text-[13px] text-destructive mt-1">{error}</p> : null}
     </div>
   );
 });
