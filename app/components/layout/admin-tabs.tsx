@@ -13,14 +13,14 @@ const TABS = [
 export function AdminTabs() {
   return (
     <nav>
-      <div className="inline-flex h-10 items-center rounded-md border border-border bg-card p-1 shadow-sm">
+      <div className="inline-flex h-10 items-center rounded-[14px] border border-border bg-card p-1 shadow-sm">
         {TABS.map((tab) => (
           <NavLink
             key={tab.to}
             to={tab.to}
             className={({ isActive }) =>
               cn(
-                "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-colors",
+                "inline-flex items-center justify-center whitespace-nowrap rounded-[12px] px-3 py-1.5 text-sm font-medium transition-colors",
                 isActive
                   ? "bg-foreground text-background shadow-sm"
                   : "text-muted-foreground hover:text-foreground",
