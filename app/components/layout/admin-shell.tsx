@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { useFetcher, useNavigate } from "react-router";
+import { LogOut } from "lucide-react";
 import { setToken } from "~/lib/auth";
 import { Button } from "~/components/ui/button";
 import { AdminTabs } from "~/components/layout/admin-tabs";
@@ -40,6 +41,7 @@ export function AdminShell({ children }: AdminShellProps) {
           </div>
           <fetcher.Form method="delete" action="/api/session">
             <Button type="submit" variant="ghost">
+              <LogOut className="h-4 w-4" />
               Sign Out
             </Button>
           </fetcher.Form>
