@@ -106,3 +106,34 @@ This is wired in `app/lib/api.ts` and `app/lib/graphql.ts`. Do not change.
 - `verbatimModuleSyntax: true` → all type-only imports MUST use `import type`.
 - `exactOptionalPropertyTypes: true` → optional props can't be set to `undefined` explicitly.
 - `noUncheckedIndexedAccess: true` → array/index access yields `T | undefined`.
+
+## Feature workflow
+
+The standard loop for any non-trivial feature is research → validate →
+plan → implement → merge. Don't skip steps and don't swap tooling.
+
+1. **Research in autopilot.** When the user asks for research (`/research`
+   or any "look into / document / map out X" request), invoke
+   `desplega:researching` with `--autonomy=autopilot` by default. Only drop
+   to `critical` / `verbose` if the user explicitly says so.
+2. **Surface Open Questions immediately.** As soon as the research doc is
+   written, post the "Open Questions" section back to the user via
+   `AskUserQuestion` (one question per item, batched up to 4 at a time) and
+   wait for answers before proposing anything else. Don't move to planning
+   with unresolved questions.
+3. **Plan with desplega.** Once questions are validated, create the plan
+   with `desplega:planning` (linear) or `desplega:v-planning` (parallel /
+   DAG) — pick based on whether the work fans out into independent slices.
+   Never hand-roll a plan or use a non-desplega planner.
+4. **Implement with desplega.** After plan approval, run
+   `desplega:implementing` (linear plans) or `desplega:v-implementing` (DAG
+   plans). No ad-hoc implementation outside the plan.
+5. **New feature branch + final commit.** Before the first edit, create a
+   new branch off the current default (e.g. `feat/<short-tag>`). Don't
+   commit mid-implementation; make a single commit (or a small set of
+   logically-grouped commits) at the very end once the plan is complete and
+   verified.
+6. **Merge on request only.** Do NOT push or merge automatically. Wait for
+   the user to explicitly say "merge". When they do, fast-forward / merge
+   into `main` locally. (This rule is temporary and will change once CI/CD
+   is in place.)
