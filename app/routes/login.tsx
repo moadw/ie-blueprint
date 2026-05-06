@@ -1,12 +1,15 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { env } from "~/lib/env";
+import { gqlClient } from "~/lib/graphql";
 import {
   commitSession,
   getSession,
   getSessionToken,
   setSessionToken,
 } from "~/lib/session.server";
+import { homePathForIdentifier } from "~/lib/user";
+import { UsersFindOneDocument } from "~/queries/users";
 import { AuthLayout } from "./login/_components/auth-layout";
 import { SSOButtons } from "./login/_components/sso-buttons";
 import { LoginForm, loginSchema } from "./login/_components/login-form";
@@ -45,7 +48,15 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const session = await getSession(request);
   await setSessionToken(session, body.token);
-  return redirect("/", {
+  const userResp = await gqlClient.request(
+    UsersFindOneDocument,
+    undefined,
+    { "access-token": body.token },
+  );
+  const target = homePathForIdentifier(
+    userResp.UsersFindOne?.typeObj?.identifier,
+  );
+  return redirect(target, {
     headers: { "Set-Cookie": await commitSession(session) },
   });
 }
