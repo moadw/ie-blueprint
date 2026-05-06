@@ -9,6 +9,9 @@ export const UsersFindOneDocument = graphql(`
       email
       userName
       type
+      typeObj {
+        identifier
+      }
       profilePicture {
         url
       }
