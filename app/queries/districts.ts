@@ -1,0 +1,65 @@
+import { graphql } from "~/gql";
+
+export const DistrictFindManyDocument = graphql(`
+  query DistrictFindMany(
+    $filter: FilterFindManydistrictInput
+    $limit: Int
+    $skip: Int
+    $sort: SortFindManydistrictInput
+  ) {
+    DistrictFindMany(filter: $filter, limit: $limit, skip: $skip, sort: $sort) {
+      _id
+      name
+      state
+      country
+      platform
+      organization
+      createdAt
+      updatedAt
+    }
+  }
+`);
+
+export const DistrictCreateOneDocument = graphql(`
+  mutation DistrictCreateOne($record: CreateOnedistrictInput!) {
+    DistrictCreateOne(record: $record) {
+      error {
+        message
+      }
+      record {
+        _id
+        name
+        state
+        country
+        platform
+        createdAt
+        updatedAt
+      }
+      recordId
+    }
+  }
+`);
+
+export const DistrictUpdateOneDocument = graphql(`
+  mutation DistrictUpdateOne(
+    $_id: String!
+    $record: UpdateByIddistrictInput!
+  ) {
+    DistrictUpdateOne(_id: $_id, record: $record) {
+      error {
+        message
+      }
+      record {
+        _id
+        name
+        state
+        country
+        platform
+        organization
+        createdAt
+        updatedAt
+      }
+      recordId
+    }
+  }
+`);

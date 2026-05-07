@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 import { cn } from "~/lib/utils";
 
 export type ButtonVariant = "primary" | "ghost" | "outline" | "sso";
-export type ButtonSize = "md";
+export type ButtonSize = "md" | "sm";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -14,19 +14,22 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary:
-    "bg-foreground text-background rounded-full hover:bg-foreground/90 h-[52px] px-6 text-[15px] font-medium",
-  ghost:
-    "bg-transparent text-foreground hover:bg-muted rounded-full h-[52px] px-6 text-[15px] font-medium",
-  outline:
-    "border border-border bg-card text-foreground hover:bg-muted rounded-full h-[52px] px-6 text-[15px] font-medium",
-  sso: "bg-card/60 backdrop-blur-sm border border-border/50 h-[52px] rounded-full text-[15px] font-medium opacity-60 cursor-not-allowed text-foreground px-6",
+  primary: "bg-foreground text-background hover:bg-foreground/90",
+  ghost: "bg-transparent text-foreground hover:bg-muted",
+  outline: "border border-border bg-card text-foreground hover:bg-muted",
+  sso: "bg-card/60 backdrop-blur-sm border border-border/50 opacity-60 cursor-not-allowed text-foreground",
+};
+
+const sizeClasses: Record<ButtonSize, string> = {
+  md: "h-[52px] px-6 text-[15px] font-medium rounded-full",
+  sm: "h-7 px-2 text-xs font-medium rounded-md gap-1",
 };
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { variant = "primary", size: _size = "md", loading = false, className, children, disabled, type = "button", ...props },
+  { variant = "primary", size = "md", loading = false, className, children, disabled, type = "button", ...props },
   ref,
 ) {
+  const spinnerClass = size === "sm" ? "h-3 w-3 animate-spin" : "h-4 w-4 animate-spin";
   return (
     <button
       ref={ref}
@@ -35,11 +38,12 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
       className={cn(
         "inline-flex items-center justify-center gap-2 transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
         variantClasses[variant],
+        sizeClasses[size],
         className,
       )}
       {...props}
     >
-      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+      {loading ? <Loader2 className={spinnerClass} /> : null}
       {children}
     </button>
   );
