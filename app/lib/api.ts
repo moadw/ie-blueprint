@@ -44,7 +44,11 @@ async function refreshSession(): Promise<string | null> {
 
 async function doFetch(path: string, opts: ApiOptions): Promise<Response> {
   const headers = new Headers(opts.headers);
-  if (!headers.has("Content-Type")) {
+  // Skip default JSON Content-Type when sending FormData — the browser must
+  // set the multipart boundary itself.
+  const isFormData =
+    typeof FormData !== "undefined" && opts.body instanceof FormData;
+  if (!headers.has("Content-Type") && !isFormData) {
     headers.set("Content-Type", "application/json");
   }
   const token = getToken();

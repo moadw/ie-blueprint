@@ -28,7 +28,7 @@ export function AdminShell({ children }: AdminShellProps) {
   }, [fetcher.state, navigate]);
 
   return (
-    <main className="min-h-screen bg-background p-8">
+    <main className="min-h-screen bg-stone-50 p-8">
       <div className="mx-auto max-w-6xl space-y-6">
         <header className="flex items-center justify-between">
           <div>
@@ -47,9 +47,7 @@ export function AdminShell({ children }: AdminShellProps) {
           </fetcher.Form>
         </header>
         <AdminTabs />
-        <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-          {children}
-        </section>
+        {children}
       </div>
     </main>
   );

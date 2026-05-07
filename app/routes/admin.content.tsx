@@ -1,7 +1,11 @@
-export default function AdminContentRoute() {
+import { Outlet } from "react-router";
+import { AdminContentTabs } from "~/components/layout/admin-content-tabs";
+
+export default function AdminContentLayout() {
   return (
-    <div className="py-12 text-center text-muted-foreground">
-      Content — coming soon
+    <div className="space-y-6">
+      <AdminContentTabs />
+      <Outlet />
     </div>
   );
 }

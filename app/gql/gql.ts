@@ -15,12 +15,16 @@ import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-
  */
 type Documents = {
     "\n  query Ping {\n    __typename\n  }\n": typeof types.PingDocument,
+    "\n  mutation CurriculumsCreateOne($record: CreateOnecurriculumsInput!) {\n    CurriculumsCreateOne(record: $record) {\n      recordId\n      record {\n        _id\n        title\n        slug\n        active\n        hidden\n      }\n      error { message }\n    }\n  }\n": typeof types.CurriculumsCreateOneDocument,
+    "\n  query CurriculumsFindMany($filter: curriculumsInput, $limit: Int, $sort: curriculumsSortEnum) {\n    CurriculumsFindMany(filter: $filter, limit: $limit, sort: $sort) {\n      _id\n      title\n      description\n      slug\n      active\n      hidden\n      grade\n      category\n      order\n      totalLesson\n      cover { type url }\n    }\n  }\n": typeof types.CurriculumsFindManyDocument,
     "\n  query GroupFindMany($filter: groupsInput) {\n    GroupFindMany(filter: $filter) {\n      _id\n      name\n      manager\n      organization\n      platform\n      curriculums\n    }\n  }\n": typeof types.GroupFindManyDocument,
     "\n  mutation GroupCreateOne(\n    $name: String!\n    $teacher: String\n    $platform: String\n    $organization: String\n    $curriculums: [String]\n  ) {\n    GroupCreateOne(\n      name: $name\n      teacher: $teacher\n      platform: $platform\n      organization: $organization\n      curriculums: $curriculums\n    ) {\n      _id\n      name\n      manager\n      organization\n      platform\n      curriculums\n    }\n  }\n": typeof types.GroupCreateOneDocument,
     "\n  query UsersFindOne {\n    UsersFindOne {\n      _id\n      firstName\n      lastName\n      email\n      userName\n      type\n      typeObj {\n        identifier\n      }\n      organization\n      profilePicture {\n        url\n      }\n    }\n  }\n": typeof types.UsersFindOneDocument,
 };
 const documents: Documents = {
     "\n  query Ping {\n    __typename\n  }\n": types.PingDocument,
+    "\n  mutation CurriculumsCreateOne($record: CreateOnecurriculumsInput!) {\n    CurriculumsCreateOne(record: $record) {\n      recordId\n      record {\n        _id\n        title\n        slug\n        active\n        hidden\n      }\n      error { message }\n    }\n  }\n": types.CurriculumsCreateOneDocument,
+    "\n  query CurriculumsFindMany($filter: curriculumsInput, $limit: Int, $sort: curriculumsSortEnum) {\n    CurriculumsFindMany(filter: $filter, limit: $limit, sort: $sort) {\n      _id\n      title\n      description\n      slug\n      active\n      hidden\n      grade\n      category\n      order\n      totalLesson\n      cover { type url }\n    }\n  }\n": types.CurriculumsFindManyDocument,
     "\n  query GroupFindMany($filter: groupsInput) {\n    GroupFindMany(filter: $filter) {\n      _id\n      name\n      manager\n      organization\n      platform\n      curriculums\n    }\n  }\n": types.GroupFindManyDocument,
     "\n  mutation GroupCreateOne(\n    $name: String!\n    $teacher: String\n    $platform: String\n    $organization: String\n    $curriculums: [String]\n  ) {\n    GroupCreateOne(\n      name: $name\n      teacher: $teacher\n      platform: $platform\n      organization: $organization\n      curriculums: $curriculums\n    ) {\n      _id\n      name\n      manager\n      organization\n      platform\n      curriculums\n    }\n  }\n": types.GroupCreateOneDocument,
     "\n  query UsersFindOne {\n    UsersFindOne {\n      _id\n      firstName\n      lastName\n      email\n      userName\n      type\n      typeObj {\n        identifier\n      }\n      organization\n      profilePicture {\n        url\n      }\n    }\n  }\n": types.UsersFindOneDocument,
@@ -44,6 +48,14 @@ export function graphql(source: string): unknown;
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  query Ping {\n    __typename\n  }\n"): (typeof documents)["\n  query Ping {\n    __typename\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation CurriculumsCreateOne($record: CreateOnecurriculumsInput!) {\n    CurriculumsCreateOne(record: $record) {\n      recordId\n      record {\n        _id\n        title\n        slug\n        active\n        hidden\n      }\n      error { message }\n    }\n  }\n"): (typeof documents)["\n  mutation CurriculumsCreateOne($record: CreateOnecurriculumsInput!) {\n    CurriculumsCreateOne(record: $record) {\n      recordId\n      record {\n        _id\n        title\n        slug\n        active\n        hidden\n      }\n      error { message }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query CurriculumsFindMany($filter: curriculumsInput, $limit: Int, $sort: curriculumsSortEnum) {\n    CurriculumsFindMany(filter: $filter, limit: $limit, sort: $sort) {\n      _id\n      title\n      description\n      slug\n      active\n      hidden\n      grade\n      category\n      order\n      totalLesson\n      cover { type url }\n    }\n  }\n"): (typeof documents)["\n  query CurriculumsFindMany($filter: curriculumsInput, $limit: Int, $sort: curriculumsSortEnum) {\n    CurriculumsFindMany(filter: $filter, limit: $limit, sort: $sort) {\n      _id\n      title\n      description\n      slug\n      active\n      hidden\n      grade\n      category\n      order\n      totalLesson\n      cover { type url }\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

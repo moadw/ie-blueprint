@@ -21,6 +21,49 @@ UI is load-bearing on this project. When building any page or feature whose
 visual reference is in `ie-prototype/`, follow this discipline — every bullet
 is a thing reviewers will reject the PR for.
 
+### Prototype port checklist (do this BEFORE the first edit)
+
+Class names lie. The prototype is Tailwind v3 with overridden tokens; `ie/` is
+Tailwind v4 with its own theme. Matching `bg-stone-100` in both files does not
+mean matching pixels. Run this checklist the first time per session you touch
+UI ported from the prototype, and again whenever a new component is in scope:
+
+1. **Read the prototype's design system source:**
+   - `ie-prototype/tailwind.config.*` — note the `borderRadius` override (driven
+     by `--radius`), any `boxShadow` overrides, palette extensions.
+   - `ie-prototype/src/index.css` — note `--radius`, `--foreground`,
+     `--muted-foreground`, `--background`, etc. (HSL triples).
+2. **Read `ie/`'s tokens:** `app/styles/app.css` — note the matching
+   `--color-*` variables. Cross-check that the prototype HSL == `ie/` HSL
+   before reusing a token; if they disagree, use a literal Tailwind palette
+   class instead.
+3. **Resolve every prototype class to its actual value before reusing it:**
+   - `rounded-md` in the prototype = `calc(var(--radius) - 2px)` = **14px**,
+     not Tailwind's default 6px. Same shift on `sm` (=12px) and `lg` (=16px).
+     In `ie/`, write the explicit pixel literal: `rounded-[14px]`,
+     `rounded-[12px]`, `rounded-[16px]`. (This is why commit `382b37f` set the
+     top admin tabs to those literals.)
+   - `shadow-sm` in v3 (prototype) = subtle 1px / 5% opacity. In v4 (`ie/`)
+     `shadow-sm` is heavier — what v3 called `shadow-sm` is now `shadow-xs`.
+     **Use `shadow-xs` in `ie/` wherever the prototype writes `shadow-sm`.**
+     Same shift up the scale (`shadow` → `shadow-sm`, etc.).
+   - Color tokens: `text-foreground` resolves to the same RGB on both sides
+     only because both files set `--foreground: 220 20% 20%`. Don't substitute
+     `text-stone-900` (= rgb 28, 25, 23, warmer/darker) — they are not the
+     same color even though both look "dark".
+4. **Match the literal RGB the prototype renders, not the class name.** If the
+   class name and the rendered color disagree, the rendered color wins. Pick
+   either the matching `ie/` token, the same literal Tailwind palette class,
+   or a `rounded-[Npx]` / `text-[rgb(...)]` arbitrary value — whichever lands
+   the exact value.
+5. **Eyeball at zoom level 1.** Side-by-side the prototype in one tab and
+   `ie/` in another at 100% zoom before declaring a component done.
+
+This checklist supersedes the "Don't introduce ad-hoc `rounded-[14px]`" line
+in **Tokens, not magic numbers** below: when 14px is the prototype's actual
+`rounded-md`, write `rounded-[14px]`. Magic numbers are bad when invented;
+they are mandatory when transcribing.
+
 ### Components: reuse before you create
 
 - **Audit `app/components/ui/` and `app/components/layout/` first.** If a
