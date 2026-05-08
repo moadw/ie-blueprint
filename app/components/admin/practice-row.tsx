@@ -8,14 +8,17 @@ import {
   ChevronUp,
   Clock,
   Film,
+  GripVertical,
   Image as ImageIcon,
   ImageIcon as ImageOverlay,
   Loader2,
   Music,
   Trash2,
+  Volume2,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
 import { api } from "~/lib/api";
@@ -92,9 +95,19 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
   }, [practice._id, practice.title, practice.description, practice.order]);
 
   const dayValue = Math.max(1, Math.round(day || 1));
-  const isComplete = Boolean(
-    practice.title && practice.description && practice.cover?.url,
-  );
+  const completeness = (() => {
+    const hasImage = Boolean(practice.cover?.url);
+    const hasMedia = false; // TODO(media): wire when LessonMedia lands
+    const hasDescription = Boolean(practice.description);
+    const hasCategory = Boolean(category);
+    const missing: string[] = [];
+    if (!hasImage) missing.push("Cover image");
+    if (!hasMedia) missing.push("Audio/Video");
+    if (!hasDescription) missing.push("Description");
+    if (!hasCategory) missing.push("Category");
+    return { isComplete: missing.length === 0, missing, hasMedia };
+  })();
+  const isComplete = completeness.isComplete;
 
   async function persistTitle(nextTitle: string) {
     const trimmed = nextTitle.trim();
@@ -194,6 +207,15 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
       )}
     >
       <div className="flex items-center justify-between gap-3 p-4">
+        {/* TODO(reorder): wire to dnd-kit + LessonUpdateOne order mutation */}
+        <button
+          type="button"
+          aria-label="Drag to reorder"
+          title="Drag to reorder (coming soon)"
+          className="cursor-grab active:cursor-grabbing p-1 text-stone-400 hover:text-stone-600 touch-none flex-shrink-0"
+        >
+          <GripVertical className="h-5 w-5" />
+        </button>
         <input
           ref={fileInputRef}
           type="file"
@@ -298,33 +320,41 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
               {practice.title || "Untitled"}
             </p>
           )}
-          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
             {category ? (
-              <span className="inline-flex items-center rounded-full border border-stone-300 px-2 py-0.5 text-stone-500">
+              <Badge shape="tag" className="bg-transparent text-stone-500 border-stone-300">
                 {category}
-              </span>
+              </Badge>
             ) : null}
-            <span className="inline-flex items-center rounded-full border border-stone-300 px-2 py-0.5 text-stone-500">
-              {GRADE_OPTIONS.find((g) => g.value === gradeLevel)?.label ??
-                "All Levels"}
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-amber-600">
-              <AlertCircle className="h-3 w-3" />
-              No audio
-            </span>
+            <Badge shape="tag" className="bg-transparent text-stone-500 border-stone-300">
+              {GRADE_OPTIONS.find((g) => g.value === gradeLevel)?.label ?? "All Levels"}
+            </Badge>
+            {completeness.hasMedia ? (
+              <Badge shape="tag" className="bg-blue-100 text-blue-700 border-blue-200">
+                <Volume2 className="w-3 h-3" />
+                {/* TODO(media): show count + langs */}
+              </Badge>
+            ) : (
+              <Badge shape="tag" className="bg-amber-50 text-amber-600 border-amber-300">
+                <AlertCircle className="w-3 h-3" />
+                No audio
+              </Badge>
+            )}
             {hasJournal ? (
-              <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 text-amber-700">
-                <BookOpen className="h-3 w-3" />
+              <Badge shape="tag" className="bg-amber-100 text-amber-700 border-amber-200">
+                <BookOpen className="w-3 h-3" />
                 Journal
-              </span>
+              </Badge>
             ) : null}
             {isComplete ? (
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-emerald-700">
-                <CheckCircle2 className="h-3 w-3" />
+              <Badge shape="tag" className="bg-emerald-100 text-emerald-700 border-emerald-200">
+                <CheckCircle2 className="w-3 h-3" />
                 Complete
-              </span>
+              </Badge>
             ) : (
-              <span className="text-stone-400">Missing: Category</span>
+              <span className="text-xs text-stone-400">
+                Missing: {completeness.missing.join(", ")}
+              </span>
             )}
           </div>
         </div>
@@ -363,31 +393,33 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
         </div>
 
         <div className="flex flex-shrink-0 gap-1">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setExpanded((x) => !x)}
-            className="flex h-9 w-9 items-center justify-center rounded text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-700"
             aria-label={expanded ? "Collapse" : "Expand"}
+            className="text-stone-500 hover:bg-stone-100 hover:text-stone-700"
           >
             {expanded ? (
               <ChevronUp className="h-4 w-4" />
             ) : (
               <ChevronDown className="h-4 w-4" />
             )}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleDelete}
             disabled={deleting}
-            className="flex h-9 w-9 items-center justify-center rounded text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
             aria-label="Delete practice"
+            className="text-red-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
           >
             {deleting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Trash2 className="h-4 w-4" />
             )}
-          </button>
+          </Button>
         </div>
       </div>
 

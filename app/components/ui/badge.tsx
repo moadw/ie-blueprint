@@ -2,9 +2,11 @@ import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "~/lib/utils";
 
 export type BadgeVariant = "neutral" | "active" | "trial" | "suspended";
+export type BadgeShape = "pill" | "tag";
 
 export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   variant?: BadgeVariant;
+  shape?: BadgeShape;
   children?: ReactNode;
 }
 
@@ -15,8 +17,14 @@ const variantClasses: Record<BadgeVariant, string> = {
   suspended: "bg-destructive/15 text-destructive",
 };
 
+const shapeClasses: Record<BadgeShape, string> = {
+  pill: "inline-flex items-center font-medium text-xs px-2 py-0.5 rounded-full",
+  tag: "inline-flex items-center gap-1 text-xs font-semibold border px-2.5 py-0.5 rounded-[14px]",
+};
+
 export function Badge({
   variant = "neutral",
+  shape = "pill",
   className,
   children,
   ...props
@@ -24,8 +32,8 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center font-medium text-xs px-2 py-0.5 rounded-full",
-        variantClasses[variant],
+        shapeClasses[shape],
+        shape === "pill" ? variantClasses[variant] : null,
         className,
       )}
       {...props}

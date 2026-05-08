@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { NavLink, useLoaderData, useRevalidator } from "react-router";
+import { useLoaderData, useNavigate, useRevalidator } from "react-router";
 import {
   ArrowLeft,
   Award,
@@ -13,6 +13,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
 import { SeriesDialog } from "~/components/admin/series-dialog";
@@ -69,6 +70,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function AdminContentSeriesDetail() {
   const { curriculum, lessons } = useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
+  const navigate = useNavigate();
   const [editOpen, setEditOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
@@ -98,59 +100,60 @@ export default function AdminContentSeriesDetail() {
   }
 
   return (
-    <div className="space-y-0">
-      <NavLink
-        to="/admin/content"
-        className="inline-flex items-center gap-2 text-sm text-stone-500 hover:text-stone-900"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Series
-      </NavLink>
-
-      <div className="mt-4 flex items-start justify-between gap-4">
-        <div className="flex min-w-0 flex-1 items-start gap-4">
+    <div className="space-y-6">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/admin/content")}
+            aria-label="Back"
+            className="text-stone-500 hover:bg-stone-100 hover:text-stone-900"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
           {curriculum.cover?.url ? (
             <img
               src={curriculum.cover.url}
               alt={curriculum.title ?? "Series cover"}
-              className="h-16 w-16 rounded-[14px] object-cover"
+              className="h-16 w-16 rounded-[16px] object-cover"
             />
           ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-[14px] bg-stone-100">
-              <Folder className="h-7 w-7 text-stone-400" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-[16px] bg-stone-100">
+              <Folder className="h-8 w-8 text-stone-300" />
             </div>
           )}
-          <div className="min-w-0 flex-1 space-y-2">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-3">
               <h1 className="truncate font-serif text-2xl text-stone-900">
                 {curriculum.title}
               </h1>
-              <span
+              <Badge
+                shape="tag"
                 className={cn(
-                  "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
                   status === "live"
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-amber-100 text-amber-700",
+                    ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                    : "bg-amber-100 text-amber-700 border-amber-200",
                 )}
               >
                 {status === "live" ? "Live" : "Draft"}
-              </span>
+              </Badge>
             </div>
-            {curriculum.description ? (
-              <p className="max-w-xl text-sm text-stone-500">
-                {curriculum.description}
-              </p>
-            ) : null}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs text-blue-600">
-                <ListOrdered className="h-3 w-3" />
+            <p className="text-stone-500 text-sm mt-1 max-w-xl">
+              {curriculum.description || "No description"}
+            </p>
+            <div className="flex items-center gap-3 mt-2">
+              {/* TODO(curriculum-type): drive from curriculum.<field>; render Collection variant */}
+              <Badge shape="tag" className="bg-blue-50 text-blue-600 border-blue-200">
+                <ListOrdered className="w-3 h-3 mr-1" />
                 Sequential
-              </span>
-              <span className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-xs text-stone-500">
+              </Badge>
+              <Badge shape="tag" className="bg-stone-50 text-stone-500 border-stone-200">
                 {gradeLabel(curriculum.grade)}
-              </span>
+              </Badge>
+              {/* TODO(counts): drive from achievements / journals queries */}
               <span className="text-sm text-stone-400">
-                {lessons.length} practices
+                {lessons.length} practices • 0 achievements • 0 journals
               </span>
             </div>
           </div>
@@ -178,70 +181,73 @@ export default function AdminContentSeriesDetail() {
         </div>
       </div>
 
-      <div className="mt-6 mb-6 flex flex-wrap items-center justify-end gap-2 border-t border-b border-stone-200 py-3">
-        <Button
-          variant="outline"
-          size="sm"
-          disabled
-          className="border-stone-300 text-stone-700"
-        >
-          <RefreshCw className="h-4 w-4" />
-          Sync Durations
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled
-          className="border-amber-300 text-amber-700 hover:bg-amber-50"
-        >
-          <Award className="h-4 w-4" />
-          Add Achievement
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled
-          className="border-sky-300 text-sky-700 hover:bg-sky-50"
-        >
-          <BookOpen className="h-4 w-4" />
-          Add Journal
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled
-          className="border-stone-300 text-stone-700"
-        >
-          <Package className="h-4 w-4" />
-          Bulk Import
-        </Button>
-        <Button
-          size="sm"
-          onClick={() => setAddOpen(true)}
-          className="bg-stone-900 text-white hover:bg-stone-800"
-        >
-          <Plus className="h-4 w-4" />
-          Add Practice
-        </Button>
+      <div className="flex justify-between items-center border-t border-b border-stone-200 py-3">
+        <p className="text-sm text-stone-500">
+          Drag practices to reorder. Changes are saved automatically.
+        </p>
+        <div className="flex gap-2 items-center">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled
+            className="border-stone-300 text-stone-700"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Sync Durations
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled
+            className="border-amber-300 text-amber-700 hover:bg-amber-50"
+          >
+            <Award className="h-4 w-4" />
+            Add Achievement
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled
+            className="border-sky-300 text-sky-700 hover:bg-sky-50"
+          >
+            <BookOpen className="h-4 w-4" />
+            Add Journal
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled
+            className="border-stone-300 text-stone-700"
+          >
+            <Package className="h-4 w-4" />
+            Bulk Import
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => setAddOpen(true)}
+            className="bg-stone-900 text-white hover:bg-stone-800"
+          >
+            <Plus className="h-4 w-4" />
+            Add Practice
+          </Button>
+        </div>
       </div>
 
       {lessons.length === 0 ? (
         <div className="rounded-xl border-2 border-dashed border-stone-200 bg-stone-50 py-16 text-center">
-          <Folder className="mx-auto mb-3 h-10 w-10 text-stone-400" />
+          <Folder className="mx-auto mb-3 h-12 w-12 text-stone-300" />
           <p className="mb-4 text-stone-500">No practices in this series yet</p>
-          <div className="flex justify-center">
-            <Button
-              size="sm"
-              onClick={() => setAddOpen(true)}
-              className="bg-stone-900 text-white hover:bg-stone-800"
-            >
-              <Plus className="h-4 w-4" />
-              Add First Practice
-            </Button>
-          </div>
+          <Button
+            size="sm"
+            onClick={() => setAddOpen(true)}
+            className="bg-stone-900 text-white hover:bg-stone-800"
+          >
+            <Plus className="h-4 w-4" />
+            Add First Practice
+          </Button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {lessons.map((practice) => (
             <PracticeRow
               key={practice._id}
