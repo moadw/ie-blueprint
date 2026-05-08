@@ -17,3 +17,21 @@ export const CurriculumsFindManyDocument = graphql(/* GraphQL */ `
     }
   }
 `);
+
+export const CurriculumsFindOneDocument = graphql(/* GraphQL */ `
+  query CurriculumsFindOne($filter: curriculumsInput) {
+    CurriculumsFindOne(filter: $filter) {
+      _id
+      title
+      description
+      slug
+      active
+      hidden
+      grade
+      category
+      order
+      totalLesson
+      cover { type url }
+    }
+  }
+`);

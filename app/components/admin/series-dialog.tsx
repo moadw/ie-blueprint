@@ -6,19 +6,34 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Modal } from "~/components/ui/modal";
 import { api } from "~/lib/api";
-import { activeHiddenFromStatus } from "~/lib/curriculum";
+import { activeHiddenFromStatus, statusFromActiveHidden } from "~/lib/curriculum";
 import type { CurriculumStatus } from "~/lib/curriculum";
 import { gqlClient } from "~/lib/graphql";
-import { CurriculumsCreateOneDocument } from "~/mutations/curriculums";
+import {
+  CurriculumsCreateOneDocument,
+  CurriculumsUpdateOneDocument,
+} from "~/mutations/curriculums";
 import { cn } from "~/lib/utils";
+
+export interface SeriesDialogCurriculum {
+  _id: string;
+  title?: string | null;
+  slug?: string | null;
+  description?: string | null;
+  category?: string | null;
+  grade?: string | null;
+  order?: number | null;
+  active?: boolean | null;
+  hidden?: boolean | null;
+  cover?: { url?: string | null } | null;
+}
 
 export interface SeriesDialogProps {
   open: boolean;
   onClose: () => void;
+  curriculum?: SeriesDialogCurriculum | null;
 }
 
-// NOTE: `category` placeholder values per plan (line ~470).
-// Backend schema accepts free-form strings; swap when canonical enum lands.
 const CATEGORY_OPTIONS = ["core", "bonus", "seasonal"] as const;
 const GRADE_OPTIONS = [
   { value: "all_levels", label: "All Levels" },
@@ -39,8 +54,9 @@ const selectClass =
   "w-full h-[52px] px-4 pr-10 bg-card border border-border rounded-lg text-[15px] text-foreground placeholder:text-muted-foreground appearance-none focus:outline-none focus:ring-2 focus:ring-primary/30";
 const labelClass = "block text-[14px] text-foreground mb-2 font-medium";
 
-export function SeriesDialog({ open, onClose }: SeriesDialogProps) {
+export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
   const revalidator = useRevalidator();
+  const isEdit = Boolean(curriculum);
 
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -72,6 +88,23 @@ export function SeriesDialog({ open, onClose }: SeriesDialogProps) {
     setCoverPreview(url);
     return () => URL.revokeObjectURL(url);
   }, [coverFile]);
+
+  // Prefill from curriculum on open / record change.
+  useEffect(() => {
+    if (!open) return;
+    if (curriculum) {
+      setTitle(curriculum.title ?? "");
+      setSlug(curriculum.slug ?? "");
+      setSlugTouched(true);
+      setDescription(curriculum.description ?? "");
+      setCategory(curriculum.category ?? "core");
+      setGrade(curriculum.grade ?? "all_levels");
+      setStatus(statusFromActiveHidden(curriculum));
+      setOrder(curriculum.order ?? 0);
+      setCoverFile(null);
+      setError(null);
+    }
+  }, [open, curriculum]);
 
   // Reset form when dialog closes.
   useEffect(() => {
@@ -109,17 +142,31 @@ export function SeriesDialog({ open, onClose }: SeriesDialogProps) {
         hidden,
         order,
       };
-      const data = await gqlClient.request(CurriculumsCreateOneDocument, {
-        record,
-      });
-      const payload = data.CurriculumsCreateOne;
-      const payloadError = (payload as { error?: { message?: string } | null } | null | undefined)?.error;
-      if (payloadError?.message) throw new Error(payloadError.message);
-      const recordId = payload?.recordId;
-      if (!recordId) throw new Error("Server did not return recordId");
+
+      let recordId: string | null | undefined;
+
+      if (isEdit && curriculum) {
+        const data = await gqlClient.request(CurriculumsUpdateOneDocument, {
+          _id: curriculum._id,
+          record,
+        });
+        const payload = data.CurriculumsUpdateOne;
+        const payloadError = (payload as { error?: { message?: string } | null } | null | undefined)?.error;
+        if (payloadError?.message) throw new Error(payloadError.message);
+        recordId = payload?.recordId ?? curriculum._id;
+      } else {
+        const data = await gqlClient.request(CurriculumsCreateOneDocument, {
+          record,
+        });
+        const payload = data.CurriculumsCreateOne;
+        const payloadError = (payload as { error?: { message?: string } | null } | null | undefined)?.error;
+        if (payloadError?.message) throw new Error(payloadError.message);
+        recordId = payload?.recordId;
+        if (!recordId) throw new Error("Server did not return recordId");
+      }
 
       let coverFailed = false;
-      if (coverFile) {
+      if (coverFile && recordId) {
         try {
           const fd = new FormData();
           fd.append("id", recordId);
@@ -136,16 +183,22 @@ export function SeriesDialog({ open, onClose }: SeriesDialogProps) {
 
       if (coverFailed) {
         toast.warning(
-          "Series created — cover upload failed. Retry from the series row.",
+          isEdit
+            ? "Series updated — cover upload failed."
+            : "Series created — cover upload failed. Retry from the series row.",
         );
       } else {
-        toast.success("Series created");
+        toast.success(isEdit ? "Series updated" : "Series created");
       }
       onClose();
       revalidator.revalidate();
     } catch (err) {
       const msg =
-        err instanceof Error ? err.message : "Failed to create series";
+        err instanceof Error
+          ? err.message
+          : isEdit
+            ? "Failed to update series"
+            : "Failed to create series";
       setError(msg);
       toast.error(msg);
     } finally {
@@ -154,7 +207,7 @@ export function SeriesDialog({ open, onClose }: SeriesDialogProps) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="New Series">
+    <Modal open={open} onClose={onClose} title={isEdit ? "Edit Series" : "New Series"}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Title"
@@ -295,6 +348,11 @@ export function SeriesDialog({ open, onClose }: SeriesDialogProps) {
             </div>
           ) : (
             <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-stone-200 bg-stone-50/50 p-6 text-center hover:bg-stone-50">
+              {isEdit && curriculum?.cover?.url ? (
+                <span className="text-xs text-stone-500 mb-2">
+                  Current cover will be kept unless you upload a new one
+                </span>
+              ) : null}
               <span className="text-sm font-medium text-stone-700">
                 Click to upload an image
               </span>
