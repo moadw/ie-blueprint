@@ -5,10 +5,17 @@ export const GroupFindManyDocument = graphql(`
     GroupFindMany(filter: $filter) {
       _id
       name
+      grade
       manager
       organization
       platform
       curriculums
+      managerObj {
+        _id
+        firstName
+        lastName
+        email
+      }
     }
   }
 `);
