@@ -47,28 +47,39 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Response("Series id required", { status: 400 });
   const token = await requireSessionToken(request);
   const headers = { "access-token": token };
-  const [curriculumData, lessonsData] = await Promise.all([
+  const [curriculumData, lessonsResult] = await Promise.all([
     gqlClient.request(
       CurriculumsFindOneDocument,
       { filter: { _id: id } },
       headers,
     ),
-    gqlClient.request(
-      LessonFindManyDocument,
-      { filter: { curriculum: id }, limit: 100, sort: lessonSortEnumTC.ORDER_ASC },
-      headers,
-    ),
+    gqlClient
+      .request(
+        LessonFindManyDocument,
+        { filter: { curriculum: id }, limit: 100, sort: lessonSortEnumTC.ORDER_ASC },
+        headers,
+      )
+      .then(
+        (data) => ({ ok: true as const, data }),
+        (err: unknown) => ({
+          ok: false as const,
+          error: err instanceof Error ? err.message : "Failed to load practices",
+        }),
+      ),
   ]);
   const curriculum = curriculumData.CurriculumsFindOne;
   if (!curriculum) throw new Response("Series not found", { status: 404 });
-  const lessons = (lessonsData.LessonFindMany ?? []).filter(
-    (l): l is NonNullable<typeof l> => Boolean(l),
-  );
-  return { curriculum, lessons };
+  const lessons = lessonsResult.ok
+    ? (lessonsResult.data.LessonFindMany ?? []).filter(
+        (l): l is NonNullable<typeof l> => Boolean(l),
+      )
+    : [];
+  const lessonsError = lessonsResult.ok ? null : lessonsResult.error;
+  return { curriculum, lessons, lessonsError };
 }
 
 export default function AdminContentSeriesDetail() {
-  const { curriculum, lessons } = useLoaderData<typeof loader>();
+  const { curriculum, lessons, lessonsError } = useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
   const navigate = useNavigate();
   const [editOpen, setEditOpen] = useState(false);
@@ -233,7 +244,14 @@ export default function AdminContentSeriesDetail() {
         </div>
       </div>
 
-      {lessons.length === 0 ? (
+      {lessonsError ? (
+        <div className="rounded-xl border-2 border-dashed border-red-200 bg-red-50 py-10 text-center">
+          <p className="mb-1 text-sm font-medium text-red-700">
+            Couldn't load practices
+          </p>
+          <p className="text-xs text-red-600">{lessonsError}</p>
+        </div>
+      ) : lessons.length === 0 ? (
         <div className="rounded-xl border-2 border-dashed border-stone-200 bg-stone-50 py-16 text-center">
           <Folder className="mx-auto mb-3 h-12 w-12 text-stone-300" />
           <p className="mb-4 text-stone-500">No practices in this series yet</p>
