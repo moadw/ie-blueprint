@@ -6,6 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { gqlClient } from "~/lib/graphql";
 import { requireSessionToken } from "~/lib/session.server";
+import { safe } from "~/lib/safe-loader";
 import { DistrictFindManyDocument } from "~/queries/districts";
 import { SortFindManydistrictInput } from "~/gql/graphql";
 import { DistrictRow } from "./admin.districts/_components/DistrictRow";
@@ -27,19 +28,23 @@ type District = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const token = await requireSessionToken(request);
-  const data = await gqlClient.request(
-    DistrictFindManyDocument,
-    { limit: PAGE_SIZE, skip: 0, sort: SortFindManydistrictInput._ID_DESC },
-    { "access-token": token },
+  const result = await safe(
+    gqlClient.request(
+      DistrictFindManyDocument,
+      { limit: PAGE_SIZE, skip: 0, sort: SortFindManydistrictInput._ID_DESC },
+      { "access-token": token },
+    ),
   );
-  const districts: District[] = (data.DistrictFindMany ?? []).filter(
-    (d): d is NonNullable<typeof d> => d != null,
-  );
-  return { districts };
+  const districts: District[] = result.ok
+    ? (result.data.DistrictFindMany ?? []).filter(
+        (d): d is NonNullable<typeof d> => d != null,
+      )
+    : [];
+  return { districts, loadError: result.error };
 }
 
 export default function AdminDistrictsRoute() {
-  const { districts: initialDistricts } = useLoaderData<typeof loader>();
+  const { districts: initialDistricts, loadError } = useLoaderData<typeof loader>();
   const navigation = useNavigation();
 
   const [districts, setDistricts] = useState<District[]>(initialDistricts);
@@ -132,6 +137,13 @@ export default function AdminDistrictsRoute() {
             className="w-6 h-6 animate-spin text-muted-foreground"
             aria-hidden="true"
           />
+        </div>
+      ) : loadError ? (
+        <div className="rounded-xl border-2 border-dashed border-red-200 bg-red-50 py-10 text-center">
+          <p className="mb-1 text-sm font-medium text-red-700">
+            Couldn't load districts
+          </p>
+          <p className="text-xs text-red-600">{loadError}</p>
         </div>
       ) : districts.length === 0 ? (
         <div className="bg-card rounded-lg border border-border p-12 text-center">

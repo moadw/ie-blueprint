@@ -21,6 +21,7 @@ import { PracticeDialog } from "~/components/admin/practice-dialog";
 import { PracticeRow } from "~/components/admin/practice-row";
 import { gqlClient } from "~/lib/graphql";
 import { requireSessionToken } from "~/lib/session.server";
+import { safe } from "~/lib/safe-loader";
 import { activeHiddenFromStatus, statusFromActiveHidden } from "~/lib/curriculum";
 import { CurriculumsFindOneDocument } from "~/queries/curriculums";
 import { CurriculumsUpdateOneDocument } from "~/mutations/curriculums";
@@ -47,53 +48,79 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Response("Series id required", { status: 400 });
   const token = await requireSessionToken(request);
   const headers = { "access-token": token };
-  const [curriculumData, lessonsResult] = await Promise.all([
-    gqlClient.request(
-      CurriculumsFindOneDocument,
-      { filter: { _id: id } },
-      headers,
+  const [curriculumResult, lessonsResult] = await Promise.all([
+    safe(
+      gqlClient.request(
+        CurriculumsFindOneDocument,
+        { filter: { _id: id } },
+        headers,
+      ),
     ),
-    gqlClient
-      .request(
+    safe(
+      gqlClient.request(
         LessonFindManyDocument,
         { filter: { curriculum: id }, limit: 100, sort: lessonSortEnumTC.ORDER_ASC },
         headers,
-      )
-      .then(
-        (data) => ({ ok: true as const, data }),
-        (err: unknown) => ({
-          ok: false as const,
-          error: err instanceof Error ? err.message : "Failed to load practices",
-        }),
       ),
+    ),
   ]);
-  const curriculum = curriculumData.CurriculumsFindOne;
-  if (!curriculum) throw new Response("Series not found", { status: 404 });
+  if (curriculumResult.ok && !curriculumResult.data.CurriculumsFindOne) {
+    throw new Response("Series not found", { status: 404 });
+  }
+  const curriculum = curriculumResult.ok ? curriculumResult.data.CurriculumsFindOne : null;
   const lessons = lessonsResult.ok
     ? (lessonsResult.data.LessonFindMany ?? []).filter(
         (l): l is NonNullable<typeof l> => Boolean(l),
       )
     : [];
-  const lessonsError = lessonsResult.ok ? null : lessonsResult.error;
-  return { curriculum, lessons, lessonsError };
+  return {
+    curriculum,
+    lessons,
+    curriculumError: curriculumResult.error,
+    lessonsError: lessonsResult.error,
+  };
 }
 
 export default function AdminContentSeriesDetail() {
-  const { curriculum, lessons, lessonsError } = useLoaderData<typeof loader>();
+  const { curriculum, lessons, lessonsError, curriculumError } =
+    useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
   const navigate = useNavigate();
   const [editOpen, setEditOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
 
+  if (!curriculum) {
+    return (
+      <div className="space-y-6">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => navigate("/admin/content")}
+          aria-label="Back"
+          className="text-stone-500 hover:bg-stone-100 hover:text-stone-900"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="rounded-xl border-2 border-dashed border-red-200 bg-red-50 py-10 text-center">
+          <p className="mb-1 text-sm font-medium text-red-700">
+            Couldn't load series
+          </p>
+          <p className="text-xs text-red-600">{curriculumError}</p>
+        </div>
+      </div>
+    );
+  }
+
   const status = statusFromActiveHidden(curriculum);
+  const curriculumId = curriculum._id;
 
   async function handleStatusToggle(next: boolean) {
     setStatusUpdating(true);
     try {
       const { active, hidden } = activeHiddenFromStatus(next ? "live" : "draft");
       const data = await gqlClient.request(CurriculumsUpdateOneDocument, {
-        _id: curriculum._id,
+        _id: curriculumId,
         record: { active, hidden },
       });
       const payloadError = (

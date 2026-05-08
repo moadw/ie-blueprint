@@ -4,6 +4,7 @@ import { useLoaderData } from "react-router";
 import { Plus } from "lucide-react";
 import { gqlClient } from "~/lib/graphql";
 import { requireSessionToken } from "~/lib/session.server";
+import { safe } from "~/lib/safe-loader";
 import { CurriculumsFindManyDocument } from "~/queries/curriculums";
 import { curriculumsSortEnum } from "~/gql/graphql";
 import { Button } from "~/components/ui/button";
@@ -12,19 +13,23 @@ import { SeriesDialog } from "~/components/admin/series-dialog";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const token = await requireSessionToken(request);
-  const data = await gqlClient.request(
-    CurriculumsFindManyDocument,
-    { limit: 50, sort: curriculumsSortEnum.ORDER_ASC },
-    { "access-token": token },
+  const result = await safe(
+    gqlClient.request(
+      CurriculumsFindManyDocument,
+      { limit: 50, sort: curriculumsSortEnum.ORDER_ASC },
+      { "access-token": token },
+    ),
   );
-  const curriculums = (data.CurriculumsFindMany ?? []).filter(
-    (c): c is NonNullable<typeof c> => Boolean(c),
-  );
-  return { curriculums };
+  const curriculums = result.ok
+    ? (result.data.CurriculumsFindMany ?? []).filter(
+        (c): c is NonNullable<typeof c> => Boolean(c),
+      )
+    : [];
+  return { curriculums, error: result.error };
 }
 
 export default function AdminContentIndex() {
-  const { curriculums } = useLoaderData<typeof loader>();
+  const { curriculums, error } = useLoaderData<typeof loader>();
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const openDialog = () => setDialogOpen(true);
@@ -47,7 +52,14 @@ export default function AdminContentIndex() {
         </Button>
       </div>
 
-      {curriculums.length === 0 ? (
+      {error ? (
+        <div className="rounded-xl border-2 border-dashed border-red-200 bg-red-50 py-10 text-center">
+          <p className="mb-1 text-sm font-medium text-red-700">
+            Couldn't load series
+          </p>
+          <p className="text-xs text-red-600">{error}</p>
+        </div>
+      ) : curriculums.length === 0 ? (
         <div className="rounded-xl border-2 border-dashed border-stone-200 bg-stone-50 py-16 text-center">
           <p className="text-stone-600">No series yet</p>
           <div className="mt-4 flex justify-center">
