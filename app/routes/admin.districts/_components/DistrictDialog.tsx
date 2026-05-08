@@ -4,7 +4,6 @@ import { Button } from "~/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
@@ -12,7 +11,6 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Select } from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
-import { Textarea } from "~/components/ui/textarea";
 import { toast } from "~/components/ui/toast";
 import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
@@ -50,12 +48,12 @@ type EditProps = {
 export type DistrictDialogProps = CreateProps | EditProps;
 
 const US_TIMEZONES: ReadonlyArray<{ value: string; label: string }> = [
-  { value: "America/New_York", label: "Eastern (ET)" },
-  { value: "America/Chicago", label: "Central (CT)" },
-  { value: "America/Denver", label: "Mountain (MT)" },
-  { value: "America/Los_Angeles", label: "Pacific (PT)" },
-  { value: "America/Anchorage", label: "Alaska (AKT)" },
-  { value: "Pacific/Honolulu", label: "Hawaii (HT)" },
+  { value: "America/New_York", label: "Eastern" },
+  { value: "America/Chicago", label: "Central" },
+  { value: "America/Denver", label: "Mountain" },
+  { value: "America/Los_Angeles", label: "Pacific" },
+  { value: "America/Anchorage", label: "Alaska" },
+  { value: "Pacific/Honolulu", label: "Hawaii" },
 ];
 
 function slugify(value: string): string {
@@ -93,6 +91,11 @@ const EMPTY_FORM: FormState = {
   active: true,
 };
 
+const FIELD_INPUT_CLASS =
+  "h-10 px-3 rounded-[14px] bg-stone-50 border border-stone-200 text-stone-900 text-sm placeholder:text-stone-400 focus:ring-stone-300";
+
+const LABEL_CLASS = "text-stone-600 text-sm font-medium";
+
 export function DistrictDialog(props: DistrictDialogProps) {
   const { mode, open, onOpenChange } = props;
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -108,8 +111,6 @@ export function DistrictDialog(props: DistrictDialogProps) {
     if (mode === "create") {
       setForm(EMPTY_FORM);
     } else {
-      // mode === "edit" — pre-populate from the target district. We don't
-      // auto-derive slug from name in edit mode (matches prototype guard).
       setForm({
         ...EMPTY_FORM,
         name: districtName,
@@ -147,8 +148,6 @@ export function DistrictDialog(props: DistrictDialogProps) {
           record,
         });
         const payload = data.DistrictCreateOne;
-        // graphql-codegen types `error` as `never` because no concrete
-        // ErrorInterface implementer is selected. Read via runtime cast.
         const errorMessage = (payload?.error as
           | { message?: string | null }
           | null
@@ -246,18 +245,18 @@ export function DistrictDialog(props: DistrictDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          {mode === "edit" ? (
-            <DialogTitle className="font-serif text-xl">{title}</DialogTitle>
-          ) : (
-            <DialogTitle>{title}</DialogTitle>
-          )}
+      <DialogContent className="bg-white border-stone-200 text-stone-900 max-w-lg font-sans rounded-[16px]">
+        <DialogHeader className="mb-0">
+          <DialogTitle className="font-serif text-xl font-normal text-stone-900">
+            {title}
+          </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 lg:space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 flex flex-col gap-1.5">
-              <Label htmlFor="district-name">Name *</Label>
+              <Label htmlFor="district-name" className={LABEL_CLASS}>
+                Name *
+              </Label>
               <Input
                 id="district-name"
                 value={form.name}
@@ -270,67 +269,83 @@ export function DistrictDialog(props: DistrictDialogProps) {
                       : {}),
                   }))
                 }
+                className={FIELD_INPUT_CLASS}
                 required
               />
             </div>
             <div className="col-span-2 flex flex-col gap-1.5">
-              <Label htmlFor="district-slug">Slug</Label>
+              <Label htmlFor="district-slug" className={LABEL_CLASS}>
+                Slug
+              </Label>
               <Input
                 id="district-slug"
                 value={form.slug}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, slug: e.target.value }))
                 }
-                className="font-mono text-xs"
+                className={`${FIELD_INPUT_CLASS} font-mono text-xs`}
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="district-city">City</Label>
+              <Label htmlFor="district-city" className={LABEL_CLASS}>
+                City
+              </Label>
               <Input
                 id="district-city"
                 value={form.city}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, city: e.target.value }))
                 }
+                className={FIELD_INPUT_CLASS}
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="district-state">State</Label>
+              <Label htmlFor="district-state" className={LABEL_CLASS}>
+                State
+              </Label>
               <Input
                 id="district-state"
                 value={form.state}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, state: e.target.value }))
                 }
+                className={FIELD_INPUT_CLASS}
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="district-address">Address</Label>
-            <Textarea
+            <Label htmlFor="district-address" className={LABEL_CLASS}>
+              Address
+            </Label>
+            <Input
               id="district-address"
               value={form.address}
               onChange={(e) =>
                 setForm((f) => ({ ...f, address: e.target.value }))
               }
-              rows={2}
+              className={FIELD_INPUT_CLASS}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="district-phone">Phone</Label>
+              <Label htmlFor="district-phone" className={LABEL_CLASS}>
+                Phone
+              </Label>
               <Input
                 id="district-phone"
                 value={form.phone}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, phone: e.target.value }))
                 }
+                className={FIELD_INPUT_CLASS}
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="district-email">Email</Label>
+              <Label htmlFor="district-email" className={LABEL_CLASS}>
+                Email
+              </Label>
               <Input
                 id="district-email"
                 type="email"
@@ -338,29 +353,36 @@ export function DistrictDialog(props: DistrictDialogProps) {
                 onChange={(e) =>
                   setForm((f) => ({ ...f, email: e.target.value }))
                 }
+                className={FIELD_INPUT_CLASS}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="district-website">Website</Label>
+              <Label htmlFor="district-website" className={LABEL_CLASS}>
+                Website
+              </Label>
               <Input
                 id="district-website"
                 value={form.website}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, website: e.target.value }))
                 }
+                className={FIELD_INPUT_CLASS}
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="district-timezone">Timezone</Label>
+              <Label htmlFor="district-timezone" className={LABEL_CLASS}>
+                Timezone
+              </Label>
               <Select
                 id="district-timezone"
                 value={form.timezone}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, timezone: e.target.value }))
                 }
+                className={FIELD_INPUT_CLASS}
               >
                 {US_TIMEZONES.map((tz) => (
                   <option key={tz.value} value={tz.value}>
@@ -372,19 +394,25 @@ export function DistrictDialog(props: DistrictDialogProps) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Cover Photo</Label>
-            <label className="flex h-14 items-center gap-3 rounded-lg border border-dashed border-border bg-card px-3 text-sm text-muted-foreground transition-colors hover:border-foreground/40 cursor-pointer">
-              <span className="block h-8 w-12 rounded bg-muted" aria-hidden="true" />
-              <span>Select cover photo</span>
+            <Label className={LABEL_CLASS}>Cover Photo</Label>
+            <label className="flex items-center gap-3 p-3 rounded-[16px] border border-dashed border-stone-300 bg-stone-50 cursor-pointer hover:border-stone-400 transition-colors">
+              <span
+                className="block h-8 w-12 rounded bg-stone-200"
+                aria-hidden="true"
+              />
+              <span className="text-stone-500 text-sm">Select cover photo</span>
               <input type="file" accept="image/*" className="hidden" />
             </label>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Logo</Label>
-            <label className="flex h-14 items-center gap-3 rounded-lg border border-dashed border-border bg-card px-3 text-sm text-muted-foreground transition-colors hover:border-foreground/40 cursor-pointer">
-              <span className="block h-10 w-10 rounded bg-muted" aria-hidden="true" />
-              <span>Select logo</span>
+            <Label className={LABEL_CLASS}>Logo</Label>
+            <label className="flex items-center gap-3 p-3 rounded-[16px] border border-dashed border-stone-300 bg-stone-50 cursor-pointer hover:border-stone-400 transition-colors">
+              <span
+                className="block h-10 w-10 rounded bg-stone-200"
+                aria-hidden="true"
+              />
+              <span className="text-stone-500 text-sm">Select logo</span>
               <input type="file" accept="image/*" className="hidden" />
             </label>
           </div>
@@ -397,29 +425,30 @@ export function DistrictDialog(props: DistrictDialogProps) {
                 setForm((f) => ({ ...f, active: checked }))
               }
             />
-            <Label htmlFor="district-active">Active</Label>
+            <Label htmlFor="district-active" className="text-stone-600 text-sm">
+              Active
+            </Label>
           </div>
 
-          <DialogFooter className="border-t border-border pt-4">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-              disabled={submitting}
-            >
-              Cancel
-            </Button>
+          <div className="flex gap-3 pt-4 border-t border-stone-100">
             <Button
               type="submit"
-              variant="primary"
-              size="sm"
               loading={submitting}
               disabled={submitting || !form.name.trim()}
+              className="h-10 px-4 rounded-[14px] bg-stone-900 hover:bg-stone-800 text-white text-sm font-medium"
             >
               Save
             </Button>
-          </DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              disabled={submitting}
+              className="h-10 px-4 rounded-[14px] text-stone-500 hover:text-stone-700 hover:bg-transparent text-sm font-medium"
+            >
+              Cancel
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
