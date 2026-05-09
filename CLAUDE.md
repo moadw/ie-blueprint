@@ -144,6 +144,37 @@ referencing the follow-up plan. Never ship a half-styled placeholder.
 Blueprint API expects `access-token` (lowercase, hyphenated) — NOT `Authorization: Bearer`.
 This is wired in `app/lib/api.ts` and `app/lib/graphql.ts`. Do not change.
 
+## Resilient loaders
+
+Blueprint backends (gateway + downstream services) intermittently 500.
+A throw in a route loader bubbles to the root `ErrorBoundary` and
+white-screens the whole page. To keep the UI mounted, every route
+loader MUST wrap its data calls (`gqlClient.request`, `api(...)`) in
+`safe()` from `app/lib/safe-loader.ts` and return an `error` field
+the component renders inline.
+
+```ts
+import { safe } from "~/lib/safe-loader";
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const token = await requireSessionToken(request);
+  const result = await safe(
+    gqlClient.request(FooFindManyDocument, vars, { "access-token": token }),
+  );
+  const items = result.ok ? (result.data.FooFindMany ?? []) : [];
+  return { items, error: result.error };
+}
+```
+
+In the component, render a soft error card (red dashed border, copy
+"Couldn't load X") when `error` is non-null, instead of the empty /
+list state. Mutations (form actions, click handlers) are exempt — they
+already toast on failure and don't take down the route.
+
+This is a guideline, not a build gate. No CI/lint enforces it; missing
+it just regresses to the root ErrorBoundary, which is the failure mode
+we're trying to avoid.
+
 ## Strict TS gotchas
 
 - `verbatimModuleSyntax: true` → all type-only imports MUST use `import type`.
