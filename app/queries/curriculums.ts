@@ -13,6 +13,7 @@ export const CurriculumsFindManyDocument = graphql(/* GraphQL */ `
       category
       order
       totalLesson
+      curriculumCollection { _id }
       cover { type url }
     }
   }
@@ -31,7 +32,15 @@ export const CurriculumsFindOneDocument = graphql(/* GraphQL */ `
       category
       order
       totalLesson
+      curriculumCollection { _id }
       cover { type url }
     }
   }
 `);
+
+// Re-exported from app/mutations/curriculums.ts so step-3's "Manage Series"
+// flow can import all curriculum operations from a single colocated module.
+// The canonical document lives in app/mutations/curriculums.ts (used by
+// existing callers); duplicating it would collide on operation name during
+// codegen.
+export { CurriculumsUpdateOneDocument } from "~/mutations/curriculums";
