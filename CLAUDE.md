@@ -211,3 +211,8 @@ plan → implement → merge. Don't skip steps and don't swap tooling.
    the user to explicitly say "merge". When they do, fast-forward / merge
    into `main` locally. (This rule is temporary and will change once CI/CD
    is in place.)
+7. **Clean up after merge.** Immediately after merging a `feat/*` branch
+   into `main`, remove its worktree and delete the branch:
+   `git worktree remove <path>` then `git branch -d feat/<tag>`. Don't
+   leave merged worktrees or branches lying around — they accumulate and
+   confuse future sessions about what's still in flight.
