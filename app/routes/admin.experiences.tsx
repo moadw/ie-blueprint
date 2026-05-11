@@ -8,7 +8,6 @@ import { gqlClient } from "~/lib/graphql";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
 import { CurriculumCollectionFindManyDocument } from "~/queries/curriculum-collections";
-import { curriculumCollectionSortEnum } from "~/gql/graphql";
 import { ExperienceRow } from "./admin.experiences/_components/ExperienceRow";
 import { ExperienceDialog } from "./admin.experiences/_components/ExperienceDialog";
 import { ManageSeriesDialog } from "./admin.experiences/_components/ManageSeriesDialog";
@@ -34,8 +33,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       CurriculumCollectionFindManyDocument,
       {
         limit: PAGE_SIZE,
-        offset: 0,
-        sort: curriculumCollectionSortEnum.NAME_ASC,
       },
       { "access-token": token },
     ),
@@ -47,8 +44,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       error: result.error,
     };
   }
-  const conn = result.data.curriculumCollectionFindMany;
-  const collections: Experience[] = (conn?.items ?? [])
+  const rows = result.data.curriculumCollectionFindMany ?? [];
+  const collections: Experience[] = rows
     .filter((c): c is NonNullable<typeof c> => c != null)
     .map((c) => ({
       _id: c._id,
@@ -63,7 +60,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }));
   return {
     collections,
-    total: conn?.total ?? collections.length,
+    total: collections.length,
     error: null as string | null,
   };
 }

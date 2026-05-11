@@ -48,15 +48,11 @@ export function ExperienceRow({
   async function handleDelete() {
     setDeleting(true);
     try {
-      const data = await gqlClient.request(
-        CurriculumCollectionDeleteOneDocument,
-        { id: experience._id },
-      );
-      const payload = data.curriculumCollectionDeleteOne;
-      if (!payload?.success) {
-        toast.error("Failed to delete experience");
-        return;
-      }
+      // Live schema returns String! (the deleted id). A throw bubbles to the
+      // catch below as a GraphQL error and is surfaced via toast.
+      await gqlClient.request(CurriculumCollectionDeleteOneDocument, {
+        id: experience._id,
+      });
       toast.success(`Experience "${experience.name ?? "Untitled"}" deleted`);
       onDeleted?.(experience._id);
       setConfirmOpen(false);

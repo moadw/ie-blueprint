@@ -93,15 +93,27 @@ export function NarratorDialog({
     try {
       // languages[0] is primary by convention (see ./languages.ts).
       const data = await gqlClient.request(NarratorsCreateOneDocument, {
-        input: {
+        record: {
           name: trimmedName,
           bio: form.bio.trim(),
           languages: form.languages,
           active: form.active,
         },
       });
-      const created = data.narratorsCreateOne;
-      if (!created || !created._id) {
+      // Read the CreateOnenarratorsPayload envelope: { recordId, record, error }.
+      // The `error` field is typed as `never` by codegen because `ErrorInterface`
+      // is a GraphQL interface with no concrete implementations on the live
+      // schema — so we cast to read the `{ message }` shape we actually selected.
+      const payload = data.narratorsCreateOne;
+      const payloadError = (
+        payload as { error?: { message?: string } | null } | null | undefined
+      )?.error;
+      if (payloadError?.message) {
+        throw new Error(payloadError.message);
+      }
+      const created = payload?.record;
+      const recordId = payload?.recordId;
+      if (!created || !(created._id || recordId)) {
         toast.error("Narrator created but response was missing a record.");
         return;
       }

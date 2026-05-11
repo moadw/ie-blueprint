@@ -7,7 +7,6 @@ import { gqlClient } from "~/lib/graphql";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
 import { NarratorsFindManyDocument } from "~/queries/narrators";
-import { narratorSortEnum } from "~/gql/graphql";
 import { NarratorRow } from "./admin.narrators/_components/NarratorRow";
 import type { NarratorRowNarrator } from "./admin.narrators/_components/NarratorRow";
 import { NarratorDialog } from "./admin.narrators/_components/NarratorDialog";
@@ -19,17 +18,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const result = await safe(
     gqlClient.request(
       NarratorsFindManyDocument,
-      { limit: PAGE_SIZE, offset: 0, sort: narratorSortEnum.NAME_ASC },
+      { limit: PAGE_SIZE },
       { "access-token": token },
     ),
   );
   const narrators: NarratorRowNarrator[] = result.ok
-    ? (result.data.narratorsFindMany?.items ?? []).filter(
+    ? (result.data.narratorsFindMany ?? []).filter(
         (n): n is NonNullable<typeof n> => n != null,
       )
     : [];
-  const total = result.ok ? result.data.narratorsFindMany?.total ?? 0 : 0;
-  return { narrators, total, error: result.error };
+  return { narrators, error: result.error };
 }
 
 export default function AdminNarratorsRoute() {

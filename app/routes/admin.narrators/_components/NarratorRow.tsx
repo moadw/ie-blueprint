@@ -110,10 +110,19 @@ export function NarratorRow({
     setSavingName(true);
     try {
       const data = await gqlClient.request(NarratorsUpdateOneDocument, {
-        id: narrator._id,
-        input: { name: trimmed },
+        _id: narrator._id,
+        record: { name: trimmed },
       });
-      const updated = data.narratorsUpdateOne;
+      const payload = data.narratorsUpdateOne;
+      // See NarratorDialog: ErrorInterface has no concrete implementations, so
+      // codegen narrows `error` to `never`. Cast to access the selected shape.
+      const payloadError = (
+        payload as { error?: { message?: string } | null } | null | undefined
+      )?.error;
+      if (payloadError?.message) {
+        throw new Error(payloadError.message);
+      }
+      const updated = payload?.record;
       if (!updated) {
         toast.error("Narrator updated but response was missing a record.");
         return;
@@ -160,14 +169,23 @@ export function NarratorRow({
     try {
       // languages[0] is primary by convention (see ./languages.ts).
       const data = await gqlClient.request(NarratorsUpdateOneDocument, {
-        id: narrator._id,
-        input: {
+        _id: narrator._id,
+        record: {
           bio: bio.trim(),
           languages,
           active: activeState,
         },
       });
-      const updated = data.narratorsUpdateOne;
+      const payload = data.narratorsUpdateOne;
+      // See NarratorDialog: ErrorInterface has no concrete implementations, so
+      // codegen narrows `error` to `never`. Cast to access the selected shape.
+      const payloadError = (
+        payload as { error?: { message?: string } | null } | null | undefined
+      )?.error;
+      if (payloadError?.message) {
+        throw new Error(payloadError.message);
+      }
+      const updated = payload?.record;
       if (!updated) {
         toast.error("Narrator updated but response was missing a record.");
         return;
@@ -194,14 +212,13 @@ export function NarratorRow({
   async function handleConfirmDelete() {
     setDeleting(true);
     try {
-      const data = await gqlClient.request(NarratorsDeleteOneDocument, {
+      // narratorsDeleteOne returns nullable String. We drop the row by the id
+      // we already hold locally regardless of the returned value (it may be
+      // null even when the mutation completed). Backend failures throw via
+      // graphql-request and flow through the catch block below.
+      await gqlClient.request(NarratorsDeleteOneDocument, {
         id: narrator._id,
       });
-      const payload = data.narratorsDeleteOne;
-      if (!payload?.success) {
-        toast.error("Failed to delete narrator");
-        return;
-      }
       onDeleted(narrator._id);
       toast.success("Narrator deleted");
       setConfirmOpen(false);

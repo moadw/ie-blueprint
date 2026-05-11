@@ -126,7 +126,7 @@ export function ExperienceDialog(props: ExperienceDialogProps) {
     setSubmitting(true);
     try {
       if (mode === "create") {
-        const input: {
+        const record: {
           name: string;
           slug: string;
           description?: string;
@@ -140,10 +140,10 @@ export function ExperienceDialog(props: ExperienceDialogProps) {
           color: form.color,
           active: form.active,
         };
-        if (trimmedDescription) input.description = trimmedDescription;
+        if (trimmedDescription) record.description = trimmedDescription;
         const data = await gqlClient.request(
           CurriculumCollectionCreateOneDocument,
-          { input },
+          { record },
         );
         const created = data.curriculumCollectionCreateOne;
         if (!created) {
@@ -168,8 +168,9 @@ export function ExperienceDialog(props: ExperienceDialogProps) {
         return;
       }
 
-      // edit
-      const input: {
+      // edit — live schema returns only the id (String!). Optimistic merge:
+      // spread the submitted record onto the original row's identity fields.
+      const record: {
         name: string;
         slug: string;
         description?: string;
@@ -183,26 +184,21 @@ export function ExperienceDialog(props: ExperienceDialogProps) {
         color: form.color,
         active: form.active,
       };
-      if (trimmedDescription) input.description = trimmedDescription;
-      const data = await gqlClient.request(
-        CurriculumCollectionUpdateOneDocument,
-        { id: props.experience._id, input },
-      );
-      const updated = data.curriculumCollectionUpdateOne;
-      if (!updated) {
-        toast.error("Experience updated but response was empty.");
-        return;
-      }
+      if (trimmedDescription) record.description = trimmedDescription;
+      await gqlClient.request(CurriculumCollectionUpdateOneDocument, {
+        id: props.experience._id,
+        record,
+      });
       const experience: Experience = {
-        _id: updated._id,
-        name: updated.name ?? trimmedName,
-        slug: updated.slug ?? trimmedSlug,
-        description: updated.description ?? null,
-        gradeLevel: updated.gradeLevel ?? form.gradeLevel,
-        color: updated.color ?? form.color,
-        active: updated.active ?? form.active,
-        createdAt: (updated.createdAt as string | null | undefined) ?? null,
-        updatedAt: (updated.updatedAt as string | null | undefined) ?? null,
+        _id: props.experience._id,
+        name: trimmedName,
+        slug: trimmedSlug,
+        description: trimmedDescription || null,
+        gradeLevel: form.gradeLevel,
+        color: form.color,
+        active: form.active,
+        createdAt: props.experience.createdAt ?? null,
+        updatedAt: props.experience.updatedAt ?? null,
       };
       toast.success("Experience updated");
       props.onUpdated(experience);

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { gqlClient } from "~/lib/graphql";
 import { requireSessionToken } from "~/lib/session.server";
+import { safe } from "~/lib/safe-loader";
 import { GroupFindManyDocument } from "~/queries/groups";
 import { GroupDeleteOneDocument } from "~/mutations/groups";
 import { ClassroomRow } from "./admin.classrooms/_components/ClassroomRow";
@@ -14,19 +15,24 @@ import { DeleteClassroomDialog } from "./admin.classrooms/_components/DeleteClas
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const token = await requireSessionToken(request);
-  const data = await gqlClient.request(
-    GroupFindManyDocument,
-    { filter: {} },
-    { "access-token": token },
+  const result = await safe(
+    gqlClient.request(
+      GroupFindManyDocument,
+      { filter: {} },
+      { "access-token": token },
+    ),
   );
-  const groups: ClassroomRowGroup[] = (data.GroupFindMany ?? []).filter(
-    (g): g is NonNullable<typeof g> => g != null,
-  );
-  return { groups };
+  const groups: ClassroomRowGroup[] = result.ok
+    ? (result.data.GroupFindMany ?? []).filter(
+        (g): g is NonNullable<typeof g> => g != null,
+      )
+    : [];
+  return { groups, error: result.error };
 }
 
 export default function AdminClassroomsRoute() {
-  const { groups: initialGroups } = useLoaderData<typeof loader>();
+  const { groups: initialGroups, error: loadError } =
+    useLoaderData<typeof loader>();
   const navigation = useNavigation();
 
   const [groups, setGroups] = useState<ClassroomRowGroup[]>(initialGroups);
@@ -72,6 +78,13 @@ export default function AdminClassroomsRoute() {
             className="w-6 h-6 text-stone-400 animate-spin"
             aria-hidden="true"
           />
+        </div>
+      ) : loadError ? (
+        <div className="rounded-xl border-2 border-dashed border-red-200 bg-red-50 py-10 text-center">
+          <p className="mb-1 text-sm font-medium text-red-700">
+            Couldn't load classrooms
+          </p>
+          <p className="text-xs text-red-600">{loadError}</p>
         </div>
       ) : groups.length === 0 ? (
         <p className="text-center text-stone-400 py-8">
