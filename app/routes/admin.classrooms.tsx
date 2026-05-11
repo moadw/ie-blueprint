@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { useLoaderData, useNavigation } from "react-router";
-import type { LoaderFunctionArgs } from "react-router";
+import { redirect, useLoaderData } from "react-router";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { gqlClient } from "~/lib/graphql";
-import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
 import { GroupFindManyDocument } from "~/queries/groups";
 import { GroupDeleteOneDocument } from "~/mutations/groups";
@@ -13,8 +11,15 @@ import { ClassroomRow } from "./admin.classrooms/_components/ClassroomRow";
 import type { ClassroomRowGroup } from "./admin.classrooms/_components/ClassroomRow";
 import { DeleteClassroomDialog } from "./admin.classrooms/_components/DeleteClassroomDialog";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const token = await requireSessionToken(request);
+// Client-only loader: the page shell SSRs immediately via HydrateFallback;
+// the GraphQL call only fires after hydration, so a slow or 503-ing backend
+// can't block the SSR stream (no "Server Timeout" from entry.server's
+// streamTimeout).
+export async function clientLoader() {
+  const sessionRes = await fetch("/api/session", { credentials: "include" });
+  const sessionData = (await sessionRes.json()) as { accessToken: string | null };
+  const token = sessionData.accessToken;
+  if (!token) throw redirect("/login");
   const result = await safe(
     gqlClient.request(
       GroupFindManyDocument,
@@ -30,10 +35,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { groups, error: result.error };
 }
 
+export function HydrateFallback() {
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-stone-500">
+        View user-created classrooms. Users create classrooms from Classroom
+        Types.
+      </p>
+      <div className="flex justify-center py-12">
+        <Loader2
+          className="w-6 h-6 text-stone-400 animate-spin"
+          aria-hidden="true"
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function AdminClassroomsRoute() {
   const { groups: initialGroups, error: loadError } =
-    useLoaderData<typeof loader>();
-  const navigation = useNavigation();
+    useLoaderData<typeof clientLoader>();
 
   const [groups, setGroups] = useState<ClassroomRowGroup[]>(initialGroups);
   const [deleteTarget, setDeleteTarget] = useState<ClassroomRowGroup | null>(
@@ -41,9 +62,6 @@ export default function AdminClassroomsRoute() {
   );
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const isInitialLoading =
-    navigation.state === "loading" && groups.length === 0;
 
   async function handleConfirmDelete() {
     if (!deleteTarget) return;
@@ -72,14 +90,7 @@ export default function AdminClassroomsRoute() {
         Types.
       </p>
 
-      {isInitialLoading ? (
-        <div className="flex justify-center py-12">
-          <Loader2
-            className="w-6 h-6 text-stone-400 animate-spin"
-            aria-hidden="true"
-          />
-        </div>
-      ) : loadError ? (
+      {loadError ? (
         <div className="rounded-xl border-2 border-dashed border-red-200 bg-red-50 py-10 text-center">
           <p className="mb-1 text-sm font-medium text-red-700">
             Couldn't load classrooms
