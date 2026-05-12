@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import type { FormEvent } from "react";
+import type { ChangeEvent, FormEvent } from "react";
+import { useRevalidator } from "react-router";
 import { ImagePlus } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import {
@@ -13,10 +14,13 @@ import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
 import { toast } from "~/components/ui/toast";
+import { api } from "~/lib/api";
 import { gqlClient } from "~/lib/graphql";
 import { NarratorsCreateOneDocument } from "~/queries/narrators";
 import type { NarratorRowNarrator } from "./NarratorRow";
 import { NARRATOR_LANGUAGES } from "./languages";
+
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 
 export interface NarratorDialogProps {
   open: boolean;
@@ -43,12 +47,32 @@ export function NarratorDialog({
   onOpenChange,
   onCreated,
 }: NarratorDialogProps) {
+  const revalidator = useRevalidator();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (open) setForm(EMPTY_FORM);
+    if (open) {
+      setForm(EMPTY_FORM);
+      setAvatarFile(null);
+    }
   }, [open]);
+
+  function handleAvatarChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) {
+      e.target.value = "";
+      return;
+    }
+    if (file.size > MAX_AVATAR_BYTES) {
+      toast.error("Avatar must be 5 MB or smaller.");
+      e.target.value = "";
+      return;
+    }
+    setAvatarFile(file);
+    e.target.value = "";
+  }
 
   function toggleLanguage(code: string) {
     setForm((f) => ({
@@ -81,10 +105,30 @@ export function NarratorDialog({
         toast.error("Narrator created but response was missing a record.");
         return;
       }
-      toast.success("Narrator created");
+
+      let avatarFailed = false;
+      if (avatarFile && created._id) {
+        try {
+          const fd = new FormData();
+          fd.append("_id", created._id);
+          fd.append("file", avatarFile);
+          await api("/admin/narrator-avatar", { method: "PUT", body: fd });
+        } catch (uploadErr) {
+          avatarFailed = true;
+          console.error("[narrator-avatar] upload failed", uploadErr);
+        }
+      }
+
+      if (avatarFailed) {
+        toast.warning("Narrator created — avatar upload failed.");
+      } else {
+        toast.success("Narrator created");
+      }
       onCreated(created);
       onOpenChange(false);
       setForm(EMPTY_FORM);
+      setAvatarFile(null);
+      revalidator.revalidate();
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to create narrator";
@@ -140,8 +184,7 @@ export function NarratorDialog({
             />
           </div>
 
-          {/* Avatar dropzone — visual only for v1. */}
-          {/* TODO(narrator-avatar): wire upload when endpoint exists */}
+          {/* Avatar dropzone */}
           <div className="flex flex-col gap-1.5">
             <Label className="text-sm font-medium text-muted-foreground">
               Avatar
@@ -153,16 +196,14 @@ export function NarratorDialog({
                   aria-hidden="true"
                 />
               </span>
-              <span className="text-muted-foreground text-sm">
-                Select avatar (upload coming soon)
+              <span className="text-muted-foreground text-sm truncate">
+                {avatarFile ? avatarFile.name : "Choose image"}
               </span>
               <input
                 type="file"
-                accept="image/*"
+                accept="image/png,image/jpeg"
                 className="hidden"
-                onChange={() => {
-                  // TODO(narrator-avatar): wire upload when endpoint exists
-                }}
+                onChange={handleAvatarChange}
               />
             </label>
           </div>

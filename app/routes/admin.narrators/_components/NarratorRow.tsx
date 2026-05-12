@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useRevalidator } from "react-router";
 import {
   Check,
   ChevronDown,
@@ -16,12 +17,15 @@ import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
 import { toast } from "~/components/ui/toast";
+import { api } from "~/lib/api";
 import { gqlClient } from "~/lib/graphql";
 import {
   NarratorsDeleteOneDocument,
   NarratorsUpdateOneDocument,
 } from "~/queries/narrators";
 import { NARRATOR_LANGUAGES } from "./languages";
+
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 
 export type NarratorRowNarrator = {
   _id: string;
@@ -54,6 +58,7 @@ export function NarratorRow({
   onUpdated,
   onDeleted,
 }: NarratorRowProps) {
+  const revalidator = useRevalidator();
   const name = narrator.name ?? "";
   const active = narrator.active ?? true;
 
@@ -71,6 +76,9 @@ export function NarratorRow({
   );
   const [activeState, setActiveState] = useState(active);
   const [savingExpanded, setSavingExpanded] = useState(false);
+
+  // Avatar upload
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   // Delete
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -206,15 +214,36 @@ export function NarratorRow({
     }
   }
 
+  async function handleAvatarPick(file: File) {
+    if (file.size > MAX_AVATAR_BYTES) {
+      toast.error("Avatar must be 5 MB or smaller.");
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const fd = new FormData();
+      fd.append("_id", narrator._id); // underscore — not "id"
+      fd.append("file", file);
+      await api("/admin/narrator-avatar", { method: "PUT", body: fd });
+      toast.success("Avatar updated");
+      revalidator.revalidate();
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Avatar upload failed";
+      toast.error(message);
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
+
   return (
     <div className="bg-card rounded-[14px] shadow-xs border border-border">
       {/* Main row */}
       <div className="p-4 flex items-center justify-between gap-3">
-        {/* Avatar dropzone — visual only for v1. */}
-        {/* TODO(narrator-avatar): wire upload when endpoint exists */}
+        {/* Avatar dropzone */}
         <label
           className="w-12 h-12 rounded-full bg-muted flex-shrink-0 overflow-hidden cursor-pointer relative ring-1 ring-transparent hover:ring-2 hover:ring-dashed hover:ring-border transition-shadow"
-          title="Avatar — upload not yet supported"
+          title="Click to upload avatar"
         >
           {narrator.avatar?.url ? (
             <img
@@ -230,12 +259,23 @@ export function NarratorRow({
               />
             </div>
           )}
+          {uploadingAvatar ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/60">
+              <Loader2
+                className="w-4 h-4 animate-spin text-muted-foreground"
+                aria-hidden="true"
+              />
+            </div>
+          ) : null}
           <input
             type="file"
-            accept="image/*"
+            accept="image/png,image/jpeg"
             className="hidden"
-            onChange={() => {
-              // TODO(narrator-avatar): wire upload when endpoint exists
+            disabled={uploadingAvatar}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void handleAvatarPick(file);
+              e.target.value = "";
             }}
           />
         </label>
