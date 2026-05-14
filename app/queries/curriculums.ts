@@ -15,6 +15,7 @@ export const CurriculumsFindManyDocument = graphql(/* GraphQL */ `
       totalLesson
       curriculumCollection { _id }
       cover { type url }
+      bgImage { type url }
     }
   }
 `);
@@ -34,6 +35,7 @@ export const CurriculumsFindOneDocument = graphql(/* GraphQL */ `
       totalLesson
       curriculumCollection { _id }
       cover { type url }
+      bgImage { type url }
     }
   }
 `);

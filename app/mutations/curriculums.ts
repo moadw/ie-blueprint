@@ -30,6 +30,7 @@ export const CurriculumsUpdateOneDocument = graphql(/* GraphQL */ `
         grade
         order
         cover { type url }
+        bgImage { type url }
       }
       error { message }
     }

@@ -26,6 +26,7 @@ export interface SeriesDialogCurriculum {
   active?: boolean | null;
   hidden?: boolean | null;
   cover?: { url?: string | null } | null;
+  bgImage?: { url?: string | null } | null;
 }
 
 export interface SeriesDialogProps {
@@ -68,6 +69,8 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
   const [order, setOrder] = useState<number>(0);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [bgFile, setBgFile] = useState<File | null>(null);
+  const [bgPreview, setBgPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -89,6 +92,16 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
     return () => URL.revokeObjectURL(url);
   }, [coverFile]);
 
+  useEffect(() => {
+    if (!bgFile) {
+      setBgPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(bgFile);
+    setBgPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [bgFile]);
+
   // Prefill from curriculum on open / record change.
   useEffect(() => {
     if (!open) return;
@@ -102,6 +115,7 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
       setStatus(statusFromActiveHidden(curriculum));
       setOrder(curriculum.order ?? 0);
       setCoverFile(null);
+      setBgFile(null);
       setError(null);
     }
   }, [open, curriculum]);
@@ -118,6 +132,7 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
     setStatus("live");
     setOrder(0);
     setCoverFile(null);
+    setBgFile(null);
     setError(null);
     setSubmitting(false);
   }, [open]);
@@ -181,12 +196,28 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
         }
       }
 
-      if (coverFailed) {
-        toast.warning(
-          isEdit
-            ? "Series updated — cover upload failed."
-            : "Series created — cover upload failed. Retry from the series row.",
-        );
+      let bgFailed = false;
+      if (bgFile && recordId) {
+        try {
+          const fd = new FormData();
+          fd.append("_id", recordId); // underscore — not "id"
+          fd.append("file", bgFile);
+          await api("/admin/curriculum-bg", {
+            method: "PUT",
+            body: fd,
+          });
+        } catch (uploadErr) {
+          bgFailed = true;
+          console.error("[curriculum-bg] upload failed", uploadErr);
+        }
+      }
+
+      if (coverFailed && bgFailed) {
+        toast.warning("Series saved — image uploads failed.");
+      } else if (coverFailed) {
+        toast.warning("Series saved — cover upload failed.");
+      } else if (bgFailed) {
+        toast.warning("Series saved — background upload failed.");
       } else {
         toast.success(isEdit ? "Series updated" : "Series created");
       }
@@ -366,6 +397,64 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
                 onChange={(e) => {
                   const file = e.target.files?.[0] ?? null;
                   setCoverFile(file);
+                }}
+              />
+            </label>
+          )}
+        </div>
+
+        <div>
+          <label className={labelClass}>Background Image</label>
+          {bgFile && bgPreview ? (
+            <div className="flex items-center gap-3 rounded-lg border border-border p-3">
+              <img
+                src={bgPreview}
+                alt={bgFile.name}
+                className="h-20 w-20 rounded-md object-cover"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm text-foreground">
+                  {bgFile.name}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {(bgFile.size / 1024).toFixed(1)} KB
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={() => setBgFile(null)}
+                className={cn("h-9 w-9 p-0")}
+                aria-label="Remove background"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-stone-200 bg-stone-50/50 p-6 text-center hover:bg-stone-50">
+              {isEdit && curriculum?.bgImage?.url ? (
+                <span className="text-xs text-stone-500 mb-2">
+                  Current background will be kept unless you upload a new one
+                </span>
+              ) : null}
+              <span className="text-sm font-medium text-stone-700">
+                Click to upload an image
+              </span>
+              <span className="mt-1 text-xs text-stone-500">
+                PNG or JPEG
+              </span>
+              <input
+                type="file"
+                accept="image/png,image/jpeg"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? null;
+                  if (file && file.size > 5 * 1024 * 1024) {
+                    toast.error("Background must be 5 MB or smaller.");
+                    e.target.value = "";
+                    return;
+                  }
+                  setBgFile(file);
+                  e.target.value = "";
                 }}
               />
             </label>
