@@ -19,6 +19,7 @@ import { Switch } from "~/components/ui/switch";
 import { SeriesDialog } from "~/components/admin/series-dialog";
 import { PracticeDialog } from "~/components/admin/practice-dialog";
 import { PracticeRow } from "~/components/admin/practice-row";
+import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
@@ -48,11 +49,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Response("Series id required", { status: 400 });
   const token = await requireSessionToken(request);
   const headers = { "access-token": token };
+  if (!env.PLATFORM) {
+    return {
+      curriculum: null,
+      lessons: [],
+      curriculumError:
+        "Platform is not configured. Please contact your administrator.",
+      lessonsError: null,
+    };
+  }
   const [curriculumResult, lessonsResult] = await Promise.all([
     safe(
       gqlClient.request(
         CurriculumsFindOneDocument,
-        { filter: { _id: id } },
+        { filter: { _id: id, platform: env.PLATFORM } },
         headers,
       ),
     ),
@@ -121,7 +131,7 @@ export default function AdminContentSeriesDetail() {
       const { active, hidden } = activeHiddenFromStatus(next ? "live" : "draft");
       const data = await gqlClient.request(CurriculumsUpdateOneDocument, {
         _id: curriculumId,
-        record: { active, hidden },
+        record: { active, hidden, platform: env.PLATFORM },
       });
       const payloadError = (
         data.CurriculumsUpdateOne as { error?: { message?: string } | null } | null | undefined

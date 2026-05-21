@@ -1,9 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
-import { useLoaderData, useNavigation } from "react-router";
+import { useMemo, useState } from "react";
+import {
+  useLoaderData,
+  useNavigate,
+  useNavigation,
+  useRevalidator,
+} from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { Loader2, Plus } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import {
+  ADMIN_LIST_PAGE_SIZE,
+  AdminListPagination,
+} from "~/components/admin/admin-list-pagination";
+import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
+import { readPageFromRequest } from "~/lib/pagination";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
 import { NarratorsFindManyDocument } from "~/queries/narrators";
@@ -11,14 +22,28 @@ import { NarratorRow } from "./admin.narrators/_components/NarratorRow";
 import type { NarratorRowNarrator } from "./admin.narrators/_components/NarratorRow";
 import { NarratorDialog } from "./admin.narrators/_components/NarratorDialog";
 
-const PAGE_SIZE = 100;
-
 export async function loader({ request }: LoaderFunctionArgs) {
   const token = await requireSessionToken(request);
+  const page = readPageFromRequest(request);
+  const skip = (page - 1) * ADMIN_LIST_PAGE_SIZE;
+
+  if (!env.PLATFORM) {
+    return {
+      narrators: [],
+      error: "Platform is not configured. Please contact your administrator.",
+      page: 1,
+      hasMore: false,
+    };
+  }
+
   const result = await safe(
     gqlClient.request(
       NarratorsFindManyDocument,
-      { limit: PAGE_SIZE },
+      {
+        filter: { platform: env.PLATFORM },
+        limit: ADMIN_LIST_PAGE_SIZE,
+        skip,
+      },
       { "access-token": token },
     ),
   );
@@ -27,24 +52,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
         (n): n is NonNullable<typeof n> => n != null,
       )
     : [];
-  return { narrators, error: result.error };
+  return {
+    narrators,
+    error: result.error,
+    page,
+    hasMore: narrators.length === ADMIN_LIST_PAGE_SIZE,
+  };
 }
 
 export default function AdminNarratorsRoute() {
   const {
-    narrators: initialNarrators,
+    narrators,
     error: loadError,
+    page,
+    hasMore,
   } = useLoaderData<typeof loader>();
   const navigation = useNavigation();
+  const navigate = useNavigate();
+  const revalidator = useRevalidator();
 
-  const [narrators, setNarrators] =
-    useState<NarratorRowNarrator[]>(initialNarrators);
   const [createOpen, setCreateOpen] = useState(false);
-
-  // If the loader returns a fresh list (e.g. after revalidation), sync it in.
-  useEffect(() => {
-    setNarrators(initialNarrators);
-  }, [initialNarrators]);
 
   const sorted = useMemo(() => {
     // Client-side sort fallback in case backend NAME_ASC misbehaves.
@@ -94,23 +121,27 @@ export default function AdminNarratorsRoute() {
             <NarratorRow
               key={n._id}
               narrator={n}
-              onUpdated={(next) =>
-                setNarrators((prev) =>
-                  prev.map((p) => (p._id === next._id ? { ...p, ...next } : p)),
-                )
-              }
-              onDeleted={(id) =>
-                setNarrators((prev) => prev.filter((p) => p._id !== id))
-              }
+              onUpdated={() => revalidator.revalidate()}
+              onDeleted={() => revalidator.revalidate()}
             />
           ))}
         </div>
       )}
 
+      {hasMore || page > 1 ? (
+        <AdminListPagination
+          page={page}
+          hasMore={hasMore}
+          loading={navigation.state !== "idle"}
+          onPrev={() => navigate(`?page=${page - 1}`)}
+          onNext={() => navigate(`?page=${page + 1}`)}
+        />
+      ) : null}
+
       <NarratorDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onCreated={(n) => setNarrators((prev) => [n, ...prev])}
+        onCreated={() => revalidator.revalidate()}
       />
     </div>
   );

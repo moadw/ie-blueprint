@@ -1,18 +1,27 @@
 import { useMemo, useState } from "react";
-import { useLoaderData, useNavigation } from "react-router";
+import {
+  useLoaderData,
+  useNavigate,
+  useNavigation,
+  useRevalidator,
+} from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { Layers, Loader2, Plus, Search } from "lucide-react";
+import {
+  ADMIN_LIST_PAGE_SIZE,
+  AdminListPagination,
+} from "~/components/admin/admin-list-pagination";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
+import { readPageFromRequest } from "~/lib/pagination";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
 import { CurriculumCollectionFindManyDocument } from "~/queries/curriculum-collections";
 import { ExperienceRow } from "./admin.experiences/_components/ExperienceRow";
 import { ExperienceDialog } from "./admin.experiences/_components/ExperienceDialog";
 import { ManageSeriesDialog } from "./admin.experiences/_components/ManageSeriesDialog";
-
-const PAGE_SIZE = 100;
 
 export type Experience = {
   _id: string;
@@ -28,11 +37,24 @@ export type Experience = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const token = await requireSessionToken(request);
+  if (!env.PLATFORM) {
+    return {
+      collections: [] as Experience[],
+      error:
+        "Platform is not configured. Please contact your administrator.",
+      page: 1,
+      hasMore: false,
+    };
+  }
+  const page = readPageFromRequest(request);
+  const skip = (page - 1) * ADMIN_LIST_PAGE_SIZE;
   const result = await safe(
     gqlClient.request(
       CurriculumCollectionFindManyDocument,
       {
-        limit: PAGE_SIZE,
+        filter: { platform: env.PLATFORM },
+        limit: ADMIN_LIST_PAGE_SIZE,
+        skip,
       },
       { "access-token": token },
     ),
@@ -40,8 +62,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!result.ok) {
     return {
       collections: [] as Experience[],
-      total: 0,
       error: result.error,
+      page,
+      hasMore: false,
     };
   }
   const rows = result.data.curriculumCollectionFindMany ?? [];
@@ -60,20 +83,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }));
   return {
     collections,
-    total: collections.length,
     error: null as string | null,
+    page,
+    hasMore: collections.length === ADMIN_LIST_PAGE_SIZE,
   };
 }
 
 export default function AdminExperiencesRoute() {
   const {
-    collections: initialCollections,
+    collections,
     error: loadError,
+    page,
+    hasMore,
   } = useLoaderData<typeof loader>();
   const navigation = useNavigation();
+  const navigate = useNavigate();
+  const revalidator = useRevalidator();
 
-  const [collections, setCollections] =
-    useState<Experience[]>(initialCollections);
   const [query, setQuery] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Experience | null>(null);
@@ -175,9 +201,9 @@ export default function AdminExperiencesRoute() {
                   collections.find((x) => x._id === target._id) ?? null,
                 )
               }
-              onDeleted={(id) =>
-                setCollections((prev) => prev.filter((x) => x._id !== id))
-              }
+              onDeleted={() => {
+                revalidator.revalidate();
+              }}
             />
           ))}
         </div>
@@ -187,7 +213,9 @@ export default function AdminExperiencesRoute() {
         mode="create"
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onCreated={(c) => setCollections((prev) => [c, ...prev])}
+        onCreated={() => {
+          revalidator.revalidate();
+        }}
       />
 
       {editTarget !== null ? (
@@ -198,11 +226,9 @@ export default function AdminExperiencesRoute() {
             if (!o) setEditTarget(null);
           }}
           experience={editTarget}
-          onUpdated={(c) =>
-            setCollections((prev) =>
-              prev.map((p) => (p._id === c._id ? { ...p, ...c } : p)),
-            )
-          }
+          onUpdated={() => {
+            revalidator.revalidate();
+          }}
         />
       ) : null}
 
@@ -213,6 +239,16 @@ export default function AdminExperiencesRoute() {
             if (!o) setManageSeriesTarget(null);
           }}
           experience={manageSeriesTarget}
+        />
+      ) : null}
+
+      {(hasMore || page > 1) && !query ? (
+        <AdminListPagination
+          page={page}
+          hasMore={hasMore}
+          loading={navigation.state !== "idle"}
+          onPrev={() => navigate(`?page=${page - 1}`)}
+          onNext={() => navigate(`?page=${page + 1}`)}
         />
       ) : null}
     </div>

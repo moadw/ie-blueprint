@@ -1,8 +1,8 @@
 import { graphql } from "~/gql";
 
 export const GroupFindManyDocument = graphql(`
-  query GroupFindMany($filter: groupsInput) {
-    GroupFindMany(filter: $filter) {
+  query GroupFindMany($filter: groupsInput, $limit: Int, $skip: Int) {
+    GroupFindMany(filter: $filter, limit: $limit, skip: $skip) {
       _id
       name
       grade

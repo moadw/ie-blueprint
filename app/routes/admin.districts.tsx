@@ -1,10 +1,21 @@
 import { useMemo, useState } from "react";
-import { useLoaderData, useNavigation } from "react-router";
+import {
+  useLoaderData,
+  useNavigate,
+  useNavigation,
+  useRevalidator,
+} from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { Building2, Loader2, Plus, Search } from "lucide-react";
+import {
+  ADMIN_LIST_PAGE_SIZE,
+  AdminListPagination,
+} from "~/components/admin/admin-list-pagination";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
+import { readPageFromRequest } from "~/lib/pagination";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
 import { DistrictFindManyDocument } from "~/queries/districts";
@@ -12,8 +23,6 @@ import { SortFindManydistrictInput } from "~/gql/graphql";
 import { DistrictRow } from "./admin.districts/_components/DistrictRow";
 import { DistrictDialog } from "./admin.districts/_components/DistrictDialog";
 import { SchoolsDialog } from "./admin.districts/_components/SchoolsDialog";
-
-const PAGE_SIZE = 100;
 
 type District = {
   _id: string;
@@ -28,10 +37,26 @@ type District = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const token = await requireSessionToken(request);
+  if (!env.PLATFORM) {
+    return {
+      districts: [] as District[],
+      loadError:
+        "Platform is not configured. Please contact your administrator.",
+      page: 1,
+      hasMore: false,
+    };
+  }
+  const page = readPageFromRequest(request);
+  const skip = (page - 1) * ADMIN_LIST_PAGE_SIZE;
   const result = await safe(
     gqlClient.request(
       DistrictFindManyDocument,
-      { limit: PAGE_SIZE, skip: 0, sort: SortFindManydistrictInput._ID_DESC },
+      {
+        filter: { platform: env.PLATFORM },
+        limit: ADMIN_LIST_PAGE_SIZE,
+        skip,
+        sort: SortFindManydistrictInput._ID_DESC,
+      },
       { "access-token": token },
     ),
   );
@@ -40,19 +65,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
         (d): d is NonNullable<typeof d> => d != null,
       )
     : [];
-  return { districts, loadError: result.error };
+  return {
+    districts,
+    loadError: result.error,
+    page,
+    hasMore: districts.length === ADMIN_LIST_PAGE_SIZE,
+  };
 }
 
 export default function AdminDistrictsRoute() {
-  const { districts: initialDistricts, loadError } = useLoaderData<typeof loader>();
+  const { districts, loadError, page, hasMore } =
+    useLoaderData<typeof loader>();
   const navigation = useNavigation();
+  const navigate = useNavigate();
+  const revalidator = useRevalidator();
 
-  const [districts, setDistricts] = useState<District[]>(initialDistricts);
   const [query, setQuery] = useState("");
-  const [skip, setSkip] = useState(initialDistricts.length);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(initialDistricts.length === PAGE_SIZE);
   const [createOpen, setCreateOpen] = useState(false);
   const [schoolsTarget, setSchoolsTarget] = useState<District | null>(null);
   const [editTarget, setEditTarget] = useState<District | null>(null);
@@ -71,35 +99,6 @@ export default function AdminDistrictsRoute() {
 
   const isInitialLoading =
     navigation.state === "loading" && districts.length === 0;
-
-  async function handleLoadMore() {
-    setLoadingMore(true);
-    setError(null);
-    try {
-      const data = await gqlClient.request(DistrictFindManyDocument, {
-        limit: PAGE_SIZE,
-        skip,
-        sort: SortFindManydistrictInput._ID_DESC,
-      });
-      const next: District[] = (data.DistrictFindMany ?? []).filter(
-        (d): d is NonNullable<typeof d> => d != null,
-      );
-      setDistricts((prev) => [...prev, ...next]);
-      setSkip((prev) => prev + next.length);
-      setHasMore(next.length === PAGE_SIZE);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load more districts.",
-      );
-    } finally {
-      setLoadingMore(false);
-    }
-  }
-
-  function handleRetry() {
-    setError(null);
-    void handleLoadMore();
-  }
 
   return (
     <div className="space-y-4">
@@ -183,26 +182,12 @@ export default function AdminDistrictsRoute() {
         </div>
       )}
 
-      {error ? (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive flex items-center justify-between">
-          <span>{error}</span>
-          <Button
-            variant="outline"
-            onClick={handleRetry}
-            className="h-9 px-3 text-sm"
-          >
-            Retry
-          </Button>
-        </div>
-      ) : null}
-
       <DistrictDialog
         mode="create"
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onCreated={(d) => {
-          setDistricts((prev) => [d, ...prev]);
-          setSkip((prev) => prev + 1);
+        onCreated={() => {
+          revalidator.revalidate();
         }}
       />
 
@@ -224,26 +209,20 @@ export default function AdminDistrictsRoute() {
             if (!o) setEditTarget(null);
           }}
           district={editTarget}
-          onUpdated={(d) => {
-            setDistricts((prev) =>
-              prev.map((p) => (p._id === d._id ? { ...p, ...d } : p)),
-            );
+          onUpdated={() => {
+            revalidator.revalidate();
           }}
         />
       ) : null}
 
-      {hasMore && !query ? (
-        <div className="flex justify-center pt-2">
-          <Button
-            variant="outline"
-            onClick={handleLoadMore}
-            disabled={loadingMore}
-            loading={loadingMore}
-            className="h-10 px-4 text-sm"
-          >
-            Load More
-          </Button>
-        </div>
+      {(hasMore || page > 1) && !query ? (
+        <AdminListPagination
+          page={page}
+          hasMore={hasMore}
+          loading={navigation.state !== "idle"}
+          onPrev={() => navigate(`?page=${page - 1}`)}
+          onNext={() => navigate(`?page=${page + 1}`)}
+        />
       ) : null}
     </div>
   );

@@ -1,8 +1,19 @@
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import {
+  useLoaderData,
+  useNavigate,
+  useNavigation,
+  useRevalidator,
+} from "react-router";
 import { Plus } from "lucide-react";
+import {
+  ADMIN_LIST_PAGE_SIZE,
+  AdminListPagination,
+} from "~/components/admin/admin-list-pagination";
+import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
+import { readPageFromRequest } from "~/lib/pagination";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
 import { CurriculumsFindManyDocument } from "~/queries/curriculums";
@@ -13,10 +24,31 @@ import { SeriesDialog } from "~/components/admin/series-dialog";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const token = await requireSessionToken(request);
+  if (!env.PLATFORM) {
+    return {
+      curriculums: [],
+      error: "Platform is not configured. Please contact your administrator.",
+      page: 1,
+      hasMore: false,
+    };
+  }
+  const page = readPageFromRequest(request);
+  // NOTE(curriculums-skip): the live GraphQL schema does NOT expose `skip` on
+  // `CurriculumsFindMany` (verified via codegen 2026-05-20). We compute the
+  // `page`/`skip` offset for chrome consistency with sibling admin lists, but
+  // can only send `limit` server-side, so multi-page navigation is degraded
+  // to page 1. `hasMore` therefore stays false; pagination chrome stays
+  // hidden until the backend adds a `skip` argument. This matches the
+  // threshold model documented in root.md (sub-100-row tenants see no
+  // chrome).
   const result = await safe(
     gqlClient.request(
       CurriculumsFindManyDocument,
-      { limit: 50, sort: curriculumsSortEnum.ORDER_ASC },
+      {
+        filter: { platform: env.PLATFORM },
+        limit: ADMIN_LIST_PAGE_SIZE,
+        sort: curriculumsSortEnum.ORDER_ASC,
+      },
       { "access-token": token },
     ),
   );
@@ -25,15 +57,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
         (c): c is NonNullable<typeof c> => Boolean(c),
       )
     : [];
-  return { curriculums, error: result.error };
+  return {
+    curriculums,
+    error: result.error,
+    page,
+    hasMore: false,
+  };
 }
 
 export default function AdminContentIndex() {
-  const { curriculums, error } = useLoaderData<typeof loader>();
+  const { curriculums, error, page, hasMore } = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
+  const navigation = useNavigation();
+  const revalidator = useRevalidator();
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const openDialog = () => setDialogOpen(true);
-  const closeDialog = () => setDialogOpen(false);
+  const closeDialog = () => {
+    setDialogOpen(false);
+    revalidator.revalidate();
+  };
 
   return (
     <div className="space-y-6">
@@ -76,6 +119,16 @@ export default function AdminContentIndex() {
           ))}
         </div>
       )}
+
+      {hasMore || page > 1 ? (
+        <AdminListPagination
+          page={page}
+          hasMore={hasMore}
+          loading={navigation.state !== "idle"}
+          onPrev={() => navigate(`?page=${page - 1}`)}
+          onNext={() => navigate(`?page=${page + 1}`)}
+        />
+      ) : null}
 
       <SeriesDialog open={dialogOpen} onClose={closeDialog} />
     </div>

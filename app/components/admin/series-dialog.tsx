@@ -8,6 +8,7 @@ import { Modal } from "~/components/ui/modal";
 import { api } from "~/lib/api";
 import { activeHiddenFromStatus, statusFromActiveHidden } from "~/lib/curriculum";
 import type { CurriculumStatus } from "~/lib/curriculum";
+import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
 import {
   CurriculumsCreateOneDocument,
@@ -156,6 +157,7 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
         active,
         hidden,
         order,
+        platform: env.PLATFORM,
       };
 
       let recordId: string | null | undefined;

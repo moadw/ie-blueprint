@@ -1,29 +1,49 @@
 import { useState } from "react";
-import { redirect, useLoaderData } from "react-router";
-import { Loader2 } from "lucide-react";
+import {
+  useLoaderData,
+  useNavigate,
+  useNavigation,
+  useRevalidator,
+} from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
+import {
+  ADMIN_LIST_PAGE_SIZE,
+  AdminListPagination,
+} from "~/components/admin/admin-list-pagination";
+import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
+import { readPageFromRequest } from "~/lib/pagination";
 import { safe } from "~/lib/safe-loader";
+import { requireSessionToken } from "~/lib/session.server";
 import { GroupFindManyDocument } from "~/queries/groups";
 import { GroupDeleteOneDocument } from "~/mutations/groups";
 import { ClassroomRow } from "./admin.classrooms/_components/ClassroomRow";
 import type { ClassroomRowGroup } from "./admin.classrooms/_components/ClassroomRow";
 import { DeleteClassroomDialog } from "./admin.classrooms/_components/DeleteClassroomDialog";
 
-// Client-only loader: the page shell SSRs immediately via HydrateFallback;
-// the GraphQL call only fires after hydration, so a slow or 503-ing backend
-// can't block the SSR stream (no "Server Timeout" from entry.server's
-// streamTimeout).
-export async function clientLoader() {
-  const sessionRes = await fetch("/api/session", { credentials: "include" });
-  const sessionData = (await sessionRes.json()) as { accessToken: string | null };
-  const token = sessionData.accessToken;
-  if (!token) throw redirect("/login");
+export async function loader({ request }: LoaderFunctionArgs) {
+  const token = await requireSessionToken(request);
+  if (!env.PLATFORM) {
+    return {
+      groups: [] as ClassroomRowGroup[],
+      error:
+        "Platform is not configured. Please contact your administrator.",
+      page: 1,
+      hasMore: false,
+    };
+  }
+  const page = readPageFromRequest(request);
+  const skip = (page - 1) * ADMIN_LIST_PAGE_SIZE;
   const result = await safe(
     gqlClient.request(
       GroupFindManyDocument,
-      { filter: {} },
+      {
+        filter: { platform: env.PLATFORM },
+        limit: ADMIN_LIST_PAGE_SIZE,
+        skip,
+      },
       { "access-token": token },
     ),
   );
@@ -32,31 +52,25 @@ export async function clientLoader() {
         (g): g is NonNullable<typeof g> => g != null,
       )
     : [];
-  return { groups, error: result.error };
-}
-
-export function HydrateFallback() {
-  return (
-    <div className="space-y-4">
-      <p className="text-sm text-stone-500">
-        View user-created classrooms. Users create classrooms from Classroom
-        Types.
-      </p>
-      <div className="flex justify-center py-12">
-        <Loader2
-          className="w-6 h-6 text-stone-400 animate-spin"
-          aria-hidden="true"
-        />
-      </div>
-    </div>
-  );
+  return {
+    groups,
+    error: result.error,
+    page,
+    hasMore: groups.length === ADMIN_LIST_PAGE_SIZE,
+  };
 }
 
 export default function AdminClassroomsRoute() {
-  const { groups: initialGroups, error: loadError } =
-    useLoaderData<typeof clientLoader>();
+  const {
+    groups,
+    error: loadError,
+    page,
+    hasMore,
+  } = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
+  const navigation = useNavigation();
+  const revalidator = useRevalidator();
 
-  const [groups, setGroups] = useState<ClassroomRowGroup[]>(initialGroups);
   const [deleteTarget, setDeleteTarget] = useState<ClassroomRowGroup | null>(
     null,
   );
@@ -70,9 +84,9 @@ export default function AdminClassroomsRoute() {
     setError(null);
     try {
       await gqlClient.request(GroupDeleteOneDocument, { _id: target._id });
-      setGroups((prev) => prev.filter((g) => g._id !== target._id));
       setDeleteTarget(null);
       toast.success("Classroom deleted");
+      revalidator.revalidate();
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to delete classroom";
@@ -125,6 +139,16 @@ export default function AdminClassroomsRoute() {
             Dismiss
           </Button>
         </div>
+      ) : null}
+
+      {hasMore || page > 1 ? (
+        <AdminListPagination
+          page={page}
+          hasMore={hasMore}
+          loading={navigation.state !== "idle"}
+          onPrev={() => navigate(`?page=${page - 1}`)}
+          onNext={() => navigate(`?page=${page + 1}`)}
+        />
       ) : null}
 
       <DeleteClassroomDialog

@@ -1,6 +1,20 @@
 import { useMemo, useState } from "react";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { Pencil, Plus, Search, Trash2, Video } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { requireSessionToken } from "~/lib/session.server";
+import { env } from "~/lib/env";
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  await requireSessionToken(request);
+  if (!env.PLATFORM) {
+    return {
+      error: "Platform is not configured. Please contact your administrator.",
+    };
+  }
+  return { error: null as string | null };
+}
 
 interface DummyAchievement {
   id: string;
@@ -54,6 +68,7 @@ const DUMMY_ACHIEVEMENTS: DummyAchievement[] = [
 ];
 
 export default function AdminContentAchievements() {
+  const { error } = useLoaderData<typeof loader>();
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
@@ -61,6 +76,17 @@ export default function AdminContentAchievements() {
     if (!q) return DUMMY_ACHIEVEMENTS;
     return DUMMY_ACHIEVEMENTS.filter((a) => a.title.toLowerCase().includes(q));
   }, [query]);
+
+  if (error) {
+    return (
+      <div className="rounded-xl border-2 border-dashed border-red-200 bg-red-50 py-10 text-center">
+        <p className="mb-1 text-sm font-medium text-red-700">
+          Couldn't load achievements
+        </p>
+        <p className="text-xs text-red-600">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

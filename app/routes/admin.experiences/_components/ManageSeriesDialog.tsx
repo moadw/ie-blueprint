@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { toast } from "~/components/ui/toast";
+import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
 import {
   CurriculumsFindManyDocument,
@@ -50,9 +51,15 @@ export function ManageSeriesDialog({
     setLoadError(null);
 
     Promise.all([
-      gqlClient.request(CurriculumsFindManyDocument, { limit: 500 }),
       gqlClient.request(CurriculumsFindManyDocument, {
-        filter: { curriculumCollection: [experience._id] },
+        filter: { platform: env.PLATFORM },
+        limit: 500,
+      }),
+      gqlClient.request(CurriculumsFindManyDocument, {
+        filter: {
+          curriculumCollection: [experience._id],
+          platform: env.PLATFORM,
+        },
         limit: 500,
       }),
     ])
@@ -107,7 +114,7 @@ export function ManageSeriesDialog({
           );
       const data = await gqlClient.request(CurriculumsUpdateOneDocument, {
         _id: curriculum._id,
-        record: { curriculumCollection: next },
+        record: { curriculumCollection: next, platform: env.PLATFORM },
       });
       const payload = data.CurriculumsUpdateOne;
       const errMsg = (payload?.error as

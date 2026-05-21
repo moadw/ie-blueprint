@@ -13,6 +13,7 @@ import { Select } from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
 import { toast } from "~/components/ui/toast";
+import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
 import {
   CurriculumCollectionCreateOneDocument,
@@ -133,12 +134,14 @@ export function ExperienceDialog(props: ExperienceDialogProps) {
           gradeLevel: string;
           color: string;
           active: boolean;
+          platform: string;
         } = {
           name: trimmedName,
           slug: trimmedSlug,
           gradeLevel: form.gradeLevel,
           color: form.color,
           active: form.active,
+          platform: env.PLATFORM,
         };
         if (trimmedDescription) record.description = trimmedDescription;
         const data = await gqlClient.request(
@@ -177,12 +180,14 @@ export function ExperienceDialog(props: ExperienceDialogProps) {
         gradeLevel: string;
         color: string;
         active: boolean;
+        platform: string;
       } = {
         name: trimmedName,
         slug: trimmedSlug,
         gradeLevel: form.gradeLevel,
         color: form.color,
         active: form.active,
+        platform: env.PLATFORM,
       };
       if (trimmedDescription) record.description = trimmedDescription;
       await gqlClient.request(CurriculumCollectionUpdateOneDocument, {

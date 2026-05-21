@@ -15,6 +15,7 @@ import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
 import { toast } from "~/components/ui/toast";
 import { api } from "~/lib/api";
+import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
 import { NarratorsCreateOneDocument } from "~/queries/narrators";
 import type { NarratorRowNarrator } from "./NarratorRow";
@@ -98,6 +99,7 @@ export function NarratorDialog({
           bio: form.bio.trim(),
           languages: form.languages,
           active: form.active,
+          platform: env.PLATFORM,
         },
       });
       // Read the CreateOnenarratorsPayload envelope: { recordId, record, error }.

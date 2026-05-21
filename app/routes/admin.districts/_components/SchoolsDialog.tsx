@@ -63,7 +63,7 @@ export function SchoolsDialog({
     setNewName("");
     gqlClient
       .request(SchoolFindManyDocument, {
-        filter: { district: district._id },
+        filter: { district: district._id, platform: env.PLATFORM },
         limit: 500,
         skip: 0,
       })
@@ -160,7 +160,7 @@ export function SchoolsDialog({
     try {
       const data = await gqlClient.request(SchoolUpdateOneDocument, {
         _id: school._id,
-        record: { name },
+        record: { name, platform: env.PLATFORM },
       });
       const payload = data.SchoolUpdateOne;
       const updateErrMsg = (payload?.error as

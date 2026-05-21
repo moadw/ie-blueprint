@@ -18,6 +18,7 @@ import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
 import { toast } from "~/components/ui/toast";
 import { api } from "~/lib/api";
+import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
 import {
   NarratorsDeleteOneDocument,
@@ -111,7 +112,7 @@ export function NarratorRow({
     try {
       const data = await gqlClient.request(NarratorsUpdateOneDocument, {
         _id: narrator._id,
-        record: { name: trimmed },
+        record: { name: trimmed, platform: env.PLATFORM },
       });
       const payload = data.narratorsUpdateOne;
       // See NarratorDialog: ErrorInterface has no concrete implementations, so
@@ -174,6 +175,7 @@ export function NarratorRow({
           bio: bio.trim(),
           languages,
           active: activeState,
+          platform: env.PLATFORM,
         },
       });
       const payload = data.narratorsUpdateOne;
