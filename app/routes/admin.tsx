@@ -10,7 +10,7 @@ import { AdminShell } from "~/components/layout/admin-shell";
 export async function loader({ request }: LoaderFunctionArgs) {
   const token = await requireSessionToken(request);
   const result = await safe(
-    gqlClient.request(UsersFindOneDocument, undefined, {
+    gqlClient.request(UsersFindOneDocument, {}, {
       "access-token": token,
     }),
   );

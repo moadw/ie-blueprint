@@ -9,7 +9,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const token = await requireSessionToken(request);
   const data = await gqlClient.request(
     UsersFindOneDocument,
-    undefined,
+    {},
     { "access-token": token },
   );
   throw redirect(homePathForIdentifier(data.UsersFindOne?.typeObj?.identifier));

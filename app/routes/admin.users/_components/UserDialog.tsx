@@ -1,0 +1,371 @@
+import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
+import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Select } from "~/components/ui/select";
+import { toast } from "~/components/ui/toast";
+import { env } from "~/lib/env";
+import { gqlClient } from "~/lib/graphql";
+import { DistrictFindManyDocument } from "~/queries/districts";
+import { SchoolFindManyDocument } from "~/queries/schools";
+import {
+  UserTypesFindManyDocument,
+} from "~/queries/users";
+import {
+  CreateUserDocument,
+  SetUserSchoolDocument,
+  UserUpdateOneDocument,
+} from "~/mutations/users";
+import type { AdminUserRow } from "./UserRow";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+interface DistrictOption {
+  _id: string;
+  name?: string | null;
+  organization?: string | null;
+}
+
+interface UserTypeOption {
+  _id: string;
+  label?: string | null;
+}
+
+interface SchoolOption {
+  _id: string;
+  name?: string | null;
+}
+
+export interface UserDialogProps {
+  open: boolean;
+  target: AdminUserRow | null;
+  onOpenChange: (open: boolean) => void;
+  onSaved: () => void;
+}
+
+export function UserDialog({
+  open,
+  target,
+  onOpenChange,
+  onSaved,
+}: UserDialogProps) {
+  const isEdit = target !== null;
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [type, setType] = useState("");
+  const [organization, setOrganization] = useState("");
+  const [school, setSchool] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const [districts, setDistricts] = useState<DistrictOption[]>([]);
+  const [userTypes, setUserTypes] = useState<UserTypeOption[]>([]);
+  const [schools, setSchools] = useState<SchoolOption[]>([]);
+
+  // Reset form fields whenever the dialog opens or the target changes.
+  useEffect(() => {
+    if (!open) return;
+    setFirstName(target?.firstName ?? "");
+    setLastName(target?.lastName ?? "");
+    setEmail(target?.email ?? "");
+    setPassword("");
+    setType(target?.type_id ?? "");
+    setOrganization(target?.organization_id ?? "");
+    setSchool("");
+    setSchools([]);
+  }, [open, target]);
+
+  // Load districts + user types when the dialog opens. Self-contained so the
+  // route's loader doesn't have to provide them. Errors degrade gracefully —
+  // the selects render their placeholder + nothing else.
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const result = await gqlClient.request(DistrictFindManyDocument, {
+          filter: { platform: env.PLATFORM },
+        });
+        if (cancelled) return;
+        const items = (result.DistrictFindMany ?? []).filter(
+          (d): d is NonNullable<typeof d> => d != null,
+        );
+        setDistricts(items);
+      } catch {
+        if (!cancelled) setDistricts([]);
+      }
+    })();
+    (async () => {
+      try {
+        const result = await gqlClient.request(UserTypesFindManyDocument, {});
+        if (cancelled) return;
+        const items = (result.UserTypesFindMany ?? []).filter(
+          (t): t is NonNullable<typeof t> => t != null,
+        );
+        setUserTypes(items);
+      } catch {
+        if (!cancelled) setUserTypes([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
+  // When a district is selected in create mode, load its schools so the user
+  // can optionally assign one inline.
+  useEffect(() => {
+    if (!open) return;
+    if (isEdit) return;
+    if (!organization) {
+      setSchools([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const result = await gqlClient.request(SchoolFindManyDocument, {
+          filter: { district: organization, platform: env.PLATFORM },
+        });
+        if (cancelled) return;
+        const items = (result.SchoolFindMany ?? []).filter(
+          (s): s is NonNullable<typeof s> => s != null,
+        );
+        setSchools(items);
+      } catch {
+        if (!cancelled) setSchools([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, isEdit, organization]);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (saving) return;
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!EMAIL_RE.test(normalizedEmail)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    setSaving(true);
+    try {
+      if (isEdit && target) {
+        if (!target.userId) {
+          throw new Error("Cannot update user: missing id");
+        }
+        const result = await gqlClient.request(UserUpdateOneDocument, {
+          _id: target.userId,
+          record: {
+            firstName,
+            lastName,
+            email: normalizedEmail,
+            type,
+            organization,
+          },
+        });
+        const payload = result.UserUpdateOne;
+        const payloadError = (
+          payload as { error?: { message?: string } | null } | null | undefined
+        )?.error;
+        if (payloadError?.message) {
+          throw new Error(payloadError.message);
+        }
+        toast.success("User updated");
+      } else {
+        const selectedDistrict = districts.find((d) => d._id === organization);
+        const orgId = selectedDistrict?.organization ?? null;
+        const data = await gqlClient.request(CreateUserDocument, {
+          firstName,
+          lastName,
+          email: normalizedEmail,
+          type,
+          organization: orgId,
+          password,
+          platform: env.PLATFORM,
+          sendEmail: false,
+        });
+        const userId = data.CreateUser;
+        if (school && userId) {
+          try {
+            await gqlClient.request(SetUserSchoolDocument, {
+              user: userId,
+              school,
+            });
+          } catch (err) {
+            console.error("[user-dialog] school assignment failed", err);
+            toast.warning("User created — school assignment failed.");
+          }
+        }
+        toast.success("User created");
+      }
+      onSaved();
+      onOpenChange(false);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to save user";
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const submitDisabled =
+    saving ||
+    !firstName.trim() ||
+    !lastName.trim() ||
+    !email.trim() ||
+    !type ||
+    !organization ||
+    (!isEdit && !password.trim());
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="font-serif text-xl font-normal">
+            {isEdit ? "Edit user" : "Create user"}
+          </DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="First name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              required
+              autoFocus
+              className="h-10 text-sm"
+            />
+            <Input
+              label="Last name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              required
+              className="h-10 text-sm"
+            />
+          </div>
+
+          <Input
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="h-10 text-sm"
+          />
+
+          {!isEdit ? (
+            <Input
+              label="Password"
+              type="text"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="h-10 text-sm"
+            />
+          ) : null}
+
+          <div className="flex flex-col gap-1.5">
+            <Label
+              htmlFor="user-dialog-role"
+              className="text-sm font-medium text-muted-foreground"
+            >
+              Role
+            </Label>
+            <Select
+              id="user-dialog-role"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              required
+            >
+              <option value="">Select role</option>
+              {userTypes.map((t) => (
+                <option key={t._id} value={t._id}>
+                  {t.label ?? t._id}
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label
+              htmlFor="user-dialog-district"
+              className="text-sm font-medium text-muted-foreground"
+            >
+              District
+            </Label>
+            <Select
+              id="user-dialog-district"
+              value={organization}
+              onChange={(e) => setOrganization(e.target.value)}
+              required
+            >
+              <option value="">Select district</option>
+              {districts.map((d) => (
+                <option key={d._id} value={d._id}>
+                  {d.name ?? d._id}
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          {!isEdit && organization && schools.length > 0 ? (
+            <div className="flex flex-col gap-1.5">
+              <Label
+                htmlFor="user-dialog-school"
+                className="text-sm font-medium text-muted-foreground"
+              >
+                School
+              </Label>
+              <Select
+                id="user-dialog-school"
+                value={school}
+                onChange={(e) => setSchool(e.target.value)}
+              >
+                <option value="">Select school</option>
+                {schools.map((s) => (
+                  <option key={s._id} value={s._id}>
+                    {s.name ?? s._id}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              disabled={saving}
+              className="h-10 px-4 text-sm font-medium"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={saving}
+              disabled={submitDisabled}
+              className="h-10 px-4 text-sm font-medium"
+            >
+              {isEdit ? "Save" : "Create"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

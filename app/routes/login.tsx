@@ -50,7 +50,7 @@ export async function action({ request }: ActionFunctionArgs) {
   await setSessionToken(session, body.token);
   const userResp = await gqlClient.request(
     UsersFindOneDocument,
-    undefined,
+    {},
     { "access-token": body.token },
   );
   const target = homePathForIdentifier(

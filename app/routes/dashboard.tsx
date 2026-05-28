@@ -15,7 +15,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const token = await requireSessionToken(request);
   const data = await gqlClient.request(
     UsersFindOneDocument,
-    undefined,
+    {},
     { "access-token": token },
   );
   return { token, user: data.UsersFindOne ?? null };

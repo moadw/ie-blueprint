@@ -9,7 +9,6 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Select } from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
 import { toast } from "~/components/ui/toast";
 import { env } from "~/lib/env";
@@ -47,15 +46,6 @@ type EditProps = {
 
 export type DistrictDialogProps = CreateProps | EditProps;
 
-const US_TIMEZONES: ReadonlyArray<{ value: string; label: string }> = [
-  { value: "America/New_York", label: "Eastern" },
-  { value: "America/Chicago", label: "Central" },
-  { value: "America/Denver", label: "Mountain" },
-  { value: "America/Los_Angeles", label: "Pacific" },
-  { value: "America/Anchorage", label: "Alaska" },
-  { value: "Pacific/Honolulu", label: "Hawaii" },
-];
-
 function slugify(value: string): string {
   return value
     .toLowerCase()
@@ -71,10 +61,7 @@ type FormState = {
   city: string;
   state: string;
   address: string;
-  phone: string;
-  email: string;
   website: string;
-  timezone: string;
   active: boolean;
 };
 
@@ -84,10 +71,7 @@ const EMPTY_FORM: FormState = {
   city: "",
   state: "",
   address: "",
-  phone: "",
-  email: "",
   website: "",
-  timezone: "America/New_York",
   active: true,
 };
 
@@ -328,69 +312,18 @@ export function DistrictDialog(props: DistrictDialogProps) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="district-phone" className={LABEL_CLASS}>
-                Phone
-              </Label>
-              <Input
-                id="district-phone"
-                value={form.phone}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, phone: e.target.value }))
-                }
-                className={FIELD_INPUT_CLASS}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="district-email" className={LABEL_CLASS}>
-                Email
-              </Label>
-              <Input
-                id="district-email"
-                type="email"
-                value={form.email}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, email: e.target.value }))
-                }
-                className={FIELD_INPUT_CLASS}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="district-website" className={LABEL_CLASS}>
-                Website
-              </Label>
-              <Input
-                id="district-website"
-                value={form.website}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, website: e.target.value }))
-                }
-                className={FIELD_INPUT_CLASS}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="district-timezone" className={LABEL_CLASS}>
-                Timezone
-              </Label>
-              <Select
-                id="district-timezone"
-                value={form.timezone}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, timezone: e.target.value }))
-                }
-                className={FIELD_INPUT_CLASS}
-              >
-                {US_TIMEZONES.map((tz) => (
-                  <option key={tz.value} value={tz.value}>
-                    {tz.label}
-                  </option>
-                ))}
-              </Select>
-            </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="district-website" className={LABEL_CLASS}>
+              Website
+            </Label>
+            <Input
+              id="district-website"
+              value={form.website}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, website: e.target.value }))
+              }
+              className={FIELD_INPUT_CLASS}
+            />
           </div>
 
           <div className="flex flex-col gap-1.5">

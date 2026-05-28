@@ -6,6 +6,7 @@ const TABS = [
   { to: "/admin/classrooms", label: "User Classrooms" },
   { to: "/admin/experiences", label: "Experiences" },
   { to: "/admin/narrators", label: "Narrators" },
+  { to: "/admin/users", label: "Users" },
   { to: "/admin/districts", label: "Districts" },
   { to: "/admin/image-themes", label: "Image Themes" },
 ] as const;

@@ -5,7 +5,7 @@ import { UsersFindOneDocument } from "~/queries/users";
 export function useCurrentUser() {
   return useQuery({
     queryKey: ["currentUser"],
-    queryFn: () => gqlClient.request(UsersFindOneDocument),
+    queryFn: () => gqlClient.request(UsersFindOneDocument, {}),
     select: (d) => d.UsersFindOne ?? null,
   });
 }

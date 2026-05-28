@@ -35,7 +35,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const token = await requireSessionToken(request);
   const userData = await gqlClient.request(
     UsersFindOneDocument,
-    undefined,
+    {},
     { "access-token": token },
   );
   const user = userData.UsersFindOne ?? null;
@@ -58,7 +58,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const userData = await gqlClient.request(
     UsersFindOneDocument,
-    undefined,
+    {},
     { "access-token": token },
   );
   const user = userData.UsersFindOne;

@@ -1,8 +1,8 @@
 import { graphql } from "~/gql";
 
 export const UsersFindOneDocument = graphql(`
-  query UsersFindOne {
-    UsersFindOne {
+  query UsersFindOne($_id: String) {
+    UsersFindOne(_id: $_id) {
       _id
       firstName
       lastName
@@ -16,6 +16,74 @@ export const UsersFindOneDocument = graphql(`
       profilePicture {
         url
       }
+    }
+  }
+`);
+
+export const UserSearchDocument = graphql(`
+  query UserSearch(
+    $districtId: String
+    $schoolId: String
+    $type: String
+    $search: String
+    $sortBy: String
+    $sortOrder: Int
+    $limit: Int
+    $skip: Int
+    $platformId: String
+    $organizationId: String
+  ) {
+    UserSearch(
+      districtId: $districtId
+      schoolId: $schoolId
+      type: $type
+      search: $search
+      sortBy: $sortBy
+      sortOrder: $sortOrder
+      limit: $limit
+      skip: $skip
+      platformId: $platformId
+      organizationId: $organizationId
+    ) {
+      total
+      data {
+        userId
+        firstName
+        lastName
+        email
+        organization_id
+        organization_name
+        type_id
+        type_name
+        createdAt
+        updatedAt
+        lastLogin
+        schools {
+          school_id
+          school_name
+          region_id
+          region_name
+        }
+        groups {
+          group_id
+          group_name
+        }
+      }
+    }
+  }
+`);
+
+export const UserTypesFindManyDocument = graphql(`
+  query UserTypesFindMany(
+    $filter: FilterFindManyusertypesInput
+    $limit: Int
+    $skip: Int
+    $sort: SortFindManyusertypesInput
+  ) {
+    UserTypesFindMany(filter: $filter, limit: $limit, skip: $skip, sort: $sort) {
+      _id
+      identifier
+      label
     }
   }
 `);
