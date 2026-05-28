@@ -18,11 +18,24 @@ import { gqlClient } from "~/lib/graphql";
 import { readPageFromRequest } from "~/lib/pagination";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
-import { DistrictFindManyDocument } from "~/queries/districts";
+import {
+  DistrictFindManyDocument,
+  DistrictProfileFindManyDocument,
+} from "~/queries/districts";
 import { SortFindManydistrictInput } from "~/gql/graphql";
 import { DistrictRow } from "./admin.districts/_components/DistrictRow";
 import { DistrictDialog } from "./admin.districts/_components/DistrictDialog";
 import { SchoolsDialog } from "./admin.districts/_components/SchoolsDialog";
+
+type DistrictProfile = {
+  _id: string;
+  district?: string | null;
+  city?: string | null;
+  address?: string | null;
+  website?: string | null;
+  cover?: { type?: string | null; url?: string | null } | null;
+  logo?: { type?: string | null; url?: string | null } | null;
+};
 
 type District = {
   _id: string;
@@ -33,6 +46,7 @@ type District = {
   organization?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
+  profile?: DistrictProfile | null;
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -60,11 +74,48 @@ export async function loader({ request }: LoaderFunctionArgs) {
       { "access-token": token },
     ),
   );
-  const districts: District[] = result.ok
+  const baseDistricts = result.ok
     ? (result.data.DistrictFindMany ?? []).filter(
         (d): d is NonNullable<typeof d> => d != null,
       )
     : [];
+
+  let profiles: DistrictProfile[] = [];
+  if (baseDistricts.length > 0) {
+    const districtIds = baseDistricts
+      .map((d) => d._id)
+      .filter((id): id is string => Boolean(id));
+    if (districtIds.length > 0) {
+      const profileResult = await safe(
+        gqlClient.request(
+          DistrictProfileFindManyDocument,
+          {
+            filter: {
+              _operators: { district: { in: districtIds } },
+            },
+            limit: districtIds.length,
+            skip: 0,
+          },
+          { "access-token": token },
+        ),
+      );
+      profiles = profileResult.ok
+        ? (profileResult.data.DistrictProfileFindMany ?? []).filter(
+            (p): p is NonNullable<typeof p> => p != null,
+          )
+        : [];
+    }
+  }
+
+  const profileByDistrict = new Map<string, DistrictProfile>();
+  for (const p of profiles) {
+    if (p.district) profileByDistrict.set(p.district, p);
+  }
+  const districts: District[] = baseDistricts.map((d) => ({
+    ...d,
+    profile: profileByDistrict.get(d._id) ?? null,
+  }));
+
   return {
     districts,
     loadError: result.error,

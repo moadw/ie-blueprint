@@ -14,6 +14,10 @@ export interface DistrictRowDistrict {
   _id: string;
   name?: string | null;
   state?: string | null;
+  profile?: {
+    city?: string | null;
+    cover?: { url?: string | null } | null;
+  } | null;
 }
 
 export interface DistrictRowProps {
@@ -28,8 +32,17 @@ export function DistrictRow({ district, onSchools, onEdit }: DistrictRowProps) {
     <div className="bg-card rounded-lg border border-border p-4 hover:border-border/80 transition-colors">
       <div className="flex items-start gap-4">
         {/* Left thumbnail */}
-        <div className="w-20 h-20 rounded-lg bg-muted flex-shrink-0 flex items-center justify-center">
-          <Building2 className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
+        <div className="w-20 h-20 rounded-lg bg-muted flex-shrink-0 overflow-hidden flex items-center justify-center">
+          {district.profile?.cover?.url ? (
+            <img
+              src={district.profile.cover.url}
+              alt=""
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <Building2 className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
+          )}
         </div>
 
         {/* Center info */}
@@ -44,6 +57,12 @@ export function DistrictRow({ district, onSchools, onEdit }: DistrictRowProps) {
               </span>
             ) : null}
           </div>
+
+          {district.profile?.city ? (
+            <div className="text-sm text-muted-foreground mb-1 truncate">
+              {district.profile.city}
+            </div>
+          ) : null}
 
           <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
             <MapPin className="w-3 h-3" aria-hidden="true" />

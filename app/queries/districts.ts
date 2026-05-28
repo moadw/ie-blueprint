@@ -63,3 +63,76 @@ export const DistrictUpdateOneDocument = graphql(`
     }
   }
 `);
+
+export const DistrictProfileFindManyDocument = graphql(`
+  query DistrictProfileFindMany(
+    $filter: FilterFindManydistrictprofileInput
+    $limit: Int
+    $skip: Int
+  ) {
+    DistrictProfileFindMany(filter: $filter, limit: $limit, skip: $skip) {
+      _id
+      district
+      city
+      address
+      website
+      cover {
+        type
+        url
+      }
+      logo {
+        type
+        url
+      }
+    }
+  }
+`);
+
+export const DistrictProfileFindOneDocument = graphql(`
+  query DistrictProfileFindOne($filter: FilterFindOnedistrictprofileInput) {
+    DistrictProfileFindOne(filter: $filter) {
+      _id
+      district
+      city
+      address
+      website
+      cover {
+        type
+        url
+      }
+      logo {
+        type
+        url
+      }
+    }
+  }
+`);
+
+export const DistrictProfileCreateOneDocument = graphql(`
+  mutation DistrictProfileCreateOne($record: districtprofileInput) {
+    DistrictProfileCreateOne(record: $record) {
+      _id
+      district
+      city
+      address
+      website
+      cover {
+        type
+        url
+      }
+      logo {
+        type
+        url
+      }
+    }
+  }
+`);
+
+export const DistrictProfileUpdateOneDocument = graphql(`
+  mutation DistrictProfileUpdateOne(
+    $_id: String!
+    $record: districtprofileInput
+  ) {
+    DistrictProfileUpdateOne(_id: $_id, record: $record)
+  }
+`);
