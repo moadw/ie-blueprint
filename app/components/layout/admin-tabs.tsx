@@ -8,6 +8,7 @@ const TABS = [
   { to: "/admin/narrators", label: "Narrators" },
   { to: "/admin/users", label: "Users" },
   { to: "/admin/districts", label: "Districts" },
+  { to: "/admin/license-presets", label: "License Presets" },
   { to: "/admin/image-themes", label: "Image Themes" },
 ] as const;
 
