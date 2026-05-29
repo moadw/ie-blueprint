@@ -1,4 +1,13 @@
+.git
+.gitignore
 .react-router
 build
 node_modules
+.env
+.env.local
+.env.*.local
+.DS_Store
+reports
+thoughts
+CLAUDE*
 README.md
