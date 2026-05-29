@@ -49,6 +49,8 @@ type District = {
   state?: string | null;
   courses?: Array<string | null> | null;
   licenseLabel?: string | null;
+  coverPhoto?: { type?: string | null; url?: string | null } | null;
+  logo?: { type?: string | null; url?: string | null } | null;
   country?: string | null;
   platform?: string | null;
   organization?: string | null;

@@ -17,6 +17,7 @@ import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
 import {
   DistrictCreateOneDocument,
+  DistrictFindOneDocument,
   DistrictProfileCreateOneDocument,
   DistrictProfileFindOneDocument,
   DistrictProfileUpdateOneDocument,
@@ -171,8 +172,15 @@ export function DistrictDialog(props: DistrictDialogProps) {
           address: found?.address ?? "",
           website: found?.website ?? "",
         }));
-        setPersistedCoverUrl(found.cover?.url ?? null);
-        setPersistedLogoUrl(found.logo?.url ?? null);
+        // Cover/logo live on `district` (not on `districtprofile`).
+        const districtResult = await gqlClient.request(
+          DistrictFindOneDocument,
+          { filter: { _id: targetId } },
+        );
+        if (cancelled) return;
+        const districtRecord = districtResult.DistrictFindOne ?? null;
+        setPersistedCoverUrl(districtRecord?.coverPhoto?.url ?? null);
+        setPersistedLogoUrl(districtRecord?.logo?.url ?? null);
       } catch (err) {
         if (cancelled) return;
         console.error("[district-profile-open] failed", err);
@@ -208,6 +216,30 @@ export function DistrictDialog(props: DistrictDialogProps) {
     return () => URL.revokeObjectURL(url);
   }, [logoFile]);
 
+  // Refetch the district and update persisted cover/logo URLs.
+  // Cover/logo live on `district.coverPhoto` / `district.logo` (not on the
+  // profile). Appends a cache-bust so the browser drops the stale image
+  // even when the backend overwrites the same S3 path.
+  async function refetchDistrictAssets() {
+    if (!districtId) return;
+    try {
+      const result = await gqlClient.request(
+        DistrictFindOneDocument,
+        { filter: { _id: districtId } },
+      );
+      const found = result.DistrictFindOne;
+      if (!found) return;
+      const bust = (url: string) =>
+        `${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`;
+      setPersistedCoverUrl(
+        found.coverPhoto?.url ? bust(found.coverPhoto.url) : null,
+      );
+      setPersistedLogoUrl(found.logo?.url ? bust(found.logo.url) : null);
+    } catch (err) {
+      console.error("[district-assets-refetch] failed", err);
+    }
+  }
+
   async function handleCoverChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null;
     e.target.value = "";
@@ -228,14 +260,16 @@ export function DistrictDialog(props: DistrictDialogProps) {
     setUploadingCover(true);
     try {
       const fd = new FormData();
-      fd.append("id", profileId);
+      fd.append("id", districtId ?? "");
       fd.append("file", file);
       console.log("[district-cover] PUT /admin/district-cover", {
+        districtId,
         profileId,
         file: { name: file.name, size: file.size, type: file.type },
       });
       await api("/admin/district-cover", { method: "PUT", body: fd });
       toast.success("Cover photo updated");
+      await refetchDistrictAssets();
       revalidator.revalidate();
     } catch (err) {
       console.error("[district-cover] upload-on-change failed", {
@@ -272,14 +306,16 @@ export function DistrictDialog(props: DistrictDialogProps) {
     setUploadingLogo(true);
     try {
       const fd = new FormData();
-      fd.append("id", profileId);
+      fd.append("id", districtId ?? "");
       fd.append("file", file);
       console.log("[district-logo] PUT /admin/district-logo", {
+        districtId,
         profileId,
         file: { name: file.name, size: file.size, type: file.type },
       });
       await api("/admin/district-logo", { method: "PUT", body: fd });
       toast.success("Logo updated");
+      await refetchDistrictAssets();
       revalidator.revalidate();
     } catch (err) {
       console.error("[district-logo] upload-on-change failed", {
@@ -391,9 +427,10 @@ export function DistrictDialog(props: DistrictDialogProps) {
         if (profileId && coverFile) {
           try {
             const fd = new FormData();
-            fd.append("id", profileId);
+            fd.append("id", district._id);
             fd.append("file", coverFile);
             console.log("[district-cover] PUT /admin/district-cover", {
+              districtId: district._id,
               profileId,
               file: { name: coverFile.name, size: coverFile.size, type: coverFile.type },
             });
@@ -413,9 +450,10 @@ export function DistrictDialog(props: DistrictDialogProps) {
         if (profileId && logoFile) {
           try {
             const fd = new FormData();
-            fd.append("id", profileId);
+            fd.append("id", district._id);
             fd.append("file", logoFile);
             console.log("[district-logo] PUT /admin/district-logo", {
+              districtId: district._id,
               profileId,
               file: { name: logoFile.name, size: logoFile.size, type: logoFile.type },
             });

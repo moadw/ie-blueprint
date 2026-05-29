@@ -16,6 +16,8 @@ export interface DistrictRowDistrict {
   state?: string | null;
   courses?: Array<string | null> | null;
   licenseLabel?: string | null;
+  coverPhoto?: { url?: string | null } | null;
+  logo?: { url?: string | null } | null;
   profile?: {
     city?: string | null;
     cover?: { url?: string | null } | null;
@@ -46,9 +48,16 @@ export function DistrictRow({
       <div className="flex items-start gap-4">
         {/* Left thumbnail */}
         <div className="w-20 h-20 rounded-lg bg-muted flex-shrink-0 overflow-hidden flex items-center justify-center">
-          {district.profile?.cover?.url ? (
+          {district.logo?.url ? (
             <img
-              src={district.profile.cover.url}
+              src={district.logo.url}
+              alt=""
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          ) : district.coverPhoto?.url ? (
+            <img
+              src={district.coverPhoto.url}
               alt=""
               className="w-full h-full object-cover"
               loading="lazy"
@@ -99,7 +108,7 @@ export function DistrictRow({
           </div>
 
           <div className="text-xs text-muted-foreground">
-            {courseCount > 0 ? `${courseCount} courses` : "No license"}
+            {courseCount} courses
           </div>
 
           <div className="flex gap-1.5 mt-1">

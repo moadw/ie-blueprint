@@ -16,6 +16,14 @@ export const DistrictFindManyDocument = graphql(`
       organization
       courses
       licenseLabel
+      coverPhoto {
+        type
+        url
+      }
+      logo {
+        type
+        url
+      }
       createdAt
       updatedAt
     }
@@ -101,6 +109,22 @@ export const DistrictProfileFindOneDocument = graphql(`
       address
       website
       cover {
+        type
+        url
+      }
+      logo {
+        type
+        url
+      }
+    }
+  }
+`);
+
+export const DistrictFindOneDocument = graphql(`
+  query DistrictFindOne($filter: FilterFindOnedistrictInput) {
+    DistrictFindOne(filter: $filter) {
+      _id
+      coverPhoto {
         type
         url
       }
