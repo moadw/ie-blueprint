@@ -14,6 +14,8 @@ export const DistrictFindManyDocument = graphql(`
       country
       platform
       organization
+      courses
+      licenseLabel
       createdAt
       updatedAt
     }
@@ -56,6 +58,8 @@ export const DistrictUpdateOneDocument = graphql(`
         country
         platform
         organization
+        courses
+        licenseLabel
         createdAt
         updatedAt
       }

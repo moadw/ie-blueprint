@@ -14,6 +14,8 @@ export interface DistrictRowDistrict {
   _id: string;
   name?: string | null;
   state?: string | null;
+  courses?: Array<string | null> | null;
+  licenseLabel?: string | null;
   profile?: {
     city?: string | null;
     cover?: { url?: string | null } | null;
@@ -23,11 +25,22 @@ export interface DistrictRowDistrict {
 export interface DistrictRowProps {
   district: DistrictRowDistrict;
   onSchools?: (district: DistrictRowDistrict) => void;
+  onLicense?: (district: DistrictRowDistrict) => void;
   onEdit?: (district: DistrictRowDistrict) => void;
 }
 
-export function DistrictRow({ district, onSchools, onEdit }: DistrictRowProps) {
+export function DistrictRow({
+  district,
+  onSchools,
+  onLicense,
+  onEdit,
+}: DistrictRowProps) {
   const idTail = district._id ? district._id.slice(-6) : "";
+  const validCourses = (district.courses ?? []).filter(
+    (id): id is string => !!id,
+  );
+  const courseCount = validCourses.length;
+  const hasLicense = !!district.licenseLabel;
   return (
     <div className="bg-card rounded-lg border border-border p-4 hover:border-border/80 transition-colors">
       <div className="flex items-start gap-4">
@@ -78,10 +91,16 @@ export function DistrictRow({ district, onSchools, onEdit }: DistrictRowProps) {
         {/* Right: license + actions */}
         <div className="flex flex-col items-end gap-2 flex-shrink-0">
           <div className="flex items-center gap-2">
-            <Badge variant="neutral">No License</Badge>
+            {hasLicense ? (
+              <Badge variant="active">{district.licenseLabel}</Badge>
+            ) : (
+              <Badge variant="neutral">No License</Badge>
+            )}
           </div>
 
-          <div className="text-xs text-muted-foreground">No license</div>
+          <div className="text-xs text-muted-foreground">
+            {courseCount > 0 ? `${courseCount} courses` : "No license"}
+          </div>
 
           <div className="flex gap-1.5 mt-1">
             <Button
@@ -92,8 +111,12 @@ export function DistrictRow({ district, onSchools, onEdit }: DistrictRowProps) {
             >
               <Pencil className="w-3 h-3" aria-hidden="true" /> Edit
             </Button>
-            {/* TODO(license): wire to license management plan */}
-            <Button variant="outline" size="sm" disabled>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onLicense?.(district)}
+              disabled={!onLicense}
+            >
               <ShieldCheck className="w-3 h-3" aria-hidden="true" /> License
             </Button>
             <Button

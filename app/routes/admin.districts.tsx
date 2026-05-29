@@ -21,11 +21,17 @@ import { safe } from "~/lib/safe-loader";
 import {
   DistrictFindManyDocument,
   DistrictProfileFindManyDocument,
+  DistrictUpdateOneDocument,
 } from "~/queries/districts";
+import { LicensePresetFindManyDocument } from "~/queries/license-presets";
+import { CurriculumsFindManyDocument } from "~/queries/curriculums";
 import { SortFindManydistrictInput } from "~/gql/graphql";
+import { toast } from "~/components/ui/toast";
 import { DistrictRow } from "./admin.districts/_components/DistrictRow";
 import { DistrictDialog } from "./admin.districts/_components/DistrictDialog";
 import { SchoolsDialog } from "./admin.districts/_components/SchoolsDialog";
+import { DistrictLicenseDialog } from "./admin.districts/_components/DistrictLicenseDialog";
+import type { LicenseDialogDistrict } from "./admin.districts/_components/DistrictLicenseDialog";
 
 type DistrictProfile = {
   _id: string;
@@ -41,12 +47,41 @@ type District = {
   _id: string;
   name?: string | null;
   state?: string | null;
+  courses?: Array<string | null> | null;
+  licenseLabel?: string | null;
   country?: string | null;
   platform?: string | null;
   organization?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
   profile?: DistrictProfile | null;
+};
+
+type LicensePreset = {
+  _id: string;
+  identifier?: string | null;
+  label?: string | null;
+  description?: string | null;
+  platform?: string | null;
+  courses?: Array<string | null> | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
+type Curriculum = {
+  _id: string;
+  title?: string | null;
+  description?: string | null;
+  slug?: string | null;
+  active?: boolean | null;
+  hidden?: boolean | null;
+  grade?: string | null;
+  category?: string | null;
+  order?: number | null;
+  totalLesson?: number | null;
+  curriculumCollection?: { _id?: string | null } | null;
+  cover?: { type?: string | null; url?: string | null } | null;
+  bgImage?: { type?: string | null; url?: string | null } | null;
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -58,6 +93,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
         "Platform is not configured. Please contact your administrator.",
       page: 1,
       hasMore: false,
+      presets: [] as LicensePreset[],
+      curriculums: [] as Curriculum[],
     };
   }
   const page = readPageFromRequest(request);
@@ -116,16 +153,45 @@ export async function loader({ request }: LoaderFunctionArgs) {
     profile: profileByDistrict.get(d._id) ?? null,
   }));
 
+  const [presetsResult, curriculumsResult] = await Promise.all([
+    safe(
+      gqlClient.request(
+        LicensePresetFindManyDocument,
+        { filter: { platform: env.PLATFORM }, limit: 500 },
+        { "access-token": token },
+      ),
+    ),
+    safe(
+      gqlClient.request(
+        CurriculumsFindManyDocument,
+        { filter: { platform: env.PLATFORM }, limit: 500 },
+        { "access-token": token },
+      ),
+    ),
+  ]);
+  const presets: LicensePreset[] = presetsResult.ok
+    ? ((presetsResult.data.LicensePresetFindMany ?? []).filter(
+        (p): p is NonNullable<typeof p> => p != null,
+      ) as LicensePreset[])
+    : [];
+  const curriculums: Curriculum[] = curriculumsResult.ok
+    ? ((curriculumsResult.data.CurriculumsFindMany ?? []).filter(
+        (c): c is NonNullable<typeof c> => c != null,
+      ) as Curriculum[])
+    : [];
+
   return {
     districts,
     loadError: result.error,
     page,
     hasMore: districts.length === ADMIN_LIST_PAGE_SIZE,
+    presets,
+    curriculums,
   };
 }
 
 export default function AdminDistrictsRoute() {
-  const { districts, loadError, page, hasMore } =
+  const { districts, loadError, page, hasMore, presets, curriculums } =
     useLoaderData<typeof loader>();
   const navigation = useNavigation();
   const navigate = useNavigate();
@@ -135,6 +201,9 @@ export default function AdminDistrictsRoute() {
   const [createOpen, setCreateOpen] = useState(false);
   const [schoolsTarget, setSchoolsTarget] = useState<District | null>(null);
   const [editTarget, setEditTarget] = useState<District | null>(null);
+  const [licenseDialogOpen, setLicenseDialogOpen] = useState(false);
+  const [licenseTarget, setLicenseTarget] =
+    useState<LicenseDialogDistrict | null>(null);
 
   const filteredSorted = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -228,6 +297,15 @@ export default function AdminDistrictsRoute() {
                 const found = districts.find((x) => x._id === target._id);
                 setEditTarget(found ?? null);
               }}
+              onLicense={(target) => {
+                setLicenseTarget({
+                  _id: target._id,
+                  name: target.name ?? null,
+                  courses: target.courses ?? null,
+                  licenseLabel: target.licenseLabel ?? null,
+                });
+                setLicenseDialogOpen(true);
+              }}
             />
           ))}
         </div>
@@ -265,6 +343,81 @@ export default function AdminDistrictsRoute() {
           }}
         />
       ) : null}
+
+      <DistrictLicenseDialog
+        open={licenseDialogOpen}
+        onOpenChange={(o) => {
+          setLicenseDialogOpen(o);
+          if (!o) setLicenseTarget(null);
+        }}
+        district={licenseTarget}
+        presets={presets}
+        curriculums={curriculums}
+        onSubmit={async ({ courses, licenseLabel }) => {
+          if (!licenseTarget) return;
+          try {
+            const data = await gqlClient.request(DistrictUpdateOneDocument, {
+              _id: licenseTarget._id,
+              record: {
+                courses,
+                licenseLabel,
+                platform: env.PLATFORM,
+              },
+            });
+            const payload = data.DistrictUpdateOne;
+            const errorMessage = (
+              payload?.error as
+                | { message?: string | null }
+                | null
+                | undefined
+            )?.message;
+            if (errorMessage) {
+              toast.error(errorMessage);
+              return;
+            }
+            toast.success("License updated");
+            setLicenseDialogOpen(false);
+            setLicenseTarget(null);
+            revalidator.revalidate();
+          } catch (err) {
+            const message =
+              err instanceof Error ? err.message : "Failed to update license";
+            toast.error(message);
+          }
+        }}
+        onUnassign={async () => {
+          if (!licenseTarget) return;
+          try {
+            const data = await gqlClient.request(DistrictUpdateOneDocument, {
+              _id: licenseTarget._id,
+              record: {
+                courses: [],
+                licenseLabel: null,
+                platform: env.PLATFORM,
+              },
+            });
+            const payload = data.DistrictUpdateOne;
+            const errorMessage = (
+              payload?.error as
+                | { message?: string | null }
+                | null
+                | undefined
+            )?.message;
+            if (errorMessage) {
+              toast.error(errorMessage);
+              return;
+            }
+            toast.success("License unassigned");
+            setLicenseDialogOpen(false);
+            setLicenseTarget(null);
+            revalidator.revalidate();
+          } catch (err) {
+            const message =
+              err instanceof Error ? err.message : "Failed to unassign license";
+            toast.error(message);
+          }
+        }}
+      />
 
       {(hasMore || page > 1) && !query ? (
         <AdminListPagination
