@@ -14,7 +14,6 @@ import { Select } from "~/components/ui/select";
 import { toast } from "~/components/ui/toast";
 import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
-import { DistrictFindManyDocument } from "~/queries/districts";
 import { SchoolFindManyDocument } from "~/queries/schools";
 import {
   UserTypesFindManyDocument,
@@ -47,6 +46,8 @@ interface SchoolOption {
 export interface UserDialogProps {
   open: boolean;
   target: AdminUserRow | null;
+  /** Full district list from the route loader (already `limit: 500`). */
+  districts: ReadonlyArray<DistrictOption>;
   onOpenChange: (open: boolean) => void;
   onSaved: () => void;
 }
@@ -54,6 +55,7 @@ export interface UserDialogProps {
 export function UserDialog({
   open,
   target,
+  districts,
   onOpenChange,
   onSaved,
 }: UserDialogProps) {
@@ -64,15 +66,18 @@ export function UserDialog({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [type, setType] = useState("");
-  const [organization, setOrganization] = useState("");
+  // Holds the selected district's _id. The user's `organization` field is
+  // derived from `district.organization` at submit time — districts are the
+  // real connector between users and organizations in the admin UI.
+  const [districtId, setDistrictId] = useState("");
   const [school, setSchool] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const [districts, setDistricts] = useState<DistrictOption[]>([]);
   const [userTypes, setUserTypes] = useState<UserTypeOption[]>([]);
   const [schools, setSchools] = useState<SchoolOption[]>([]);
 
   // Reset form fields whenever the dialog opens or the target changes.
+  // `districtId` is resolved separately once districts load (see below).
   useEffect(() => {
     if (!open) return;
     setFirstName(target?.firstName ?? "");
@@ -80,31 +85,28 @@ export function UserDialog({
     setEmail(target?.email ?? "");
     setPassword("");
     setType(target?.type_id ?? "");
-    setOrganization(target?.organization_id ?? "");
+    setDistrictId("");
     setSchool("");
     setSchools([]);
   }, [open, target]);
 
-  // Load districts + user types when the dialog opens. Self-contained so the
-  // route's loader doesn't have to provide them. Errors degrade gracefully —
-  // the selects render their placeholder + nothing else.
+  // In edit mode, resolve the district whose `organization` matches the
+  // user's `organization` once the districts list is available.
+  useEffect(() => {
+    if (!open || !isEdit) return;
+    if (districts.length === 0) return;
+    const userOrgId = target?.organization_id;
+    if (!userOrgId) return;
+    const match = districts.find((d) => d.organization === userOrgId);
+    setDistrictId(match?._id ?? "");
+  }, [open, isEdit, districts, target?.organization_id]);
+
+  // Load user types when the dialog opens. Districts come from the route
+  // loader as a prop. Errors degrade gracefully — the select renders its
+  // placeholder + nothing else.
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    (async () => {
-      try {
-        const result = await gqlClient.request(DistrictFindManyDocument, {
-          filter: { platform: env.PLATFORM },
-        });
-        if (cancelled) return;
-        const items = (result.DistrictFindMany ?? []).filter(
-          (d): d is NonNullable<typeof d> => d != null,
-        );
-        setDistricts(items);
-      } catch {
-        if (!cancelled) setDistricts([]);
-      }
-    })();
     (async () => {
       try {
         const result = await gqlClient.request(UserTypesFindManyDocument, {});
@@ -127,7 +129,7 @@ export function UserDialog({
   useEffect(() => {
     if (!open) return;
     if (isEdit) return;
-    if (!organization) {
+    if (!districtId) {
       setSchools([]);
       return;
     }
@@ -135,7 +137,7 @@ export function UserDialog({
     (async () => {
       try {
         const result = await gqlClient.request(SchoolFindManyDocument, {
-          filter: { district: organization, platform: env.PLATFORM },
+          filter: { district: districtId, platform: env.PLATFORM },
         });
         if (cancelled) return;
         const items = (result.SchoolFindMany ?? []).filter(
@@ -149,7 +151,7 @@ export function UserDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, isEdit, organization]);
+  }, [open, isEdit, districtId]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -157,6 +159,14 @@ export function UserDialog({
     const normalizedEmail = email.trim().toLowerCase();
     if (!EMAIL_RE.test(normalizedEmail)) {
       toast.error("Please enter a valid email address.");
+      return;
+    }
+    // A user's `organization` is set from the chosen district's `organization`
+    // — districts and users only meet through the organization layer.
+    const selectedDistrict = districts.find((d) => d._id === districtId);
+    const orgId = selectedDistrict?.organization ?? null;
+    if (!orgId) {
+      toast.error("Selected district is missing an organization.");
       return;
     }
     setSaving(true);
@@ -172,7 +182,7 @@ export function UserDialog({
             lastName,
             email: normalizedEmail,
             type,
-            organization,
+            organization: orgId,
           },
         });
         const payload = result.UserUpdateOne;
@@ -184,8 +194,6 @@ export function UserDialog({
         }
         toast.success("User updated");
       } else {
-        const selectedDistrict = districts.find((d) => d._id === organization);
-        const orgId = selectedDistrict?.organization ?? null;
         const data = await gqlClient.request(CreateUserDocument, {
           firstName,
           lastName,
@@ -227,7 +235,7 @@ export function UserDialog({
     !lastName.trim() ||
     !email.trim() ||
     !type ||
-    !organization ||
+    !districtId ||
     (!isEdit && !password.trim());
 
   return (
@@ -308,8 +316,8 @@ export function UserDialog({
             </Label>
             <Select
               id="user-dialog-district"
-              value={organization}
-              onChange={(e) => setOrganization(e.target.value)}
+              value={districtId}
+              onChange={(e) => setDistrictId(e.target.value)}
               required
             >
               <option value="">Select district</option>
@@ -321,7 +329,7 @@ export function UserDialog({
             </Select>
           </div>
 
-          {!isEdit && organization && schools.length > 0 ? (
+          {!isEdit && districtId && schools.length > 0 ? (
             <div className="flex flex-col gap-1.5">
               <Label
                 htmlFor="user-dialog-school"

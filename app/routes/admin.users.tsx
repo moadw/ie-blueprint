@@ -308,6 +308,7 @@ export default function AdminUsersRoute() {
       <UserDialog
         open={createOpen || editTarget !== null}
         target={editTarget}
+        districts={districts}
         onOpenChange={(open) => {
           if (!open) {
             setCreateOpen(false);
