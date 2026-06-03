@@ -50,3 +50,29 @@ export const MOCK_LESSON: MockLesson = {
     "What did you notice about your breath today? Was it easy or hard to stay focused on it?",
   mediaType: "video",
 };
+
+// Milestone / achievement fixture for the post-playback "milestone" screen.
+// Stands in for the future achievements document. `iconKey` indexes the small
+// icon map in `milestone-badge.tsx` (defaults to Trophy on miss); `color` /
+// `glowColor` drive the gradient badge tile and its glow.
+export interface MockMilestone {
+  /** Badge title (large serif). */
+  title: string;
+  /** Body copy under the badge. */
+  message: string;
+  /** Key into the milestone icon map (falls back to `trophy`). */
+  iconKey: string;
+  /** Badge tile gradient seed color. */
+  color: string;
+  /** Badge glow color. */
+  glowColor: string;
+}
+
+export const MOCK_MILESTONE: MockMilestone = {
+  title: "Steady Progress",
+  message:
+    "Three days of showing up for yourself. Each breath you notice builds a calmer, more focused mind.",
+  iconKey: "trophy",
+  color: "hsl(45, 90%, 55%)",
+  glowColor: "rgba(234, 179, 8, 0.4)",
+};
