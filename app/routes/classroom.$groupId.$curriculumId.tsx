@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { setToken } from "~/lib/auth";
 import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
@@ -9,9 +9,11 @@ import { safe } from "~/lib/safe-loader";
 import { GroupFindOneDocument } from "~/queries/groups";
 import { CurriculumsFindOneDocument } from "~/queries/curriculums";
 import { LessonFindManyDocument } from "~/queries/lessons";
+import { UsersFindOneDocument } from "~/queries/users";
 import { lessonSortEnumTC } from "~/gql/graphql";
 import { CurriculumBackground } from "./classroom.$groupId.$curriculumId/_components/curriculum-background";
 import { CurriculumSlider } from "./classroom.$groupId.$curriculumId/_components/curriculum-slider";
+import { ClassroomHeader } from "./classroom.$groupId.$curriculumId/_components/classroom-header";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { groupId, curriculumId } = params;
@@ -28,6 +30,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       group: null,
       curriculum: null,
       lessons: [],
+      user: null,
       groupError: null,
       curriculumError:
         "Platform is not configured. Please contact your administrator.",
@@ -35,33 +38,35 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     };
   }
 
-  const [groupResult, curriculumResult, lessonsResult] = await Promise.all([
-    safe(
-      gqlClient.request(
-        GroupFindOneDocument,
-        { filter: { _id: groupId } },
-        headers,
+  const [groupResult, curriculumResult, lessonsResult, userResult] =
+    await Promise.all([
+      safe(
+        gqlClient.request(
+          GroupFindOneDocument,
+          { filter: { _id: groupId } },
+          headers,
+        ),
       ),
-    ),
-    safe(
-      gqlClient.request(
-        CurriculumsFindOneDocument,
-        { filter: { _id: curriculumId, platform: env.PLATFORM } },
-        headers,
+      safe(
+        gqlClient.request(
+          CurriculumsFindOneDocument,
+          { filter: { _id: curriculumId, platform: env.PLATFORM } },
+          headers,
+        ),
       ),
-    ),
-    safe(
-      gqlClient.request(
-        LessonFindManyDocument,
-        {
-          filter: { curriculum: curriculumId },
-          limit: 100,
-          sort: lessonSortEnumTC.ORDER_ASC,
-        },
-        headers,
+      safe(
+        gqlClient.request(
+          LessonFindManyDocument,
+          {
+            filter: { curriculum: curriculumId },
+            limit: 100,
+            sort: lessonSortEnumTC.ORDER_ASC,
+          },
+          headers,
+        ),
       ),
-    ),
-  ]);
+      safe(gqlClient.request(UsersFindOneDocument, {}, headers)),
+    ]);
 
   const group = groupResult.ok ? groupResult.data.GroupFindOne : null;
   const curriculum = curriculumResult.ok
@@ -72,12 +77,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         (l): l is NonNullable<typeof l> => Boolean(l),
       )
     : [];
+  // The header user is non-critical chrome — a failed fetch degrades the menu
+  // to a generic "Account" label rather than surfacing an error card.
+  const user = userResult.ok ? userResult.data.UsersFindOne : null;
 
   return {
     token,
     group,
     curriculum,
     lessons,
+    user,
     groupError: groupResult.error,
     curriculumError: curriculumResult.error,
     lessonsError: lessonsResult.error,
@@ -87,12 +96,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function ClassroomCurriculumRoute() {
   const {
     token,
+    group,
     curriculum,
     lessons,
+    user,
     groupError,
     curriculumError,
     lessonsError,
   } = useLoaderData<typeof loader>();
+  const params = useParams();
+  const groupId = params.groupId ?? "";
+  const curriculumId = params.curriculumId ?? "";
 
   useEffect(() => {
     if (token) setToken(token);
@@ -117,11 +131,18 @@ export default function ClassroomCurriculumRoute() {
         </div>
       ) : null}
 
-      {/* Hero — blurred curriculum background + full-height coverflow slider */}
-      <section className="relative h-[100dvh] overflow-hidden text-white">
+      {/* Hero — blurred curriculum background + glass header + slider */}
+      <section className="relative flex h-[100dvh] flex-col overflow-hidden text-white">
         <CurriculumBackground imageUrl={backgroundImage} />
 
-        <main className="relative z-10 flex h-full flex-col items-center pt-[clamp(0.5rem,2vh,1.5rem)]">
+        <ClassroomHeader
+          group={group}
+          groupId={groupId}
+          curriculumId={curriculumId}
+          user={user}
+        />
+
+        <main className="relative z-10 flex flex-1 flex-col items-center pt-[clamp(0.5rem,2vh,1.5rem)]">
           {lessons.length > 0 ? (
             <CurriculumSlider key={curriculum?._id} lessons={lessons} />
           ) : (
