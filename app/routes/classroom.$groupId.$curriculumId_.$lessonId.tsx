@@ -2,7 +2,6 @@ import { useCallback, useState } from "react";
 import { useLoaderData, useNavigate, useSearchParams } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { requireSessionToken } from "~/lib/session.server";
-import { MOCK_LESSON } from "./classroom.$groupId.$curriculumId_.$lessonId/_components/fixtures";
 import { PlayerStage } from "./classroom.$groupId.$curriculumId_.$lessonId/_components/player-stage";
 import { JournalScreen } from "./classroom.$groupId.$curriculumId_.$lessonId/_components/journal-screen";
 import { MilestoneScreen } from "./classroom.$groupId.$curriculumId_.$lessonId/_components/milestone-screen";
@@ -30,7 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function LessonPlayerRoute() {
-  const { groupId, curriculumId, lessonId } = useLoaderData<typeof loader>();
+  const { groupId, curriculumId } = useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -62,12 +61,8 @@ export default function LessonPlayerRoute() {
     <div className="fixed inset-0 overflow-hidden bg-slate-950 text-white">
       {showPlayer ? (
         <PlayerStage
-          order={MOCK_LESSON.order}
-          groupId={groupId}
-          curriculumId={curriculumId}
-          lessonId={lessonId}
           media={media}
-          after={after}
+          showFeedback={showFeedback}
           onExit={exitToCurriculum}
           onEnded={handleEnded}
         />
