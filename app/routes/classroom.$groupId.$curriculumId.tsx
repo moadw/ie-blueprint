@@ -1,0 +1,149 @@
+import { useEffect } from "react";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
+import { setToken } from "~/lib/auth";
+import { env } from "~/lib/env";
+import { gqlClient } from "~/lib/graphql";
+import { requireSessionToken } from "~/lib/session.server";
+import { safe } from "~/lib/safe-loader";
+import { GroupFindOneDocument } from "~/queries/groups";
+import { CurriculumsFindOneDocument } from "~/queries/curriculums";
+import { LessonFindManyDocument } from "~/queries/lessons";
+import { lessonSortEnumTC } from "~/gql/graphql";
+import { CurriculumBackground } from "./classroom.$groupId.$curriculumId/_components/curriculum-background";
+import { CurriculumSlider } from "./classroom.$groupId.$curriculumId/_components/curriculum-slider";
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { groupId, curriculumId } = params;
+  if (!groupId) throw new Response("Group id required", { status: 400 });
+  if (!curriculumId)
+    throw new Response("Curriculum id required", { status: 400 });
+
+  const token = await requireSessionToken(request);
+  const headers = { "access-token": token };
+
+  if (!env.PLATFORM) {
+    return {
+      token,
+      group: null,
+      curriculum: null,
+      lessons: [],
+      groupError: null,
+      curriculumError:
+        "Platform is not configured. Please contact your administrator.",
+      lessonsError: null,
+    };
+  }
+
+  const [groupResult, curriculumResult, lessonsResult] = await Promise.all([
+    safe(
+      gqlClient.request(
+        GroupFindOneDocument,
+        { filter: { _id: groupId } },
+        headers,
+      ),
+    ),
+    safe(
+      gqlClient.request(
+        CurriculumsFindOneDocument,
+        { filter: { _id: curriculumId, platform: env.PLATFORM } },
+        headers,
+      ),
+    ),
+    safe(
+      gqlClient.request(
+        LessonFindManyDocument,
+        {
+          filter: { curriculum: curriculumId },
+          limit: 100,
+          sort: lessonSortEnumTC.ORDER_ASC,
+        },
+        headers,
+      ),
+    ),
+  ]);
+
+  const group = groupResult.ok ? groupResult.data.GroupFindOne : null;
+  const curriculum = curriculumResult.ok
+    ? curriculumResult.data.CurriculumsFindOne
+    : null;
+  const lessons = lessonsResult.ok
+    ? (lessonsResult.data.LessonFindMany ?? []).filter(
+        (l): l is NonNullable<typeof l> => Boolean(l),
+      )
+    : [];
+
+  return {
+    token,
+    group,
+    curriculum,
+    lessons,
+    groupError: groupResult.error,
+    curriculumError: curriculumResult.error,
+    lessonsError: lessonsResult.error,
+  };
+}
+
+export default function ClassroomCurriculumRoute() {
+  const {
+    token,
+    curriculum,
+    lessons,
+    groupError,
+    curriculumError,
+    lessonsError,
+  } = useLoaderData<typeof loader>();
+
+  useEffect(() => {
+    if (token) setToken(token);
+  }, [token]);
+
+  const backgroundImage = curriculum?.bgImage?.url ?? curriculum?.cover?.url;
+  const hasErrors = Boolean(groupError || curriculumError || lessonsError);
+
+  return (
+    <div className="min-h-screen bg-zinc-900 text-white">
+      {hasErrors ? (
+        <div className="space-y-3 px-4 py-6 sm:px-6">
+          {groupError ? (
+            <ErrorCard label="classroom" message={groupError} />
+          ) : null}
+          {curriculumError ? (
+            <ErrorCard label="curriculum" message={curriculumError} />
+          ) : null}
+          {lessonsError ? (
+            <ErrorCard label="lessons" message={lessonsError} />
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* Hero — blurred curriculum background + full-height coverflow slider */}
+      <section className="relative h-[100dvh] overflow-hidden text-white">
+        <CurriculumBackground imageUrl={backgroundImage} />
+
+        <main className="relative z-10 flex h-full flex-col items-center pt-[clamp(0.5rem,2vh,1.5rem)]">
+          {lessons.length > 0 ? (
+            <CurriculumSlider key={curriculum?._id} lessons={lessons} />
+          ) : (
+            <div className="flex flex-1 items-center justify-center px-6 text-center">
+              <p className="font-serif text-xl text-white/70">
+                No lessons in this curriculum yet.
+              </p>
+            </div>
+          )}
+        </main>
+      </section>
+    </div>
+  );
+}
+
+function ErrorCard({ label, message }: { label: string; message: string }) {
+  return (
+    <div className="rounded-xl border-2 border-dashed border-red-200 bg-red-50 py-10 text-center">
+      <p className="mb-1 text-sm font-medium text-red-700">
+        Couldn't load {label}
+      </p>
+      <p className="text-xs text-red-600">{message}</p>
+    </div>
+  );
+}
