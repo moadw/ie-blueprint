@@ -20,6 +20,35 @@ export const GroupFindManyDocument = graphql(`
   }
 `);
 
+export const GroupFindOneDocument = graphql(`
+  query GroupFindOne($filter: groupsInput) {
+    GroupFindOne(filter: $filter) {
+      _id
+      name
+      grade
+      manager
+      organization
+      platform
+      curriculumsObj {
+        _id
+        title
+        slug
+        order
+        grade
+        totalLesson
+        cover {
+          type
+          url
+        }
+        bgImage {
+          type
+          url
+        }
+      }
+    }
+  }
+`);
+
 export const GroupCreateOneDocument = graphql(`
   mutation GroupCreateOne(
     $name: String!

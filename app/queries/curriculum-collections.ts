@@ -40,7 +40,7 @@ export const CurriculumCollectionFindOneDocument = graphql(/* GraphQL */ `
 
 export const CurriculumCollectionCreateOneDocument = graphql(/* GraphQL */ `
   mutation curriculumCollectionCreateOne($record: curriculumcollectionInput!) {
-    curriculumCollectionCreateOne(record: $record) {
+    curriculumCollectionCreateOne: CurriculumCollectionCreateOne(record: $record) {
       _id
       name
       slug
@@ -59,12 +59,12 @@ export const CurriculumCollectionUpdateOneDocument = graphql(/* GraphQL */ `
     $id: String!
     $record: curriculumcollectionInput!
   ) {
-    curriculumCollectionUpdateOne(id: $id, record: $record)
+    curriculumCollectionUpdateOne: CurriculumCollectionUpdateOne(id: $id, record: $record)
   }
 `);
 
 export const CurriculumCollectionDeleteOneDocument = graphql(/* GraphQL */ `
   mutation curriculumCollectionDeleteOne($id: String!) {
-    curriculumCollectionDeleteOne(id: $id)
+    curriculumCollectionDeleteOne: CurriculumCollectionDeleteOne(id: $id)
   }
 `);

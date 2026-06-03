@@ -44,7 +44,7 @@ export const NarratorsFindOneDocument = graphql(/* GraphQL */ `
 
 export const NarratorsCreateOneDocument = graphql(/* GraphQL */ `
   mutation narratorsCreateOne($record: CreateOnenarratorsInput!) {
-    narratorsCreateOne(record: $record) {
+    narratorsCreateOne: NarratorsCreateOne(record: $record) {
       recordId
       record {
         _id
@@ -72,7 +72,7 @@ export const NarratorsUpdateOneDocument = graphql(/* GraphQL */ `
     $_id: String!
     $record: UpdateByIdnarratorsInput!
   ) {
-    narratorsUpdateOne(_id: $_id, record: $record) {
+    narratorsUpdateOne: NarratorsUpdateOne(_id: $_id, record: $record) {
       recordId
       record {
         _id
@@ -97,6 +97,6 @@ export const NarratorsUpdateOneDocument = graphql(/* GraphQL */ `
 
 export const NarratorsDeleteOneDocument = graphql(/* GraphQL */ `
   mutation narratorsDeleteOne($id: String!) {
-    narratorsDeleteOne(id: $id)
+    narratorsDeleteOne: NarratorsDeleteOne(id: $id)
   }
 `);
