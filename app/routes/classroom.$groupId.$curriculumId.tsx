@@ -14,6 +14,13 @@ import { lessonSortEnumTC } from "~/gql/graphql";
 import { CurriculumBackground } from "./classroom.$groupId.$curriculumId/_components/curriculum-background";
 import { CurriculumSlider } from "./classroom.$groupId.$curriculumId/_components/curriculum-slider";
 import { ClassroomHeader } from "./classroom.$groupId.$curriculumId/_components/classroom-header";
+import {
+  CurriculumSidebar,
+  CurriculumTabs,
+} from "./classroom.$groupId.$curriculumId/_components/curriculum-sidebar";
+import type { SidebarCurriculum } from "./classroom.$groupId.$curriculumId/_components/curriculum-sidebar";
+import { LessonGrid } from "./classroom.$groupId.$curriculumId/_components/lesson-grid";
+import { SettingsButton } from "./classroom.$groupId.$curriculumId/_components/settings-button";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { groupId, curriculumId } = params;
@@ -114,6 +121,9 @@ export default function ClassroomCurriculumRoute() {
 
   const backgroundImage = curriculum?.bgImage?.url ?? curriculum?.cover?.url;
   const hasErrors = Boolean(groupError || curriculumError || lessonsError);
+  const sidebarCurriculums: SidebarCurriculum[] = (
+    group?.curriculumsObj ?? []
+  ).filter((c): c is SidebarCurriculum => Boolean(c?._id));
 
   return (
     <div className="min-h-screen bg-zinc-900 text-white">
@@ -154,6 +164,47 @@ export default function ClassroomCurriculumRoute() {
           )}
         </main>
       </section>
+
+      {/* All lessons — sticky left nav + responsive lesson grid */}
+      <section
+        id="all-lessons"
+        className="relative z-10 min-h-screen bg-zinc-900"
+      >
+        <CurriculumTabs
+          curriculums={sidebarCurriculums}
+          groupId={groupId}
+          curriculumId={curriculumId}
+        />
+
+        <div className="flex">
+          <CurriculumSidebar
+            curriculums={sidebarCurriculums}
+            groupId={groupId}
+            curriculumId={curriculumId}
+          />
+
+          <main className="flex-1 px-4 py-6 lg:px-12 lg:py-12">
+            <div className="mb-6 lg:mb-8">
+              <h2 className="mb-2 font-serif text-2xl text-white lg:text-4xl">
+                {curriculum?.title ?? "All Lessons"}
+              </h2>
+              <p className="font-sans text-sm text-zinc-400 lg:text-base">
+                Explore every lesson in this curriculum.
+              </p>
+            </div>
+
+            {lessons.length > 0 ? (
+              <LessonGrid lessons={lessons} />
+            ) : (
+              <p className="font-serif text-base text-zinc-400">
+                No lessons in this curriculum yet.
+              </p>
+            )}
+          </main>
+        </div>
+      </section>
+
+      <SettingsButton />
     </div>
   );
 }
