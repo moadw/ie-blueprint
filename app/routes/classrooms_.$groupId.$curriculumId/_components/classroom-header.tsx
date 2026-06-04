@@ -82,7 +82,7 @@ export function ClassroomHeader({
             return (
               <Link
                 key={c._id}
-                to={`/classroom/${groupId}/${c._id}`}
+                to={`/classrooms/${groupId}/${c._id}`}
                 className="whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-bold text-white transition-all duration-300 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:px-4"
                 style={{
                   background: isActive

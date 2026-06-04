@@ -33,7 +33,7 @@ export function CurriculumTabs({
           return (
             <Link
               key={c._id}
-              to={`/classroom/${groupId}/${c._id}`}
+              to={`/classrooms/${groupId}/${c._id}`}
               className={`flex-shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
                 isActive
                   ? "bg-white text-zinc-900"
@@ -73,7 +73,7 @@ export function CurriculumSidebar({
           return (
             <Link
               key={c._id}
-              to={`/classroom/${groupId}/${c._id}`}
+              to={`/classrooms/${groupId}/${c._id}`}
               className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${
                 isActive
                   ? "bg-zinc-800 text-white"

@@ -28,8 +28,8 @@ import { experienceIds, experiences } from "~/lib/experiences";
 import type { ExperienceId } from "~/lib/experiences";
 import { UsersFindOneDocument } from "~/queries/users";
 import { GroupCreateOneDocument } from "~/queries/groups";
-import { OnboardingLayout } from "./classroom.create/_components/onboarding-layout";
-import { ClassroomPreviewCard } from "./classroom.create/_components/classroom-preview-card";
+import { OnboardingLayout } from "./classrooms_.create/_components/onboarding-layout";
+import { ClassroomPreviewCard } from "./classrooms_.create/_components/classroom-preview-card";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const token = await requireSessionToken(request);

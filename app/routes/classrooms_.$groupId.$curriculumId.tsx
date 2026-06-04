@@ -11,16 +11,16 @@ import { CurriculumsFindOneDocument } from "~/queries/curriculums";
 import { LessonFindManyDocument } from "~/queries/lessons";
 import { UsersFindOneDocument } from "~/queries/users";
 import { lessonSortEnumTC } from "~/gql/graphql";
-import { CurriculumBackground } from "./classroom.$groupId.$curriculumId/_components/curriculum-background";
-import { CurriculumSlider } from "./classroom.$groupId.$curriculumId/_components/curriculum-slider";
-import { ClassroomHeader } from "./classroom.$groupId.$curriculumId/_components/classroom-header";
+import { CurriculumBackground } from "./classrooms_.$groupId.$curriculumId/_components/curriculum-background";
+import { CurriculumSlider } from "./classrooms_.$groupId.$curriculumId/_components/curriculum-slider";
+import { ClassroomHeader } from "./classrooms_.$groupId.$curriculumId/_components/classroom-header";
 import {
   CurriculumSidebar,
   CurriculumTabs,
-} from "./classroom.$groupId.$curriculumId/_components/curriculum-sidebar";
-import type { SidebarCurriculum } from "./classroom.$groupId.$curriculumId/_components/curriculum-sidebar";
-import { LessonGrid } from "./classroom.$groupId.$curriculumId/_components/lesson-grid";
-import { SettingsButton } from "./classroom.$groupId.$curriculumId/_components/settings-button";
+} from "./classrooms_.$groupId.$curriculumId/_components/curriculum-sidebar";
+import type { SidebarCurriculum } from "./classrooms_.$groupId.$curriculumId/_components/curriculum-sidebar";
+import { LessonGrid } from "./classrooms_.$groupId.$curriculumId/_components/lesson-grid";
+import { SettingsButton } from "./classrooms_.$groupId.$curriculumId/_components/settings-button";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { groupId, curriculumId } = params;

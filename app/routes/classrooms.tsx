@@ -61,7 +61,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Zero-groups redirect only on a successful fetch — never when the request
   // errored (show the error card instead).
   if (groupsResult.ok && groups.length === 0) {
-    throw redirect("/classroom/create");
+    throw redirect("/classrooms/create");
   }
 
   return {
@@ -129,14 +129,23 @@ export default function ClassroomsRoute() {
                   key={g._id}
                   name={g.name ?? ""}
                   index={i}
-                  onSelect={() => navigate(`/classrooms/${g._id}`)}
+                  onSelect={() => {
+                    const firstCurriculumId = g.curriculums?.[0];
+                    if (!firstCurriculumId) {
+                      toast.error(
+                        "This Classroom does not have any series assigned.",
+                      );
+                      return;
+                    }
+                    navigate(`/classrooms/${g._id}/${firstCurriculumId}`);
+                  }}
                   onDelete={() => handleDelete(g._id)}
                   deleting={deletingId === g._id}
                 />
               ))}
             </div>
             <Link
-              to="/classroom/create"
+              to="/classrooms/create"
               className="mt-4 flex flex-col items-center gap-3"
             >
               <CircleTile

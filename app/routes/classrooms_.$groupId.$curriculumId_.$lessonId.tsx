@@ -2,10 +2,10 @@ import { useCallback, useState } from "react";
 import { useLoaderData, useNavigate, useSearchParams } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { requireSessionToken } from "~/lib/session.server";
-import { PlayerStage } from "./classroom.$groupId.$curriculumId_.$lessonId/_components/player-stage";
-import { JournalScreen } from "./classroom.$groupId.$curriculumId_.$lessonId/_components/journal-screen";
-import { MilestoneScreen } from "./classroom.$groupId.$curriculumId_.$lessonId/_components/milestone-screen";
-import { FeedbackOverlay } from "./classroom.$groupId.$curriculumId_.$lessonId/_components/feedback-overlay";
+import { PlayerStage } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/player-stage";
+import { JournalScreen } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/journal-screen";
+import { MilestoneScreen } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/milestone-screen";
+import { FeedbackOverlay } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/feedback-overlay";
 
 type AfterScreen = "journal" | "milestone" | "feedback";
 type MediaType = "audio" | "video";
@@ -46,7 +46,7 @@ export default function LessonPlayerRoute() {
   const [stage, setStage] = useState<Stage>("player");
 
   const exitToCurriculum = useCallback(() => {
-    navigate(`/classroom/${groupId}/${curriculumId}`);
+    navigate(`/classrooms/${groupId}/${curriculumId}`);
   }, [navigate, groupId, curriculumId]);
 
   const handleEnded = useCallback(() => {
