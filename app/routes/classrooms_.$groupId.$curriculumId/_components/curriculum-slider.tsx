@@ -216,7 +216,7 @@ export function CurriculumSlider({ lessons }: CurriculumSliderProps) {
 
   return (
     <div
-      className="flex h-full flex-col items-center"
+      className="flex flex-col items-center"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -272,6 +272,36 @@ export function CurriculumSlider({ lessons }: CurriculumSliderProps) {
                   pointerEvents: style.opacity === 0 ? "none" : "auto",
                 }}
               >
+                {/* Day label — lives inside the transformed wrapper so it
+                    scales/tilts with its card; the active card's label is
+                    taller + larger (prototype ThemedCardCarouselPlayer day
+                    label + `.day-label-animate` in index.css). */}
+                <div
+                  className="relative mb-2 text-center text-white drop-shadow-lg"
+                  style={{
+                    height: isActive
+                      ? "clamp(3rem, 6vh, 4rem)"
+                      : "clamp(1.5rem, 3vh, 2rem)",
+                    transition: "height 0.8s ease",
+                  }}
+                >
+                  <div
+                    key={isActive ? `day-${currentIndex}` : undefined}
+                    className={`absolute inset-0 flex items-center justify-center font-serif italic${
+                      isActive ? " day-label-animate" : ""
+                    }`}
+                    style={{
+                      fontSize: isActive
+                        ? "clamp(2rem, 4vw, 3rem)"
+                        : "clamp(1rem, 2vw, 1.5rem)",
+                      textShadow: "0 2px 10px rgba(0,0,0,0.3)",
+                      transition: "font-size 0.4s ease",
+                    }}
+                  >
+                    Day {lesson.order ?? index + 1}
+                  </div>
+                </div>
+
                 <LessonGlassCard
                   image={lesson.cover?.url}
                   title={lesson.title ?? ""}
@@ -311,9 +341,6 @@ export function CurriculumSlider({ lessons }: CurriculumSliderProps) {
 
           {/* Center content */}
           <div className="flex w-[280px] flex-col items-center gap-2 sm:w-[360px] sm:gap-3 md:w-[420px] lg:w-[480px]">
-            <p className="font-serif text-sm italic text-white drop-shadow-lg">
-              Day {currentLesson?.order ?? currentIndex + 1}
-            </p>
             <h2 className="line-clamp-2 w-full text-center font-serif text-lg text-white drop-shadow-lg sm:text-xl md:text-2xl lg:text-3xl">
               {currentLesson?.title}
             </h2>
@@ -444,6 +471,15 @@ export function CurriculumSlider({ lessons }: CurriculumSliderProps) {
             --carousel-angle-spread: 14;
             --carousel-scale-adjacent: 0.66;
           }
+        }
+
+        /* Active Day-label fade-in (prototype index.css \`.day-label-animate\`). */
+        .day-label-animate {
+          animation: day-fade-in 0.4s ease-out;
+        }
+        @keyframes day-fade-in {
+          0% { opacity: 0; transform: translateY(8px); }
+          100% { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </div>
