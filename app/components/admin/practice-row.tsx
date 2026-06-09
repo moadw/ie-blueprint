@@ -23,16 +23,13 @@ import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
 import { api } from "~/lib/api";
 import { gqlClient } from "~/lib/graphql";
-import {
-  LessonDeleteOneDocument,
-  LessonUpdateOneDocument,
-} from "~/mutations/lessons";
-import type { LessonFindManyQuery } from "~/gql/graphql";
+import { ClassesUpdateOneDocument } from "~/mutations/classes";
+import type { ClassesAdminFindManyQuery } from "~/gql/graphql";
 import { cn } from "~/lib/utils";
 
 type Practice = NonNullable<
-  NonNullable<LessonFindManyQuery["LessonFindMany"]>[number]
->;
+  ClassesAdminFindManyQuery["ClassesAdminFindMany"]
+>[number];
 
 export interface PracticeRowProps {
   practice: Practice;
@@ -74,10 +71,14 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
   const initialDay = Math.max(1, Math.round(practice.order ?? 1));
   const [day, setDay] = useState<number>(initialDay);
 
+  // Access is wired to the record's `free` flag.
+  const [accessLevel, setAccessLevel] = useState<string>(
+    practice.free ? "free" : "premium",
+  );
+
   // Visual-only state (not persisted)
   const [category, setCategory] = useState<string>("");
   const [gradeLevel, setGradeLevel] = useState<string>("all_levels");
-  const [accessLevel, setAccessLevel] = useState<string>("free");
   const [active, setActive] = useState<boolean>(true);
   const [hasJournal, setHasJournal] = useState<boolean>(false);
   const [journalPrompt, setJournalPrompt] = useState<string>("");
@@ -117,12 +118,12 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
     }
     setTitleSaving(true);
     try {
-      const data = await gqlClient.request(LessonUpdateOneDocument, {
+      const data = await gqlClient.request(ClassesUpdateOneDocument, {
         _id: practiceId,
         record: { title: trimmed },
       });
       const payloadError = (
-        data.LessonUpdateOne as { error?: { message?: string } | null } | null | undefined
+        data.ClassesUpdateOne as { error?: { message?: string } | null } | null | undefined
       )?.error;
       if (payloadError?.message) throw new Error(payloadError.message);
       toast.success("Practice updated");
@@ -139,17 +140,19 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
   async function handleSave() {
     setSubmitting(true);
     try {
-      const data = await gqlClient.request(LessonUpdateOneDocument, {
+      const data = await gqlClient.request(ClassesUpdateOneDocument, {
         _id: practiceId,
         record: {
           title: title.trim(),
           description: description.trim() || null,
           order: dayValue,
-          // classificationType intentionally omitted (Decision 2-3, plan)
+          free: accessLevel === "free",
+          // Category, Grade, Active, Journal are visual-only (I2/I3).
+          // `deleted` is not written here — soft delete is the Delete button's job (I3).
         },
       });
       const payloadError = (
-        data.LessonUpdateOne as { error?: { message?: string } | null } | null | undefined
+        data.ClassesUpdateOne as { error?: { message?: string } | null } | null | undefined
       )?.error;
       if (payloadError?.message) throw new Error(payloadError.message);
       toast.success("Practice updated");
@@ -173,7 +176,11 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
       return;
     setDeleting(true);
     try {
-      await gqlClient.request(LessonDeleteOneDocument, { _id: practiceId });
+      // Soft delete: flag the record; loader filters out `deleted` rows.
+      await gqlClient.request(ClassesUpdateOneDocument, {
+        _id: practiceId,
+        record: { deleted: true },
+      });
       toast.success("Practice deleted");
       onChange();
     } catch (err) {
@@ -188,13 +195,14 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
   async function handleCoverPick(file: File) {
     try {
       const fd = new FormData();
-      fd.append("_id", practiceId); // underscore — not "id"
+      fd.append("class", practiceId); // class-cover uses field "class", not "_id"
       fd.append("file", file);
-      await api("/admin/lesson-cover", { method: "PUT", body: fd });
+      await api("/admin/class-cover", { method: "PUT", body: fd });
       toast.success("Cover updated");
       onChange();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Cover upload failed";
+      console.error("[class-cover] upload failed", err);
       toast.error(msg);
     }
   }
@@ -207,7 +215,7 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
       )}
     >
       <div className="flex items-center justify-between gap-3 p-4">
-        {/* TODO(reorder): wire to dnd-kit + LessonUpdateOne order mutation */}
+        {/* TODO(reorder): wire to dnd-kit + ClassesUpdateOne order mutation */}
         <button
           type="button"
           aria-label="Drag to reorder"

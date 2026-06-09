@@ -17,7 +17,7 @@ import { homePathForIdentifier } from "~/lib/user";
 import { UsersFindOneDocument } from "~/queries/users";
 import { GroupFindManyDocument } from "~/queries/groups";
 import type { GroupFindManyQuery } from "~/gql/graphql";
-import { ClassesDeleteOneDocument } from "~/mutations/groups";
+import { ClassesDeleteOneDocument } from "~/mutations/classes";
 import { CircleTile } from "~/components/ui/circle-tile";
 import { ClassroomCard } from "./classrooms/_components/classroom-card";
 import glassBackground from "~/assets/glass-background.webp";

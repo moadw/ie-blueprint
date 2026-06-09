@@ -15,10 +15,12 @@ import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-
  */
 type Documents = {
     "\n  query Ping {\n    __typename\n  }\n": typeof types.PingDocument,
+    "\n  mutation ClassesCreateOne($record: CreateOneclassesInput!) {\n    ClassesCreateOne(record: $record) {\n      recordId\n      record {\n        _id\n        title\n        description\n        order\n        free\n        deleted\n        curriculum\n        cover { type url }\n      }\n      error { message }\n    }\n  }\n": typeof types.ClassesCreateOneDocument,
+    "\n  mutation ClassesUpdateOne($_id: String!, $record: UpdateByIdclassesInput!) {\n    ClassesUpdateOne(_id: $_id, record: $record) {\n      recordId\n      record {\n        _id\n        title\n        description\n        order\n        free\n        deleted\n        curriculum\n        cover { type url }\n      }\n      error { message }\n    }\n  }\n": typeof types.ClassesUpdateOneDocument,
+    "\n  mutation ClassesDeleteOne($_id: String!) {\n    ClassesDeleteOne(_id: $_id)\n  }\n": typeof types.ClassesDeleteOneDocument,
     "\n  mutation CurriculumsCreateOne($record: CreateOnecurriculumsInput!) {\n    CurriculumsCreateOne(record: $record) {\n      recordId\n      record {\n        _id\n        title\n        slug\n        active\n        hidden\n      }\n      error { message }\n    }\n  }\n": typeof types.CurriculumsCreateOneDocument,
     "\n  mutation CurriculumsUpdateOne($_id: String!, $record: UpdateByIdcurriculumsInput!) {\n    CurriculumsUpdateOne(_id: $_id, record: $record) {\n      recordId\n      record {\n        _id\n        title\n        slug\n        active\n        hidden\n        description\n        grade\n        order\n        cover { type url }\n        bgImage { type url }\n      }\n      error { message }\n    }\n  }\n": typeof types.CurriculumsUpdateOneDocument,
     "\n  mutation GroupDeleteOne($_id: String!) {\n    GroupDeleteOne(_id: $_id)\n  }\n": typeof types.GroupDeleteOneDocument,
-    "\n  mutation ClassesDeleteOne($_id: String!) {\n    ClassesDeleteOne(_id: $_id)\n  }\n": typeof types.ClassesDeleteOneDocument,
     "\n  mutation LessonCreateOne($record: CreateOnelessonInput!) {\n    LessonCreateOne(record: $record) {\n      recordId\n      record {\n        _id\n        title\n        description\n        order\n        curriculum\n        classificationType\n        cover { type url }\n      }\n      error { message }\n    }\n  }\n": typeof types.LessonCreateOneDocument,
     "\n  mutation LessonUpdateOne($_id: String!, $record: UpdateByIdlessonInput!) {\n    LessonUpdateOne(_id: $_id, record: $record) {\n      recordId\n      record {\n        _id\n        title\n        description\n        order\n        curriculum\n        classificationType\n        cover { type url }\n      }\n      error { message }\n    }\n  }\n": typeof types.LessonUpdateOneDocument,
     "\n  mutation LessonDeleteOne($_id: String!) {\n    LessonDeleteOne(_id: $_id)\n  }\n": typeof types.LessonDeleteOneDocument,
@@ -28,6 +30,8 @@ type Documents = {
     "\n  mutation UsersSetPasswordAdmin($user: String!, $password: String!) {\n    UsersSetPasswordAdmin(user: $user, password: $password)\n  }\n": typeof types.UsersSetPasswordAdminDocument,
     "\n  mutation SchoolUserDeleteOne($school: String!, $user: String!) {\n    SchoolUserDeleteOne(school: $school, user: $user)\n  }\n": typeof types.SchoolUserDeleteOneDocument,
     "\n  mutation SetUserSchool($school: String!, $user: String!) {\n    SetUserSchool(school: $school, user: $user)\n  }\n": typeof types.SetUserSchoolDocument,
+    "\n  query ClassesAdminFindMany($filter: FilterFindManyclassesInput, $limit: Int, $sort: [SortFindManyclassesInput!]) {\n    ClassesAdminFindMany(filter: $filter, limit: $limit, sort: $sort) {\n      _id\n      title\n      description\n      order\n      free\n      deleted\n      curriculum\n      cover { type url }\n    }\n  }\n": typeof types.ClassesAdminFindManyDocument,
+    "\n  query ClassesAdminFindOne($filter: FilterFindOneclassesInput) {\n    ClassesAdminFindOne(filter: $filter) {\n      _id\n      title\n      description\n      order\n      free\n      deleted\n      curriculum\n      cover { type url }\n    }\n  }\n": typeof types.ClassesAdminFindOneDocument,
     "\n  query curriculumCollectionFindMany(\n    $filter: FilterFindManycurriculumcollectionInput\n    $skip: Int\n    $limit: Int\n  ) {\n    curriculumCollectionFindMany(filter: $filter, skip: $skip, limit: $limit) {\n      _id\n      name\n      slug\n      description\n      gradeLevel\n      color\n      active\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.curriculumCollectionFindManyDocument,
     "\n  query curriculumCollectionFindOne(\n    $filter: FilterFindOnecurriculumcollectionInput\n  ) {\n    curriculumCollectionFindOne(filter: $filter) {\n      _id\n      name\n      slug\n      description\n      gradeLevel\n      color\n      active\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.curriculumCollectionFindOneDocument,
     "\n  mutation curriculumCollectionCreateOne($record: curriculumcollectionInput!) {\n    curriculumCollectionCreateOne: CurriculumCollectionCreateOne(record: $record) {\n      _id\n      name\n      slug\n      description\n      gradeLevel\n      color\n      active\n      createdAt\n      updatedAt\n    }\n  }\n": typeof types.curriculumCollectionCreateOneDocument,
@@ -66,10 +70,12 @@ type Documents = {
 };
 const documents: Documents = {
     "\n  query Ping {\n    __typename\n  }\n": types.PingDocument,
+    "\n  mutation ClassesCreateOne($record: CreateOneclassesInput!) {\n    ClassesCreateOne(record: $record) {\n      recordId\n      record {\n        _id\n        title\n        description\n        order\n        free\n        deleted\n        curriculum\n        cover { type url }\n      }\n      error { message }\n    }\n  }\n": types.ClassesCreateOneDocument,
+    "\n  mutation ClassesUpdateOne($_id: String!, $record: UpdateByIdclassesInput!) {\n    ClassesUpdateOne(_id: $_id, record: $record) {\n      recordId\n      record {\n        _id\n        title\n        description\n        order\n        free\n        deleted\n        curriculum\n        cover { type url }\n      }\n      error { message }\n    }\n  }\n": types.ClassesUpdateOneDocument,
+    "\n  mutation ClassesDeleteOne($_id: String!) {\n    ClassesDeleteOne(_id: $_id)\n  }\n": types.ClassesDeleteOneDocument,
     "\n  mutation CurriculumsCreateOne($record: CreateOnecurriculumsInput!) {\n    CurriculumsCreateOne(record: $record) {\n      recordId\n      record {\n        _id\n        title\n        slug\n        active\n        hidden\n      }\n      error { message }\n    }\n  }\n": types.CurriculumsCreateOneDocument,
     "\n  mutation CurriculumsUpdateOne($_id: String!, $record: UpdateByIdcurriculumsInput!) {\n    CurriculumsUpdateOne(_id: $_id, record: $record) {\n      recordId\n      record {\n        _id\n        title\n        slug\n        active\n        hidden\n        description\n        grade\n        order\n        cover { type url }\n        bgImage { type url }\n      }\n      error { message }\n    }\n  }\n": types.CurriculumsUpdateOneDocument,
     "\n  mutation GroupDeleteOne($_id: String!) {\n    GroupDeleteOne(_id: $_id)\n  }\n": types.GroupDeleteOneDocument,
-    "\n  mutation ClassesDeleteOne($_id: String!) {\n    ClassesDeleteOne(_id: $_id)\n  }\n": types.ClassesDeleteOneDocument,
     "\n  mutation LessonCreateOne($record: CreateOnelessonInput!) {\n    LessonCreateOne(record: $record) {\n      recordId\n      record {\n        _id\n        title\n        description\n        order\n        curriculum\n        classificationType\n        cover { type url }\n      }\n      error { message }\n    }\n  }\n": types.LessonCreateOneDocument,
     "\n  mutation LessonUpdateOne($_id: String!, $record: UpdateByIdlessonInput!) {\n    LessonUpdateOne(_id: $_id, record: $record) {\n      recordId\n      record {\n        _id\n        title\n        description\n        order\n        curriculum\n        classificationType\n        cover { type url }\n      }\n      error { message }\n    }\n  }\n": types.LessonUpdateOneDocument,
     "\n  mutation LessonDeleteOne($_id: String!) {\n    LessonDeleteOne(_id: $_id)\n  }\n": types.LessonDeleteOneDocument,
@@ -79,6 +85,8 @@ const documents: Documents = {
     "\n  mutation UsersSetPasswordAdmin($user: String!, $password: String!) {\n    UsersSetPasswordAdmin(user: $user, password: $password)\n  }\n": types.UsersSetPasswordAdminDocument,
     "\n  mutation SchoolUserDeleteOne($school: String!, $user: String!) {\n    SchoolUserDeleteOne(school: $school, user: $user)\n  }\n": types.SchoolUserDeleteOneDocument,
     "\n  mutation SetUserSchool($school: String!, $user: String!) {\n    SetUserSchool(school: $school, user: $user)\n  }\n": types.SetUserSchoolDocument,
+    "\n  query ClassesAdminFindMany($filter: FilterFindManyclassesInput, $limit: Int, $sort: [SortFindManyclassesInput!]) {\n    ClassesAdminFindMany(filter: $filter, limit: $limit, sort: $sort) {\n      _id\n      title\n      description\n      order\n      free\n      deleted\n      curriculum\n      cover { type url }\n    }\n  }\n": types.ClassesAdminFindManyDocument,
+    "\n  query ClassesAdminFindOne($filter: FilterFindOneclassesInput) {\n    ClassesAdminFindOne(filter: $filter) {\n      _id\n      title\n      description\n      order\n      free\n      deleted\n      curriculum\n      cover { type url }\n    }\n  }\n": types.ClassesAdminFindOneDocument,
     "\n  query curriculumCollectionFindMany(\n    $filter: FilterFindManycurriculumcollectionInput\n    $skip: Int\n    $limit: Int\n  ) {\n    curriculumCollectionFindMany(filter: $filter, skip: $skip, limit: $limit) {\n      _id\n      name\n      slug\n      description\n      gradeLevel\n      color\n      active\n      createdAt\n      updatedAt\n    }\n  }\n": types.curriculumCollectionFindManyDocument,
     "\n  query curriculumCollectionFindOne(\n    $filter: FilterFindOnecurriculumcollectionInput\n  ) {\n    curriculumCollectionFindOne(filter: $filter) {\n      _id\n      name\n      slug\n      description\n      gradeLevel\n      color\n      active\n      createdAt\n      updatedAt\n    }\n  }\n": types.curriculumCollectionFindOneDocument,
     "\n  mutation curriculumCollectionCreateOne($record: curriculumcollectionInput!) {\n    curriculumCollectionCreateOne: CurriculumCollectionCreateOne(record: $record) {\n      _id\n      name\n      slug\n      description\n      gradeLevel\n      color\n      active\n      createdAt\n      updatedAt\n    }\n  }\n": types.curriculumCollectionCreateOneDocument,
@@ -137,6 +145,18 @@ export function graphql(source: "\n  query Ping {\n    __typename\n  }\n"): (typ
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
+export function graphql(source: "\n  mutation ClassesCreateOne($record: CreateOneclassesInput!) {\n    ClassesCreateOne(record: $record) {\n      recordId\n      record {\n        _id\n        title\n        description\n        order\n        free\n        deleted\n        curriculum\n        cover { type url }\n      }\n      error { message }\n    }\n  }\n"): (typeof documents)["\n  mutation ClassesCreateOne($record: CreateOneclassesInput!) {\n    ClassesCreateOne(record: $record) {\n      recordId\n      record {\n        _id\n        title\n        description\n        order\n        free\n        deleted\n        curriculum\n        cover { type url }\n      }\n      error { message }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation ClassesUpdateOne($_id: String!, $record: UpdateByIdclassesInput!) {\n    ClassesUpdateOne(_id: $_id, record: $record) {\n      recordId\n      record {\n        _id\n        title\n        description\n        order\n        free\n        deleted\n        curriculum\n        cover { type url }\n      }\n      error { message }\n    }\n  }\n"): (typeof documents)["\n  mutation ClassesUpdateOne($_id: String!, $record: UpdateByIdclassesInput!) {\n    ClassesUpdateOne(_id: $_id, record: $record) {\n      recordId\n      record {\n        _id\n        title\n        description\n        order\n        free\n        deleted\n        curriculum\n        cover { type url }\n      }\n      error { message }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation ClassesDeleteOne($_id: String!) {\n    ClassesDeleteOne(_id: $_id)\n  }\n"): (typeof documents)["\n  mutation ClassesDeleteOne($_id: String!) {\n    ClassesDeleteOne(_id: $_id)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
 export function graphql(source: "\n  mutation CurriculumsCreateOne($record: CreateOnecurriculumsInput!) {\n    CurriculumsCreateOne(record: $record) {\n      recordId\n      record {\n        _id\n        title\n        slug\n        active\n        hidden\n      }\n      error { message }\n    }\n  }\n"): (typeof documents)["\n  mutation CurriculumsCreateOne($record: CreateOnecurriculumsInput!) {\n    CurriculumsCreateOne(record: $record) {\n      recordId\n      record {\n        _id\n        title\n        slug\n        active\n        hidden\n      }\n      error { message }\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
@@ -146,10 +166,6 @@ export function graphql(source: "\n  mutation CurriculumsUpdateOne($_id: String!
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation GroupDeleteOne($_id: String!) {\n    GroupDeleteOne(_id: $_id)\n  }\n"): (typeof documents)["\n  mutation GroupDeleteOne($_id: String!) {\n    GroupDeleteOne(_id: $_id)\n  }\n"];
-/**
- * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
- */
-export function graphql(source: "\n  mutation ClassesDeleteOne($_id: String!) {\n    ClassesDeleteOne(_id: $_id)\n  }\n"): (typeof documents)["\n  mutation ClassesDeleteOne($_id: String!) {\n    ClassesDeleteOne(_id: $_id)\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -186,6 +202,14 @@ export function graphql(source: "\n  mutation SchoolUserDeleteOne($school: Strin
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation SetUserSchool($school: String!, $user: String!) {\n    SetUserSchool(school: $school, user: $user)\n  }\n"): (typeof documents)["\n  mutation SetUserSchool($school: String!, $user: String!) {\n    SetUserSchool(school: $school, user: $user)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query ClassesAdminFindMany($filter: FilterFindManyclassesInput, $limit: Int, $sort: [SortFindManyclassesInput!]) {\n    ClassesAdminFindMany(filter: $filter, limit: $limit, sort: $sort) {\n      _id\n      title\n      description\n      order\n      free\n      deleted\n      curriculum\n      cover { type url }\n    }\n  }\n"): (typeof documents)["\n  query ClassesAdminFindMany($filter: FilterFindManyclassesInput, $limit: Int, $sort: [SortFindManyclassesInput!]) {\n    ClassesAdminFindMany(filter: $filter, limit: $limit, sort: $sort) {\n      _id\n      title\n      description\n      order\n      free\n      deleted\n      curriculum\n      cover { type url }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query ClassesAdminFindOne($filter: FilterFindOneclassesInput) {\n    ClassesAdminFindOne(filter: $filter) {\n      _id\n      title\n      description\n      order\n      free\n      deleted\n      curriculum\n      cover { type url }\n    }\n  }\n"): (typeof documents)["\n  query ClassesAdminFindOne($filter: FilterFindOneclassesInput) {\n    ClassesAdminFindOne(filter: $filter) {\n      _id\n      title\n      description\n      order\n      free\n      deleted\n      curriculum\n      cover { type url }\n    }\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

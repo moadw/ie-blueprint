@@ -7,8 +7,9 @@ import { Input } from "~/components/ui/input";
 import { Modal } from "~/components/ui/modal";
 import { Switch } from "~/components/ui/switch";
 import { api } from "~/lib/api";
+import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
-import { LessonCreateOneDocument } from "~/mutations/lessons";
+import { ClassesCreateOneDocument } from "~/mutations/classes";
 import { cn } from "~/lib/utils";
 
 export interface PracticeDialogProps {
@@ -114,16 +115,19 @@ export function PracticeDialog({
     setError(null);
     try {
       const dayValue = Math.max(1, Math.round(day || 1));
-      const data = await gqlClient.request(LessonCreateOneDocument, {
+      const data = await gqlClient.request(ClassesCreateOneDocument, {
         record: {
           title: title.trim(),
           description: description.trim() || null,
           order: dayValue,
           curriculum: curriculumId,
-          // classificationType intentionally omitted (Decision 2)
+          platform: env.PLATFORM,
+          free: accessLevel === "free",
+          // Category, Grade, Active, Journal are visual-only (I2/I3).
+          // `deleted` is intentionally omitted (I1) — loader treats null/false as visible.
         },
       });
-      const payload = data.LessonCreateOne;
+      const payload = data.ClassesCreateOne;
       const payloadError = (
         payload as { error?: { message?: string } | null } | null | undefined
       )?.error;
@@ -135,12 +139,12 @@ export function PracticeDialog({
       if (coverFile) {
         try {
           const fd = new FormData();
-          fd.append("_id", recordId);
+          fd.append("class", recordId);
           fd.append("file", coverFile);
-          await api("/admin/lesson-cover", { method: "PUT", body: fd });
+          await api("/admin/class-cover", { method: "PUT", body: fd });
         } catch (uploadErr) {
           coverFailed = true;
-          console.error("[lesson-cover] upload failed", uploadErr);
+          console.error("[class-cover] upload failed", uploadErr);
         }
       }
 

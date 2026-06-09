@@ -26,8 +26,8 @@ import { safe } from "~/lib/safe-loader";
 import { activeHiddenFromStatus, statusFromActiveHidden } from "~/lib/curriculum";
 import { CurriculumsFindOneDocument } from "~/queries/curriculums";
 import { CurriculumsUpdateOneDocument } from "~/mutations/curriculums";
-import { LessonFindManyDocument } from "~/queries/lessons";
-import { lessonSortEnumTC } from "~/gql/graphql";
+import { ClassesAdminFindManyDocument } from "~/queries/classes";
+import { SortFindManyclassesInput } from "~/gql/graphql";
 import { cn } from "~/lib/utils";
 
 const GRADE_LABELS: Record<string, string> = {
@@ -52,13 +52,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!env.PLATFORM) {
     return {
       curriculum: null,
-      lessons: [],
+      classes: [],
       curriculumError:
         "Platform is not configured. Please contact your administrator.",
-      lessonsError: null,
+      classesError: null,
     };
   }
-  const [curriculumResult, lessonsResult] = await Promise.all([
+  const [curriculumResult, classesResult] = await Promise.all([
     safe(
       gqlClient.request(
         CurriculumsFindOneDocument,
@@ -68,8 +68,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ),
     safe(
       gqlClient.request(
-        LessonFindManyDocument,
-        { filter: { curriculum: id }, limit: 100, sort: lessonSortEnumTC.ORDER_ASC },
+        ClassesAdminFindManyDocument,
+        {
+          filter: { curriculum: id, platform: env.PLATFORM },
+          limit: 100,
+          sort: [SortFindManyclassesInput.ORDER_ASC],
+        },
         headers,
       ),
     ),
@@ -78,21 +82,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Response("Series not found", { status: 404 });
   }
   const curriculum = curriculumResult.ok ? curriculumResult.data.CurriculumsFindOne : null;
-  const lessons = lessonsResult.ok
-    ? (lessonsResult.data.LessonFindMany ?? []).filter(
-        (l): l is NonNullable<typeof l> => Boolean(l),
-      )
+  const classes = classesResult.ok
+    ? (classesResult.data.ClassesAdminFindMany ?? []).filter((c) => !c.deleted)
     : [];
   return {
     curriculum,
-    lessons,
+    classes,
     curriculumError: curriculumResult.error,
-    lessonsError: lessonsResult.error,
+    classesError: classesResult.error,
   };
 }
 
 export default function AdminContentSeriesDetail() {
-  const { curriculum, lessons, lessonsError, curriculumError } =
+  const { curriculum, classes, classesError, curriculumError } =
     useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
   const navigate = useNavigate();
@@ -201,7 +203,7 @@ export default function AdminContentSeriesDetail() {
               </Badge>
               {/* TODO(counts): drive from achievements / journals queries */}
               <span className="text-sm text-stone-400">
-                {lessons.length} practices • 0 achievements • 0 journals
+                {classes.length} practices • 0 achievements • 0 journals
               </span>
             </div>
           </div>
@@ -281,14 +283,14 @@ export default function AdminContentSeriesDetail() {
         </div>
       </div>
 
-      {lessonsError ? (
+      {classesError ? (
         <div className="rounded-xl border-2 border-dashed border-red-200 bg-red-50 py-10 text-center">
           <p className="mb-1 text-sm font-medium text-red-700">
             Couldn't load practices
           </p>
-          <p className="text-xs text-red-600">{lessonsError}</p>
+          <p className="text-xs text-red-600">{classesError}</p>
         </div>
-      ) : lessons.length === 0 ? (
+      ) : classes.length === 0 ? (
         <div className="rounded-xl border-2 border-dashed border-stone-200 bg-stone-50 py-16 text-center">
           <Folder className="mx-auto mb-3 h-12 w-12 text-stone-300" />
           <p className="mb-4 text-stone-500">No practices in this series yet</p>
@@ -303,7 +305,7 @@ export default function AdminContentSeriesDetail() {
         </div>
       ) : (
         <div className="space-y-2">
-          {lessons.map((practice) => (
+          {classes.map((practice) => (
             <PracticeRow
               key={practice._id}
               practice={practice}
@@ -322,7 +324,7 @@ export default function AdminContentSeriesDetail() {
         open={addOpen}
         onClose={() => setAddOpen(false)}
         curriculumId={curriculum._id}
-        defaultOrder={lessons.length + 1}
+        defaultOrder={classes.length + 1}
       />
     </div>
   );
