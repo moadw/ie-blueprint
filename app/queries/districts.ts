@@ -172,8 +172,30 @@ export const UserDistrictFindOneDocument = graphql(`
     UserDistrictFindOne {
       _id
       name
+      state
+      country
+      organization
+      platform
+      exemptionDates
+      extraCourse
+      slug
       courses
       coursesCollections
+      licenseLabel
+      address
+      website
+      city
+      deletedAt
+      createdAt
+      updatedAt
+      coverPhoto {
+        url
+        type
+      }
+      logo {
+        url
+        type
+      }
     }
   }
 `);

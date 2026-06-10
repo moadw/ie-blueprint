@@ -1,11 +1,16 @@
 export type UserRoleIdentifier = "admin" | "teacher" | "district-admin";
 
-export type UserHomePath = "/admin" | "/classrooms" | "/dashboard" | "/home";
+export type UserHomePath =
+  | "/admin"
+  | "/classrooms"
+  | "/dashboard"
+  | "/district"
+  | "/home";
 
 const HOME_BY_IDENTIFIER: Record<UserRoleIdentifier, UserHomePath> = {
   admin: "/admin",
   teacher: "/classrooms",
-  "district-admin": "/dashboard",
+  "district-admin": "/district",
 };
 
 export function homePathForIdentifier(
