@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, Folder } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -7,6 +6,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import {
+  ExperiencesSelector,
+  deriveCourses,
+} from "~/components/admin/experiences-selector";
+import type { CurriculumLite } from "~/components/admin/experiences-selector";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -17,6 +21,7 @@ export interface LicenseDialogDistrict {
   _id: string;
   name?: string | null;
   courses?: Array<string | null> | null;
+  coursesCollections?: Array<string | null> | null;
   licenseLabel?: string | null;
 }
 
@@ -25,12 +30,13 @@ export interface LicenseDialogPreset {
   label?: string | null;
   identifier?: string | null;
   courses?: Array<string | null> | null;
+  coursesCollection?: Array<string | null> | null;
 }
 
 export interface LicenseDialogCurriculum {
   _id: string;
   title?: string | null;
-  description?: string | null;
+  curriculumCollection?: Array<{ _id: string } | null> | null;
   cover?: { url?: string | null } | null;
 }
 
@@ -41,6 +47,7 @@ export interface DistrictLicenseDialogProps {
   presets: ReadonlyArray<LicenseDialogPreset>;
   curriculums: ReadonlyArray<LicenseDialogCurriculum>;
   onSubmit: (args: {
+    coursesCollections: string[];
     courses: string[];
     licenseLabel: string;
   }) => Promise<void> | void;
@@ -56,7 +63,7 @@ export function DistrictLicenseDialog({
   onSubmit,
   onUnassign,
 }: DistrictLicenseDialogProps) {
-  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
   const [selectedPresetId, setSelectedPresetId] = useState<string>("");
   const [customLabel, setCustomLabel] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
@@ -65,10 +72,9 @@ export function DistrictLicenseDialog({
   // Hydrate from district + presets on every open flip.
   useEffect(() => {
     if (!open || !district) return;
-    const initialCourses = (district.courses ?? []).filter(
-      (id): id is string => !!id,
+    setSelectedCollections(
+      (district.coursesCollections ?? []).filter((id): id is string => !!id),
     );
-    setSelected(new Set(initialCourses));
 
     const matchPreset = district.licenseLabel
       ? presets.find((p) => p.label === district.licenseLabel)
@@ -82,13 +88,18 @@ export function DistrictLicenseDialog({
     }
   }, [open, district, presets]);
 
-  const sortedCurriculums = useMemo(
+  // Map loader curricula to the selector's lite shape for save-time
+  // deriveCourses (mirrors classrooms_.create.tsx).
+  const curriculaLite = useMemo<CurriculumLite[]>(
     () =>
-      [...curriculums].sort((a, b) =>
-        (a.title ?? "")
-          .toLocaleLowerCase()
-          .localeCompare((b.title ?? "").toLocaleLowerCase()),
-      ),
+      curriculums.map((c) => ({
+        _id: c._id,
+        title: c.title ?? "Untitled",
+        collectionIds: (c.curriculumCollection ?? [])
+          .filter((cc): cc is NonNullable<typeof cc> => cc != null)
+          .map((cc) => cc._id),
+        coverUrl: c.cover?.url ?? null,
+      })),
     [curriculums],
   );
 
@@ -102,45 +113,65 @@ export function DistrictLicenseDialog({
       setSelectedPresetId("");
       return;
     }
-    const presetCourses = (preset.courses ?? []).filter(
-      (id): id is string => !!id,
+    // Replace semantics: a modern preset sets the selection to exactly its
+    // collections; a legacy preset (no coursesCollection) clears it — its
+    // courses apply at save time.
+    setSelectedCollections(
+      (preset.coursesCollection ?? []).filter((id): id is string => !!id),
     );
-    setSelected((prev) => {
-      const next = new Set(prev);
-      for (const id of presetCourses) next.add(id);
-      return next;
-    });
     setSelectedPresetId(preset._id);
     setCustomLabel("");
   }
 
-  function toggleCurriculum(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  function clearAll() {
-    setSelected(new Set());
+  function handleSelectorChange(next: {
+    coursesCollection: string[];
+    courses: string[];
+  }) {
+    // Ignore next.courses — derivation happens at save time.
+    setSelectedCollections(next.coursesCollection);
+    if (selectedPresetId === "") return;
+    const preset = presets.find((p) => p._id === selectedPresetId);
+    const presetCollections = new Set(
+      (preset?.coursesCollection ?? []).filter((id): id is string => !!id),
+    );
+    const diverged =
+      presetCollections.size !== next.coursesCollection.length ||
+      !next.coursesCollection.every((id) => presetCollections.has(id));
+    if (diverged) setSelectedPresetId("");
   }
 
   async function handleSave() {
+    const preset =
+      selectedPresetId !== ""
+        ? presets.find((p) => p._id === selectedPresetId)
+        : undefined;
+
     let effectiveLabel: string;
     if (selectedPresetId !== "") {
-      const preset = presets.find((p) => p._id === selectedPresetId);
       effectiveLabel = preset?.label ?? "";
     } else {
       const trimmed = customLabel.trim();
       effectiveLabel = trimmed !== "" ? trimmed : "Custom";
     }
 
+    // Legacy presets (no coursesCollection) apply their courses directly and
+    // clear coursesCollections; everything else derives courses from the
+    // selected collections.
+    const legacyPreset =
+      preset &&
+      (preset.coursesCollection ?? []).filter((id) => !!id).length === 0
+        ? preset
+        : undefined;
+    const coursesCollections = legacyPreset ? [] : selectedCollections;
+    const courses = legacyPreset
+      ? (legacyPreset.courses ?? []).filter((id): id is string => !!id)
+      : deriveCourses(selectedCollections, curriculaLite);
+
     setSubmitting(true);
     try {
       await onSubmit({
-        courses: Array.from(selected),
+        coursesCollections,
+        courses,
         licenseLabel: effectiveLabel,
       });
     } finally {
@@ -212,85 +243,16 @@ export function DistrictLicenseDialog({
             </div>
           ) : null}
 
-          {/* Curriculum list */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">
-                Curricula ({selected.size} selected)
-              </Label>
-              <button
-                type="button"
-                onClick={clearAll}
-                disabled={submitting || selected.size === 0}
-                className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline disabled:opacity-50 disabled:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded"
-              >
-                Clear all selections
-              </button>
-            </div>
-            <div className="space-y-2">
-              {sortedCurriculums.length === 0 ? (
-                <p className="text-center text-stone-400 py-8 text-sm">
-                  No curricula available
-                </p>
-              ) : (
-                sortedCurriculums.map((c) => {
-                  const isSelected = selected.has(c._id);
-                  return (
-                    <label
-                      key={c._id}
-                      className={`flex items-center gap-3 p-3 rounded-[14px] border cursor-pointer transition-colors ${
-                        isSelected
-                          ? "bg-blue-50 border-blue-200"
-                          : "bg-card border-border hover:border-foreground/30"
-                      }`}
-                    >
-                      <div className="relative h-12 w-12 flex-shrink-0">
-                        {c.cover?.url ? (
-                          <img
-                            src={c.cover.url}
-                            alt=""
-                            className="h-12 w-12 rounded-lg object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-stone-100">
-                            <Folder
-                              className="h-5 w-5 text-stone-400"
-                              aria-hidden="true"
-                            />
-                          </div>
-                        )}
-                        <span
-                          aria-hidden="true"
-                          className={`absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white transition-colors ${
-                            isSelected
-                              ? "bg-foreground text-background"
-                              : "bg-white text-transparent border-stone-300"
-                          }`}
-                        >
-                          <Check className="h-3 w-3" />
-                        </span>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium truncate">
-                          {c.title ?? "Untitled"}
-                        </p>
-                        {c.description ? (
-                          <p className="text-sm text-muted-foreground truncate">
-                            {c.description}
-                          </p>
-                        ) : null}
-                      </div>
-                      <input
-                        type="checkbox" className="sr-only"
-                        checked={isSelected}
-                        onChange={() => toggleCurriculum(c._id)}
-                        aria-label={`Toggle ${c.title ?? "curriculum"}`}
-                      />
-                    </label>
-                  );
-                })
-              )}
-            </div>
+          {/* Experiences selector */}
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-muted-foreground">
+              Experiences
+            </span>
+            <ExperiencesSelector
+              value={selectedCollections}
+              onChange={handleSelectorChange}
+              disabled={submitting}
+            />
           </div>
         </div>
 

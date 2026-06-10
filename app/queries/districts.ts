@@ -15,6 +15,7 @@ export const DistrictFindManyDocument = graphql(`
       platform
       organization
       courses
+      coursesCollections
       licenseLabel
       coverPhoto {
         type
@@ -67,6 +68,7 @@ export const DistrictUpdateOneDocument = graphql(`
         platform
         organization
         courses
+        coursesCollections
         licenseLabel
         createdAt
         updatedAt

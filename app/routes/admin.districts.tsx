@@ -48,6 +48,7 @@ type District = {
   name?: string | null;
   state?: string | null;
   courses?: Array<string | null> | null;
+  coursesCollections?: Array<string | null> | null;
   licenseLabel?: string | null;
   coverPhoto?: { type?: string | null; url?: string | null } | null;
   logo?: { type?: string | null; url?: string | null } | null;
@@ -66,6 +67,7 @@ type LicensePreset = {
   description?: string | null;
   platform?: string | null;
   courses?: Array<string | null> | null;
+  coursesCollection?: Array<string | null> | null;
   createdAt?: string | null;
   updatedAt?: string | null;
 };
@@ -81,7 +83,7 @@ type Curriculum = {
   category?: string | null;
   order?: number | null;
   totalLesson?: number | null;
-  curriculumCollection?: { _id?: string | null } | null;
+  curriculumCollection?: Array<{ _id: string } | null> | null;
   cover?: { type?: string | null; url?: string | null } | null;
   bgImage?: { type?: string | null; url?: string | null } | null;
 };
@@ -304,6 +306,7 @@ export default function AdminDistrictsRoute() {
                   _id: target._id,
                   name: target.name ?? null,
                   courses: target.courses ?? null,
+                  coursesCollections: target.coursesCollections ?? null,
                   licenseLabel: target.licenseLabel ?? null,
                 });
                 setLicenseDialogOpen(true);
@@ -355,13 +358,14 @@ export default function AdminDistrictsRoute() {
         district={licenseTarget}
         presets={presets}
         curriculums={curriculums}
-        onSubmit={async ({ courses, licenseLabel }) => {
+        onSubmit={async ({ coursesCollections, courses, licenseLabel }) => {
           if (!licenseTarget) return;
           try {
             const data = await gqlClient.request(DistrictUpdateOneDocument, {
               _id: licenseTarget._id,
               record: {
                 courses,
+                coursesCollections,
                 licenseLabel,
                 platform: env.PLATFORM,
               },
@@ -394,6 +398,7 @@ export default function AdminDistrictsRoute() {
               _id: licenseTarget._id,
               record: {
                 courses: [],
+                coursesCollections: [],
                 licenseLabel: null,
                 platform: env.PLATFORM,
               },

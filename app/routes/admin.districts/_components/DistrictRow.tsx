@@ -15,6 +15,7 @@ export interface DistrictRowDistrict {
   name?: string | null;
   state?: string | null;
   courses?: Array<string | null> | null;
+  coursesCollections?: Array<string | null> | null;
   licenseLabel?: string | null;
   coverPhoto?: { url?: string | null } | null;
   logo?: { url?: string | null } | null;
