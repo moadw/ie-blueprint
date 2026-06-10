@@ -1,17 +1,7 @@
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useRevalidator } from "react-router";
-import {
-  ArrowLeft,
-  Award,
-  BookOpen,
-  Edit,
-  Folder,
-  ListOrdered,
-  Package,
-  Plus,
-  RefreshCw,
-} from "lucide-react";
+import { ArrowLeft, Edit, Folder, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -193,85 +183,37 @@ export default function AdminContentSeriesDetail() {
               {curriculum.description || "No description"}
             </p>
             <div className="flex items-center gap-3 mt-2">
-              {/* TODO(curriculum-type): drive from curriculum.<field>; render Collection variant */}
-              <Badge shape="tag" className="bg-blue-50 text-blue-600 border-blue-200">
-                <ListOrdered className="w-3 h-3 mr-1" />
-                Sequential
-              </Badge>
               <Badge shape="tag" className="bg-stone-50 text-stone-500 border-stone-200">
                 {gradeLabel(curriculum.grade)}
               </Badge>
-              {/* TODO(counts): drive from achievements / journals queries */}
               <span className="text-sm text-stone-400">
-                {classes.length} practices • 0 achievements • 0 journals
+                {classes.length} practices
               </span>
             </div>
           </div>
         </div>
-        <div className="flex flex-shrink-0 items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-stone-500">
-              {status === "live" ? "Live" : "Draft"}
-            </span>
-            <Switch
-              checked={status === "live"}
-              disabled={statusUpdating}
-              onCheckedChange={handleStatusToggle}
-            />
+        <div className="flex flex-shrink-0 flex-col items-end justify-between gap-3 self-stretch">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-stone-500">
+                {status === "live" ? "Live" : "Draft"}
+              </span>
+              <Switch
+                checked={status === "live"}
+                disabled={statusUpdating}
+                onCheckedChange={handleStatusToggle}
+              />
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setEditOpen(true)}
+              className="border-stone-300 text-stone-700 hover:bg-stone-100"
+            >
+              <Edit className="h-4 w-4" />
+              Edit Series
+            </Button>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setEditOpen(true)}
-            className="border-stone-300 text-stone-700 hover:bg-stone-100"
-          >
-            <Edit className="h-4 w-4" />
-            Edit Series
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex justify-between items-center border-t border-b border-stone-200 py-3">
-        <p className="text-sm text-stone-500">
-          Drag practices to reorder. Changes are saved automatically.
-        </p>
-        <div className="flex gap-2 items-center">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled
-            className="border-stone-300 text-stone-700"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Sync Durations
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled
-            className="border-amber-300 text-amber-700 hover:bg-amber-50"
-          >
-            <Award className="h-4 w-4" />
-            Add Achievement
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled
-            className="border-sky-300 text-sky-700 hover:bg-sky-50"
-          >
-            <BookOpen className="h-4 w-4" />
-            Add Journal
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled
-            className="border-stone-300 text-stone-700"
-          >
-            <Package className="h-4 w-4" />
-            Bulk Import
-          </Button>
           <Button
             size="sm"
             onClick={() => setAddOpen(true)}
