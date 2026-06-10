@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Image as ImageIcon, Loader2 } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { env } from "~/lib/env";
@@ -19,6 +19,7 @@ interface CurriculumLite {
   _id: string;
   title: string;
   collectionIds: string[];
+  coverUrl: string | null;
 }
 
 export interface ExperiencesSelectorProps {
@@ -103,6 +104,7 @@ export function ExperiencesSelector({
             collectionIds: (c.curriculumCollection ?? [])
               .filter((cc): cc is NonNullable<typeof cc> => cc != null)
               .map((cc) => cc._id),
+            coverUrl: c.cover?.url ?? null,
           }));
         setCollections(nextCollections);
         setCurricula(nextCurricula);
@@ -245,17 +247,30 @@ export function ExperiencesSelector({
             </div>
 
             {isExpanded ? (
-              <div className="space-y-1 border-t border-border px-3 py-2">
+              <div className="space-y-2 border-t border-border px-3 py-2">
                 {children.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No series</p>
                 ) : (
                   children.map((curriculum) => (
-                    <p
+                    <div
                       key={curriculum._id}
-                      className="truncate text-sm text-muted-foreground"
+                      className="flex items-center gap-2.5"
                     >
-                      {curriculum.title}
-                    </p>
+                      {curriculum.coverUrl ? (
+                        <img
+                          src={curriculum.coverUrl}
+                          alt=""
+                          className="h-9 w-9 flex-shrink-0 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground">
+                          <ImageIcon className="h-4 w-4" aria-hidden="true" />
+                        </div>
+                      )}
+                      <span className="truncate text-sm text-muted-foreground">
+                        {curriculum.title}
+                      </span>
+                    </div>
                   ))
                 )}
               </div>
