@@ -21,7 +21,7 @@ import {
   LicensePresetUpdateOneDocument,
 } from "~/queries/license-presets";
 import type { LicensePresetListItem } from "~/routes/admin.license-presets";
-import { SeriesPickerDialog } from "./SeriesPickerDialog";
+import { ExperiencesSelector } from "~/components/admin/experiences-selector";
 
 export interface LicensePresetRowProps {
   preset: LicensePresetListItem;
@@ -52,10 +52,16 @@ export function LicensePresetRow({
         (id): id is string => typeof id === "string",
       ),
   );
+  const [coursesCollectionState, setCoursesCollectionState] = useState<
+    string[]
+  >(
+    () =>
+      (preset.coursesCollection ?? []).filter(
+        (id): id is string => typeof id === "string",
+      ),
+  );
+  const [experiencesDirty, setExperiencesDirty] = useState(false);
   const [savingExpanded, setSavingExpanded] = useState(false);
-
-  // Series picker
-  const [seriesPickerOpen, setSeriesPickerOpen] = useState(false);
 
   // Delete
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -79,6 +85,12 @@ export function LicensePresetRow({
         (id): id is string => typeof id === "string",
       ),
     );
+    setCoursesCollectionState(
+      (preset.coursesCollection ?? []).filter(
+        (id): id is string => typeof id === "string",
+      ),
+    );
+    setExperiencesDirty(false);
   }, [preset]);
 
   async function handleLabelSave() {
@@ -145,6 +157,16 @@ export function LicensePresetRow({
           identifier: identifier.trim(),
           description: description.trim(),
           platform: env.PLATFORM,
+          // Only persist the experience selection when the user changed it,
+          // so an unrelated edit (e.g. description) never wipes a legacy
+          // preset's hand-picked `courses`. Keys are absent when not dirty
+          // (exactOptionalPropertyTypes — never set to undefined).
+          ...(experiencesDirty
+            ? {
+                coursesCollection: coursesCollectionState,
+                courses: coursesState,
+              }
+            : {}),
         },
       });
       const payload = data.LicensePresetUpdateOne as
@@ -165,6 +187,7 @@ export function LicensePresetRow({
         return;
       }
       onUpdated({ ...preset, ...updated });
+      setExperiencesDirty(false);
       toast.success("License preset updated");
       setExpanded(false);
     } catch (err) {
@@ -184,6 +207,12 @@ export function LicensePresetRow({
         (id): id is string => typeof id === "string",
       ),
     );
+    setCoursesCollectionState(
+      (preset.coursesCollection ?? []).filter(
+        (id): id is string => typeof id === "string",
+      ),
+    );
+    setExperiencesDirty(false);
     setExpanded(false);
   }
 
@@ -210,7 +239,6 @@ export function LicensePresetRow({
   }
 
   return (
-    <>
     <div className="bg-card rounded-[14px] shadow-xs border border-border">
       {/* Main row */}
       <div className="p-4 flex items-center justify-between gap-3">
@@ -324,23 +352,19 @@ export function LicensePresetRow({
             />
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-xs font-medium text-muted-foreground">
-                Series
-              </span>
-              <span className="text-sm text-muted-foreground">
-                {coursesState.length} attached
-              </span>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setSeriesPickerOpen(true)}
-            >
-              Manage Series
-            </Button>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium text-muted-foreground">
+              Experiences
+            </span>
+            <ExperiencesSelector
+              value={coursesCollectionState}
+              onChange={({ coursesCollection, courses }) => {
+                setCoursesCollectionState(coursesCollection);
+                setCoursesState(courses);
+                setExperiencesDirty(true);
+              }}
+              disabled={savingExpanded}
+            />
           </div>
 
           <div className="flex justify-between items-center gap-2 pt-2">
@@ -387,37 +411,5 @@ export function LicensePresetRow({
         </div>
       ) : null}
     </div>
-    <SeriesPickerDialog
-      open={seriesPickerOpen}
-      onOpenChange={setSeriesPickerOpen}
-      label={preset.label ?? "License Preset"}
-      selectedIds={coursesState}
-      onSave={async (nextIds) => {
-        const data = await gqlClient.request(LicensePresetUpdateOneDocument, {
-          _id: preset._id,
-          record: { courses: nextIds, platform: env.PLATFORM },
-        });
-        const payload = data.LicensePresetUpdateOne as
-          | {
-              record?: LicensePresetListItem | null;
-              error?: { message?: string | null } | null;
-            }
-          | null
-          | undefined;
-        if (payload?.error?.message) {
-          throw new Error(payload.error.message);
-        }
-        const updated = payload?.record;
-        if (!updated) {
-          throw new Error(
-            "License preset updated but response was missing a record.",
-          );
-        }
-        setCoursesState(nextIds);
-        onUpdated({ ...preset, ...updated });
-        toast.success("Series updated");
-      }}
-    />
-    </>
   );
 }

@@ -16,7 +16,7 @@ import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
 import { LicensePresetCreateOneDocument } from "~/queries/license-presets";
 import type { LicensePresetListItem } from "~/routes/admin.license-presets";
-import { SeriesPickerDialog } from "./SeriesPickerDialog";
+import { ExperiencesSelector } from "~/components/admin/experiences-selector";
 
 export interface LicensePresetDialogProps {
   open: boolean;
@@ -28,6 +28,7 @@ type FormState = {
   label: string;
   identifier: string;
   description: string;
+  coursesCollection: string[];
   courses: string[];
 };
 
@@ -35,6 +36,7 @@ const EMPTY_FORM: FormState = {
   label: "",
   identifier: "",
   description: "",
+  coursesCollection: [],
   courses: [],
 };
 
@@ -55,7 +57,6 @@ export function LicensePresetDialog({
   const revalidator = useRevalidator();
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
-  const [seriesPickerOpen, setSeriesPickerOpen] = useState(false);
   const identifierTouchedRef = useRef(false);
 
   useEffect(() => {
@@ -93,6 +94,7 @@ export function LicensePresetDialog({
           label: trimmedLabel,
           identifier: trimmedIdentifier,
           description: trimmedDescription,
+          coursesCollection: form.coursesCollection,
           courses: form.courses,
           platform: env.PLATFORM,
         },
@@ -139,7 +141,6 @@ export function LicensePresetDialog({
   }
 
   return (
-    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
@@ -198,23 +199,17 @@ export function LicensePresetDialog({
             />
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium text-muted-foreground">
-                Series
-              </span>
-              <span className="text-sm text-muted-foreground">
-                {form.courses.length} attached
-              </span>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setSeriesPickerOpen(true)}
-            >
-              Manage Series
-            </Button>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-muted-foreground">
+              Experiences
+            </span>
+            <ExperiencesSelector
+              value={form.coursesCollection}
+              onChange={({ coursesCollection, courses }) =>
+                setForm((f) => ({ ...f, coursesCollection, courses }))
+              }
+              disabled={submitting}
+            />
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-border">
@@ -240,15 +235,5 @@ export function LicensePresetDialog({
         </form>
       </DialogContent>
     </Dialog>
-    <SeriesPickerDialog
-      open={seriesPickerOpen}
-      onOpenChange={setSeriesPickerOpen}
-      label={form.label.trim() || "New License Preset"}
-      selectedIds={form.courses}
-      onSave={(nextIds) => {
-        setForm((f) => ({ ...f, courses: nextIds }));
-      }}
-    />
-    </>
   );
 }

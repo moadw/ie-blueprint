@@ -29,6 +29,7 @@ export type LicensePresetListItem = {
   description?: string | null;
   platform?: string | null;
   courses?: Array<string | null> | null;
+  coursesCollection?: Array<string | null> | null;
   createdAt?: string | null;
   updatedAt?: string | null;
 };

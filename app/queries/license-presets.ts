@@ -19,6 +19,7 @@ export const LicensePresetFindManyDocument = graphql(/* GraphQL */ `
       description
       platform
       courses
+      coursesCollection
       createdAt
       updatedAt
     }
@@ -34,6 +35,7 @@ export const LicensePresetFindOneDocument = graphql(/* GraphQL */ `
       description
       platform
       courses
+      coursesCollection
       createdAt
       updatedAt
     }
@@ -51,6 +53,7 @@ export const LicensePresetCreateOneDocument = graphql(/* GraphQL */ `
         description
         platform
         courses
+        coursesCollection
         createdAt
         updatedAt
       }
@@ -75,6 +78,7 @@ export const LicensePresetUpdateOneDocument = graphql(/* GraphQL */ `
         description
         platform
         courses
+        coursesCollection
         createdAt
         updatedAt
       }
