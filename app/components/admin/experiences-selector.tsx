@@ -15,7 +15,7 @@ interface CollectionLite {
 }
 
 /** A curriculum ("series") and the collection ids it belongs to. */
-interface CurriculumLite {
+export interface CurriculumLite {
   _id: string;
   title: string;
   collectionIds: string[];

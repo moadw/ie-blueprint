@@ -17,19 +17,24 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { IconTile } from "~/components/ui/icon-tile";
 import { Slider } from "~/components/ui/slider";
-import { OptionCard } from "~/components/ui/option-card";
+import { deriveCourses } from "~/components/admin/experiences-selector";
+import type { CurriculumLite } from "~/components/admin/experiences-selector";
 import { setToken } from "~/lib/auth";
 import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
 import { getInitials } from "~/lib/initials";
+import { safe } from "~/lib/safe-loader";
 import { requireSessionToken } from "~/lib/session.server";
 import { homePathForIdentifier } from "~/lib/user";
-import { experienceIds, experiences } from "~/lib/experiences";
-import type { ExperienceId } from "~/lib/experiences";
+import { CurriculumCollectionFindManyDocument } from "~/queries/curriculum-collections";
+import { CurriculumsFindManyDocument } from "~/queries/curriculums";
+import { UserDistrictFindOneDocument } from "~/queries/districts";
 import { UsersFindOneDocument } from "~/queries/users";
 import { GroupCreateOneDocument } from "~/queries/groups";
 import { OnboardingLayout } from "./classrooms_.create/_components/onboarding-layout";
 import { ClassroomPreviewCard } from "./classrooms_.create/_components/classroom-preview-card";
+import { CollectionSelect } from "./classrooms_.create/_components/collection-select";
+import { CourseMultiSelect } from "./classrooms_.create/_components/course-multi-select";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const token = await requireSessionToken(request);
@@ -42,7 +47,97 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (user?.typeObj?.identifier !== "teacher") {
     throw redirect(homePathForIdentifier(user?.typeObj?.identifier));
   }
-  return { token, user };
+
+  const [districtRes, collectionsRes, curriculaRes] = await Promise.all([
+    safe(
+      gqlClient.request(
+        UserDistrictFindOneDocument,
+        {},
+        { "access-token": token },
+      ),
+    ),
+    safe(
+      gqlClient.request(
+        CurriculumCollectionFindManyDocument,
+        { filter: { platform: env.PLATFORM }, limit: 500 },
+        { "access-token": token },
+      ),
+    ),
+    safe(
+      gqlClient.request(
+        CurriculumsFindManyDocument,
+        { filter: { platform: env.PLATFORM }, limit: 500 },
+        { "access-token": token },
+      ),
+    ),
+  ]);
+
+  const district = districtRes.ok
+    ? (districtRes.data.UserDistrictFindOne ?? null)
+    : null;
+
+  const curriculaLite: CurriculumLite[] = (
+    curriculaRes.ok ? (curriculaRes.data.CurriculumsFindMany ?? []) : []
+  )
+    .filter((c) => c != null)
+    .map((c) => ({
+      _id: c._id,
+      title: c.title ?? "Untitled",
+      collectionIds: (c.curriculumCollection ?? [])
+        .filter((cc) => cc != null)
+        .map((cc) => cc._id),
+      coverUrl: c.cover?.url ?? null,
+    }));
+
+  const collectionById = new Map(
+    (collectionsRes.ok ? collectionsRes.data.curriculumCollectionFindMany : [])
+      .filter((record) => record.active !== false)
+      .map((record) => [record._id, record] as const),
+  );
+
+  const collections = (district?.coursesCollections ?? [])
+    .filter((id): id is string => typeof id === "string")
+    .flatMap((id) => {
+      const record = collectionById.get(id);
+      if (!record) return []; // stale id — drop silently
+      const curriculumIds = deriveCourses([record._id], curriculaLite);
+      return [
+        {
+          _id: record._id,
+          name: record.name ?? "Untitled",
+          subtitle: record.description ?? record.gradeLevel ?? "",
+          slug: record.slug ?? "",
+          curriculumIds,
+          seriesCount: curriculumIds.length,
+        },
+      ];
+    });
+
+  const curriculumById = new Map(curriculaLite.map((c) => [c._id, c]));
+  const fallbackCourses = (district?.courses ?? [])
+    .filter((id): id is string => typeof id === "string")
+    .flatMap((id) => {
+      const curriculum = curriculumById.get(id);
+      if (!curriculum) return []; // stale id — drop silently
+      return [
+        {
+          _id: curriculum._id,
+          title: curriculum.title,
+          coverUrl: curriculum.coverUrl,
+        },
+      ];
+    });
+
+  const mode: "collections" | "courses" =
+    collections.length > 0 ? "collections" : "courses";
+
+  const error =
+    districtRes.error ??
+    (mode === "collections" ? collectionsRes.error : null) ??
+    curriculaRes.error ??
+    null;
+
+  return { token, user, mode, collections, fallbackCourses, error };
 }
 
 type ActionData = { error: string } | undefined;
@@ -54,6 +149,22 @@ export async function action({ request }: ActionFunctionArgs) {
   const name = typeof nameRaw === "string" ? nameRaw.trim() : "";
   if (name.length < 1) {
     return { error: "Classroom name is required" };
+  }
+
+  const curriculumsRaw = formData.get("curriculums");
+  let curriculums: string[] = [];
+  if (typeof curriculumsRaw === "string") {
+    try {
+      const parsed: unknown = JSON.parse(curriculumsRaw);
+      if (Array.isArray(parsed)) {
+        curriculums = parsed.filter((c): c is string => typeof c === "string");
+      }
+    } catch {
+      // fall through to the empty guard
+    }
+  }
+  if (curriculums.length === 0) {
+    return { error: "Select at least one course" };
   }
 
   const userData = await gqlClient.request(
@@ -74,7 +185,7 @@ export async function action({ request }: ActionFunctionArgs) {
         teacher: user._id,
         platform: env.PLATFORM,
         organization: user.organization,
-        curriculums: [],
+        curriculums,
       },
       { "access-token": token },
     );
@@ -89,13 +200,13 @@ export async function action({ request }: ActionFunctionArgs) {
 const schema = z.object({
   name: z.string().min(1, "Required"),
   studentCount: z.number().int().min(1).max(50),
-  experience: z.enum(experienceIds),
 });
 
 type FormValues = z.infer<typeof schema>;
 
 export default function ClassroomCreateRoute() {
-  const { token } = useLoaderData<typeof loader>();
+  const { token, mode, collections, fallbackCourses, error } =
+    useLoaderData<typeof loader>();
   const actionData = useActionData() as ActionData;
   const navigation = useNavigation();
   const navigate = useNavigate();
@@ -103,6 +214,23 @@ export default function ClassroomCreateRoute() {
   const isSubmitting = navigation.state !== "idle";
 
   const [step, setStep] = useState<1 | 2>(1);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<
+    string | null
+  >(collections[0]?._id ?? null);
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+
+  const toggleCourse = (id: string) => {
+    setSelectedCourses((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
+    );
+  };
+
+  const selectedCollection =
+    collections.find((c) => c._id === selectedCollectionId) ?? null;
+  const canCreate =
+    mode === "collections"
+      ? (selectedCollection?.curriculumIds.length ?? 0) > 0
+      : selectedCourses.length > 0;
 
   useEffect(() => {
     setToken(token);
@@ -126,23 +254,24 @@ export default function ClassroomCreateRoute() {
     defaultValues: {
       name: "",
       studentCount: 10,
-      experience: experiences[0].id as ExperienceId,
     },
   });
 
   const watchedName = watch("name") ?? "";
   const watchedCount = watch("studentCount");
-  const watchedExperience = watch("experience");
 
   const onValid = (values: FormValues) => {
     if (step === 1) {
       setStep(2);
       return;
     }
+    const curriculums =
+      mode === "collections"
+        ? (selectedCollection?.curriculumIds ?? [])
+        : selectedCourses;
+    if (curriculums.length === 0) return; // belt-and-braces; button is disabled anyway
     void submit(
-      {
-        name: values.name,
-      },
+      { name: values.name, curriculums: JSON.stringify(curriculums) },
       { method: "post" },
     );
   };
@@ -233,29 +362,38 @@ export default function ClassroomCreateRoute() {
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {experiences.map((opt) => {
-                const Icon = opt.icon;
-                const selected = watchedExperience === opt.id;
-                return (
-                  <OptionCard
-                    key={opt.id}
-                    icon={<Icon className="w-6 h-6" />}
-                    title={opt.title}
-                    subtitle={opt.subtitle}
-                    selected={selected}
-                    onSelect={() =>
-                      setValue("experience", opt.id, { shouldValidate: true })
-                    }
-                  />
-                );
-              })}
-            </div>
-            {errors.experience?.message ? (
-              <p className="text-[13px] text-destructive">
-                {errors.experience.message}
-              </p>
-            ) : null}
+            {error ? (
+              <div className="rounded-[14px] border border-dashed border-red-300 bg-red-50 p-3 text-sm text-red-600">
+                Couldn't load your district's experiences. Try again later.
+              </div>
+            ) : mode === "collections" ? (
+              <div className="space-y-3">
+                <p className="text-[14px] text-foreground font-medium">
+                  Select experience:
+                </p>
+                <CollectionSelect
+                  collections={collections}
+                  selectedId={selectedCollectionId}
+                  onSelect={setSelectedCollectionId}
+                />
+              </div>
+            ) : fallbackCourses.length > 0 ? (
+              <div className="space-y-3">
+                <p className="text-[14px] text-foreground font-medium">
+                  Select courses:
+                </p>
+                <CourseMultiSelect
+                  courses={fallbackCourses}
+                  selected={selectedCourses}
+                  onToggle={toggleCourse}
+                />
+              </div>
+            ) : (
+              <div className="rounded-[14px] border border-border bg-card p-3 text-sm text-muted-foreground">
+                No experiences are available for your district yet. Contact
+                your administrator.
+              </div>
+            )}
             <div className="flex items-center gap-3">
               <Button
                 variant="outline"
@@ -268,6 +406,7 @@ export default function ClassroomCreateRoute() {
                 variant="primary"
                 type="submit"
                 loading={isSubmitting}
+                disabled={!canCreate || isSubmitting}
                 className="flex-1"
               >
                 Create Classroom

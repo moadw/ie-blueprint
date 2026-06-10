@@ -164,3 +164,14 @@ export const DistrictProfileUpdateOneDocument = graphql(`
     DistrictProfileUpdateOne(_id: $_id, record: $record)
   }
 `);
+
+export const UserDistrictFindOneDocument = graphql(`
+  query UserDistrictFindOne {
+    UserDistrictFindOne {
+      _id
+      name
+      courses
+      coursesCollections
+    }
+  }
+`);
