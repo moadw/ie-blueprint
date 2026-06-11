@@ -1,26 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  AlertCircle,
-  BookOpen,
   Check,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
-  Clock,
-  Film,
   GripVertical,
   Image as ImageIcon,
   ImageIcon as ImageOverlay,
   Loader2,
-  Music,
   Trash2,
-  Volume2,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
+import { TapBlocks } from "~/components/admin/tap-blocks";
 import { api } from "~/lib/api";
 import { gqlClient } from "~/lib/graphql";
 import { ClassesUpdateOneDocument } from "~/mutations/classes";
@@ -80,8 +75,6 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
   const [category, setCategory] = useState<string>("");
   const [gradeLevel, setGradeLevel] = useState<string>("all_levels");
   const [active, setActive] = useState<boolean>(true);
-  const [hasJournal, setHasJournal] = useState<boolean>(false);
-  const [journalPrompt, setJournalPrompt] = useState<string>("");
 
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -98,15 +91,13 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
   const dayValue = Math.max(1, Math.round(day || 1));
   const completeness = (() => {
     const hasImage = Boolean(practice.cover?.url);
-    const hasMedia = false; // TODO(media): wire when LessonMedia lands
     const hasDescription = Boolean(practice.description);
     const hasCategory = Boolean(category);
     const missing: string[] = [];
     if (!hasImage) missing.push("Cover image");
-    if (!hasMedia) missing.push("Audio/Video");
     if (!hasDescription) missing.push("Description");
     if (!hasCategory) missing.push("Category");
-    return { isComplete: missing.length === 0, missing, hasMedia };
+    return { isComplete: missing.length === 0, missing };
   })();
   const isComplete = completeness.isComplete;
 
@@ -147,7 +138,7 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
           description: description.trim() || null,
           order: dayValue,
           free: accessLevel === "free",
-          // Category, Grade, Active, Journal are visual-only (I2/I3).
+          // Category, Grade, Active are visual-only (I2/I3).
           // `deleted` is not written here — soft delete is the Delete button's job (I3).
         },
       });
@@ -337,23 +328,6 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
             <Badge shape="tag" className="bg-transparent text-stone-500 border-stone-300">
               {GRADE_OPTIONS.find((g) => g.value === gradeLevel)?.label ?? "All Levels"}
             </Badge>
-            {completeness.hasMedia ? (
-              <Badge shape="tag" className="bg-blue-100 text-blue-700 border-blue-200">
-                <Volume2 className="w-3 h-3" />
-                {/* TODO(media): show count + langs */}
-              </Badge>
-            ) : (
-              <Badge shape="tag" className="bg-amber-50 text-amber-600 border-amber-300">
-                <AlertCircle className="w-3 h-3" />
-                No audio
-              </Badge>
-            )}
-            {hasJournal ? (
-              <Badge shape="tag" className="bg-amber-100 text-amber-700 border-amber-200">
-                <BookOpen className="w-3 h-3" />
-                Journal
-              </Badge>
-            ) : null}
             {isComplete ? (
               <Badge shape="tag" className="bg-emerald-100 text-emerald-700 border-emerald-200">
                 <CheckCircle2 className="w-3 h-3" />
@@ -364,39 +338,6 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
                 Missing: {completeness.missing.join(", ")}
               </span>
             )}
-          </div>
-        </div>
-
-        <div className="flex flex-shrink-0 items-center gap-1.5">
-          <div
-            className="flex h-12 w-12 flex-col items-center justify-center rounded border-2 border-dashed border-stone-300 bg-stone-100"
-            aria-label="Full audio (visual placeholder)"
-            title="Full audio (coming soon)"
-          >
-            <Music className="h-4 w-4 text-stone-400" />
-            <span className="mt-0.5 text-[8px] font-medium text-stone-400">
-              Full
-            </span>
-          </div>
-          <div
-            className="flex h-12 w-12 flex-col items-center justify-center rounded border-2 border-dashed border-stone-300 bg-stone-100"
-            aria-label="Short audio (visual placeholder)"
-            title="5-min audio (coming soon)"
-          >
-            <Clock className="h-4 w-4 text-stone-400" />
-            <span className="mt-0.5 text-[8px] font-medium text-stone-400">
-              5min
-            </span>
-          </div>
-          <div
-            className="flex h-12 w-12 flex-col items-center justify-center rounded border-2 border-dashed border-stone-300 bg-stone-100"
-            aria-label="Video (visual placeholder)"
-            title="Video (coming soon)"
-          >
-            <Film className="h-4 w-4 text-stone-400" />
-            <span className="mt-0.5 text-[8px] font-medium text-stone-400">
-              Video
-            </span>
           </div>
         </div>
 
@@ -516,28 +457,14 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
             />
           </div>
 
-          <div className="space-y-2 rounded-md border border-amber-200 bg-amber-50/40 p-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-amber-800">
-                Journal
-              </span>
-              <Switch checked={hasJournal} onCheckedChange={setHasJournal} />
-            </div>
-            {hasJournal ? (
-              <textarea
-                placeholder="Journal prompt"
-                value={journalPrompt}
-                onChange={(e) => setJournalPrompt(e.target.value)}
-                className="h-16 w-full rounded-md border border-amber-200 bg-card p-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-200/50"
-              />
-            ) : null}
+          {/* Taps persist via their own mutations — independent of the
+              practice Save button below. */}
+          <div>
+            <label className="mb-1 block text-xs font-medium text-stone-600">
+              Content
+            </label>
+            <TapBlocks classId={practiceId} />
           </div>
-
-          <div className="rounded-md border border-blue-200 bg-blue-50/40 p-3 text-sm text-blue-700">
-            Add translation
-          </div>
-
-          <p className="text-xs text-stone-400">No media</p>
 
           <div className="flex justify-end">
             <Button
