@@ -1,7 +1,7 @@
 import { Users } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { formatRelativeTime } from "~/lib/relative-time";
-import type { DistrictUserRow } from "~/routes/district.admin";
+import type { DistrictUserRow } from "~/routes/district.admin.users";
 
 interface DistrictUsersTableProps {
   users: DistrictUserRow[];

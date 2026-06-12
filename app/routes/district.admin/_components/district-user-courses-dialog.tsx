@@ -13,7 +13,7 @@ import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
 import { safe } from "~/lib/safe-loader";
 import { GroupFindManyDocument } from "~/queries/groups";
-import type { DistrictUserRow } from "~/routes/district.admin";
+import type { DistrictUserRow } from "~/routes/district.admin.users";
 
 export interface DistrictUserCoursesDialogProps {
   target: DistrictUserRow | null;
