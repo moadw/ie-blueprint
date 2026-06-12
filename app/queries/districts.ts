@@ -126,6 +126,8 @@ export const DistrictFindOneDocument = graphql(`
   query DistrictFindOne($filter: FilterFindOnedistrictInput) {
     DistrictFindOne(filter: $filter) {
       _id
+      name
+      organization
       coverPhoto {
         type
         url
