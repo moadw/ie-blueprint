@@ -6,11 +6,13 @@ export const SchoolFindManyDocument = graphql(`
       _id
       name
       district
+      city
       state
       country
       platform
       createdAt
       updatedAt
+      deletedAt
     }
   }
 `);

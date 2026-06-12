@@ -12,16 +12,19 @@ import { readPageFromRequest } from "~/lib/pagination";
 import { safe } from "~/lib/safe-loader";
 import { requireSessionToken } from "~/lib/session.server";
 import { DistrictFindOneDocument } from "~/queries/districts";
+import { SchoolCodeFindManyDocument } from "~/queries/school-codes";
 import { SchoolFindManyDocument } from "~/queries/schools";
 import {
   UserSearchDocument,
   UserTypesFindManyDocument,
   UsersFindOneDocument,
 } from "~/queries/users";
+import { DistrictDownloadUsersButton } from "~/routes/district.admin/_components/district-download-users-button";
+import { DistrictInviteCard } from "~/routes/district.admin/_components/district-invite-card";
+import { DistrictSchoolsGrid } from "~/routes/district.admin/_components/district-schools-grid";
+import { DistrictUserCoursesDialog } from "~/routes/district.admin/_components/district-user-courses-dialog";
 import { DistrictUsersFilterBar } from "~/routes/district.admin/_components/district-users-filter-bar";
 import { DistrictUsersTable } from "~/routes/district.admin/_components/district-users-table";
-import { DistrictUserCoursesDialog } from "~/routes/district.admin/_components/district-user-courses-dialog";
-import { DistrictDownloadUsersButton } from "~/routes/district.admin/_components/district-download-users-button";
 import type { UserSearchQuery } from "~/gql/graphql";
 
 type DistrictInfo = {
@@ -31,7 +34,14 @@ type DistrictInfo = {
 };
 
 type UserTypeOption = { _id: string; label?: string | null };
-type SchoolOption = { _id: string; name?: string | null };
+type SchoolOption = {
+  _id: string;
+  name?: string | null;
+  city?: string | null;
+  state?: string | null;
+  deletedAt?: string | null;
+};
+type InviteOption = { _id: string; code: string };
 
 export type DistrictUserRow = NonNullable<
   NonNullable<NonNullable<UserSearchQuery["UserSearch"]>["data"]>[number]
@@ -56,6 +66,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       total: 0,
       userTypes: [] as UserTypeOption[],
       schools: [] as SchoolOption[],
+      invite: null as InviteOption | null,
       filters,
       page: 1,
       hasMore: false,
@@ -78,6 +89,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       total: 0,
       userTypes: [] as UserTypeOption[],
       schools: [] as SchoolOption[],
+      invite: null as InviteOption | null,
       filters,
       page,
       hasMore: false,
@@ -107,6 +119,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       total: 0,
       userTypes: [] as UserTypeOption[],
       schools: [] as SchoolOption[],
+      invite: null as InviteOption | null,
       filters,
       page,
       hasMore: false,
@@ -125,40 +138,48 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const skip = (page - 1) * ADMIN_LIST_PAGE_SIZE;
 
-  // Llamadas 2-4: usuarios, tipos de usuario, escuelas (en paralelo)
-  const [searchResult, userTypesResult, schoolsResult] = await Promise.all([
-    safe(
-      gqlClient.request(
-        UserSearchDocument,
-        {
-          ...(district.organization ? { organizationId: district.organization } : {}),
-          platformId: env.PLATFORM,
-          ...(type ? { type } : {}),
-          ...(search ? { search } : {}),
-          ...(schoolId ? { schoolId } : {}),
-          sortBy: "createdAt",
-          sortOrder: -1,
-          limit: ADMIN_LIST_PAGE_SIZE,
-          skip,
-        },
-        { "access-token": token },
+  // Llamadas 2-5: usuarios, tipos de usuario, escuelas, schoolcode (en paralelo)
+  const [searchResult, userTypesResult, schoolsResult, schoolCodesResult] =
+    await Promise.all([
+      safe(
+        gqlClient.request(
+          UserSearchDocument,
+          {
+            ...(district.organization ? { organizationId: district.organization } : {}),
+            platformId: env.PLATFORM,
+            ...(type ? { type } : {}),
+            ...(search ? { search } : {}),
+            ...(schoolId ? { schoolId } : {}),
+            sortBy: "createdAt",
+            sortOrder: -1,
+            limit: ADMIN_LIST_PAGE_SIZE,
+            skip,
+          },
+          { "access-token": token },
+        ),
       ),
-    ),
-    safe(
-      gqlClient.request(
-        UserTypesFindManyDocument,
-        { limit: 100 },
-        { "access-token": token },
+      safe(
+        gqlClient.request(
+          UserTypesFindManyDocument,
+          { limit: 100 },
+          { "access-token": token },
+        ),
       ),
-    ),
-    safe(
-      gqlClient.request(
-        SchoolFindManyDocument,
-        { filter: { district: district._id, platform: env.PLATFORM }, limit: 500 },
-        { "access-token": token },
+      safe(
+        gqlClient.request(
+          SchoolFindManyDocument,
+          { filter: { district: district._id, platform: env.PLATFORM }, limit: 500 },
+          { "access-token": token },
+        ),
       ),
-    ),
-  ]);
+      safe(
+        gqlClient.request(
+          SchoolCodeFindManyDocument,
+          { filter: { district: district._id }, limit: 1 },
+          { "access-token": token },
+        ),
+      ),
+    ]);
 
   const users: DistrictUserRow[] = searchResult.ok
     ? (searchResult.data.UserSearch?.data ?? []).filter(
@@ -178,6 +199,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
         (s): s is NonNullable<typeof s> => s != null,
       )
     : [];
+  const schoolCodes = schoolCodesResult.ok
+    ? (schoolCodesResult.data.SchoolCodeFindMany ?? []).filter(
+        (c): c is NonNullable<typeof c> => c != null,
+      )
+    : [];
+  const firstCode = schoolCodes[0];
+  const invite: InviteOption | null =
+    firstCode && firstCode._id && firstCode.code
+      ? { _id: firstCode._id, code: firstCode.code }
+      : null;
 
   return {
     district,
@@ -185,6 +216,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     total,
     userTypes,
     schools,
+    invite,
     filters,
     page,
     hasMore: users.length === ADMIN_LIST_PAGE_SIZE,
@@ -203,6 +235,7 @@ export default function DistrictAdminRoute() {
     filters,
     userTypes,
     schools,
+    invite,
   } = useLoaderData<typeof loader>();
   const navigation = useNavigation();
   const navigate = useNavigate();
@@ -216,6 +249,16 @@ export default function DistrictAdminRoute() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto w-full space-y-4">
+      {district ? (
+        <DistrictInviteCard
+          districtId={district._id}
+          districtName={district.name}
+          invite={invite}
+        />
+      ) : null}
+
+      {!loadError ? <DistrictSchoolsGrid schools={schools} /> : null}
+
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium text-foreground">
           Users ({total})
