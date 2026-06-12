@@ -16,6 +16,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
 import { TapBlocks } from "~/components/admin/tap-blocks";
+import { AchievementBlock } from "~/components/admin/achievement-block";
 import { api } from "~/lib/api";
 import { gqlClient } from "~/lib/graphql";
 import { ClassesUpdateOneDocument } from "~/mutations/classes";
@@ -464,6 +465,18 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
               Content
             </label>
             <TapBlocks classId={practiceId} />
+          </div>
+
+          {/* The achievement (pin) persists via its own mutations —
+              independent of the practice Save button below. */}
+          <div>
+            <label className="mb-1 block text-xs font-medium text-stone-600">
+              Achievement
+            </label>
+            <AchievementBlock
+              classId={practiceId}
+              curriculumId={practice.curriculum ?? null}
+            />
           </div>
 
           <div className="flex justify-end">

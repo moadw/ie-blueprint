@@ -10,7 +10,6 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Select } from "~/components/ui/select";
-import { Textarea } from "~/components/ui/textarea";
 import { toast } from "~/components/ui/toast";
 import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
@@ -61,7 +60,7 @@ function formFromTap(
     order: Math.max(1, Math.round(tap?.order ?? defaultOrder)),
     type: tap?.type ?? "",
     points: tap?.points != null ? String(tap.points) : "",
-    time: tap?.time != null ? String(tap.time) : "",
+    time: tap?.time != null ? String(tap.time) : "5",
     intro: tap?.intro ?? "",
     description: tap?.description ?? "",
     slug: tap?.slug ?? "",
@@ -333,82 +332,6 @@ export function TapDialog({
                 </>
               )}
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="tap-points"
-                className="text-sm font-medium text-muted-foreground"
-              >
-                Points
-              </Label>
-              <Input
-                id="tap-points"
-                type="number"
-                min={0}
-                step="any"
-                value={form.points}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, points: e.target.value }))
-                }
-                className="h-10 text-sm"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="tap-time"
-                className="text-sm font-medium text-muted-foreground"
-              >
-                Time (minutes)
-              </Label>
-              <Input
-                id="tap-time"
-                type="number"
-                min={0}
-                step="any"
-                value={form.time}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, time: e.target.value }))
-                }
-                className="h-10 text-sm"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label
-              htmlFor="tap-intro"
-              className="text-sm font-medium text-muted-foreground"
-            >
-              Intro
-            </Label>
-            <Textarea
-              id="tap-intro"
-              value={form.intro}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, intro: e.target.value }))
-              }
-              placeholder="Short intro shown before the content…"
-              className="min-h-[60px] text-sm"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <Label
-              htmlFor="tap-description"
-              className="text-sm font-medium text-muted-foreground"
-            >
-              Description
-            </Label>
-            <Textarea
-              id="tap-description"
-              value={form.description}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, description: e.target.value }))
-              }
-              className="min-h-[80px] text-sm"
-            />
           </div>
 
           <div className="flex flex-col gap-1.5">

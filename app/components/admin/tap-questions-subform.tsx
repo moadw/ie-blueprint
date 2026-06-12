@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { toast } from "~/components/ui/toast";
@@ -30,13 +29,6 @@ export interface TapQuestionsSubformProps {
   onChange: (value: ExtraQuestionEntry[]) => void;
 }
 
-function parseOptionalNumber(raw: string): number | null {
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
 function payloadErrorMessage(payload: unknown): string | null {
   const err = (
     payload as { error?: { message?: string } | null } | null | undefined
@@ -49,19 +41,19 @@ export function TapQuestionsSubform({
   onChange,
 }: TapQuestionsSubformProps) {
   // Resolved question texts keyed by record id, for prefilled entries that
-  // carry only an id. The query has no limit/skip args — fetch the
-  // platform's questions and match ids client-side.
+  // carry only an id. Fetch WITHOUT a platform filter — stored entries are
+  // already scoped to this tap, and the question records' `platform` may not
+  // match the current runtime PLATFORM, which would otherwise exclude them
+  // and leave the id unresolved. Match ids client-side.
   const [resolved, setResolved] = useState<Record<string, string>>({});
   const [resolveStarted, setResolveStarted] = useState(false);
 
   const [adding, setAdding] = useState(false);
   const [draftText, setDraftText] = useState("");
-  const [draftPoints, setDraftPoints] = useState("");
   const [creating, setCreating] = useState(false);
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
-  const [editPoints, setEditPoints] = useState("");
   const [updating, setUpdating] = useState(false);
 
   const needsResolution = value.some((entry) => entry.label == null);
@@ -71,9 +63,7 @@ export function TapQuestionsSubform({
     let cancelled = false;
     setResolveStarted(true);
     gqlClient
-      .request(QuestionsFindManyDocument, {
-        filter: { platform: env.PLATFORM },
-      })
+      .request(QuestionsFindManyDocument, { filter: {} })
       .then((data) => {
         if (cancelled) return;
         const map: Record<string, string> = {};
@@ -96,7 +86,6 @@ export function TapQuestionsSubform({
 
   function resetDraft() {
     setDraftText("");
-    setDraftPoints("");
     setAdding(false);
   }
 
@@ -115,11 +104,13 @@ export function TapQuestionsSubform({
       if (message) throw new Error(message);
       const recordId = payload?.recordId ?? payload?.record?._id;
       if (!recordId) throw new Error("Question record was not created");
+      // The points UI is hidden; new entries start with no points. Stored
+      // points on existing entries are preserved on edit (see handleUpdate).
       onChange([
         ...value,
         {
           question: recordId,
-          points: parseOptionalNumber(draftPoints),
+          points: null,
           label: text,
         },
       ]);
@@ -139,7 +130,6 @@ export function TapQuestionsSubform({
     if (!entry) return;
     setEditingIndex(index);
     setEditText(displayText(entry) ?? "");
-    setEditPoints(entry.points != null ? String(entry.points) : "");
   }
 
   function cancelEdit() {
@@ -155,8 +145,9 @@ export function TapQuestionsSubform({
     if (!text) return;
     setUpdating(true);
     try {
-      // Text changes persist immediately on the question record; points
-      // changes are tap-side only and persist when the tap is saved.
+      // Text changes persist immediately on the question record. The points
+      // UI is hidden, so the entry's stored `points` is left untouched (the
+      // `...item` spread carries it through unchanged) and round-trips on save.
       if (text !== displayText(entry)) {
         const data = await gqlClient.request(QuestionsUpdateOneDocument, {
           _id: entry.question,
@@ -172,7 +163,6 @@ export function TapQuestionsSubform({
             ? {
                 ...item,
                 label: text,
-                points: parseOptionalNumber(editPoints),
               }
             : item,
         ),
@@ -197,7 +187,7 @@ export function TapQuestionsSubform({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-muted-foreground">Questions</p>
+        <p className="text-sm font-medium text-muted-foreground">Journal</p>
         {!adding ? (
           <Button
             variant="ghost"
@@ -206,13 +196,13 @@ export function TapQuestionsSubform({
             className="h-7 px-2 text-xs text-stone-500 hover:text-stone-700"
           >
             <Plus className="h-3 w-3" />
-            Add question
+            Add entry
           </Button>
         ) : null}
       </div>
 
       {value.length === 0 && !adding ? (
-        <p className="text-xs text-stone-400">No questions yet.</p>
+        <p className="text-xs text-stone-400">No journal entries yet.</p>
       ) : null}
 
       {value.map((entry, index) => {
@@ -236,23 +226,6 @@ export function TapQuestionsSubform({
                   onChange={(e) => setEditText(e.target.value)}
                   required
                   className="min-h-[60px] text-sm"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label
-                  htmlFor={`tap-question-edit-points-${index}`}
-                  className="text-xs font-medium text-muted-foreground"
-                >
-                  Points
-                </Label>
-                <Input
-                  id={`tap-question-edit-points-${index}`}
-                  type="number"
-                  min={0}
-                  step="any"
-                  value={editPoints}
-                  onChange={(e) => setEditPoints(e.target.value)}
-                  className="h-9 text-sm"
                 />
               </div>
               <div className="flex justify-end gap-2">
@@ -295,9 +268,6 @@ export function TapQuestionsSubform({
                   </p>
                 </>
               )}
-              <p className="mt-0.5 text-xs text-stone-400">
-                {entry.points != null ? `${entry.points} pts` : "No points"}
-              </p>
             </div>
             <div className="flex flex-shrink-0 gap-1">
               <Button
@@ -340,23 +310,6 @@ export function TapQuestionsSubform({
               autoFocus
               placeholder="Question text…"
               className="min-h-[60px] text-sm"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label
-              htmlFor="tap-question-new-points"
-              className="text-xs font-medium text-muted-foreground"
-            >
-              Points
-            </Label>
-            <Input
-              id="tap-question-new-points"
-              type="number"
-              min={0}
-              step="any"
-              value={draftPoints}
-              onChange={(e) => setDraftPoints(e.target.value)}
-              className="h-9 text-sm"
             />
           </div>
           <div className="flex justify-end gap-2">

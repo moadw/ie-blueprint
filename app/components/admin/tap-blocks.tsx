@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router";
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { ConfirmDialog } from "~/components/ui/alert-dialog";
 import { Badge } from "~/components/ui/badge";
@@ -19,6 +20,7 @@ export interface TapBlocksProps {
 }
 
 export function TapBlocks({ classId }: TapBlocksProps) {
+  const [params, setSearchParams] = useSearchParams();
   const [taps, setTaps] = useState<TapItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -100,11 +102,29 @@ export function TapBlocks({ classId }: TapBlocksProps) {
   function openCreate() {
     setEditing(null);
     setDialogOpen(true);
+    // A create dialog isn't an existing tap — clear any stale ?tap=.
+    const next = new URLSearchParams(params);
+    next.delete("tap");
+    setSearchParams(next, { replace: true });
   }
 
   function openEdit(tap: TapItem) {
     setEditing(tap);
     setDialogOpen(true);
+    // Write-only URL reflection of the opened tap (tap._id is globally unique).
+    const next = new URLSearchParams(params);
+    if (tap._id) next.set("tap", tap._id);
+    else next.delete("tap");
+    setSearchParams(next, { replace: true });
+  }
+
+  function handleDialogOpenChange(open: boolean) {
+    setDialogOpen(open);
+    if (!open) {
+      const next = new URLSearchParams(params);
+      next.delete("tap");
+      setSearchParams(next, { replace: true });
+    }
   }
 
   async function handleDelete() {
@@ -236,7 +256,7 @@ export function TapBlocks({ classId }: TapBlocksProps) {
 
       <TapDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={handleDialogOpenChange}
         classId={classId}
         defaultOrder={taps.length + 1}
         tap={editing}

@@ -104,23 +104,54 @@ function parseOptionalNumber(value: string): number | null {
 }
 
 /**
+ * Only a real server-assigned URL (http/https) is eligible to be echoed
+ * back. A fresh upload swaps `thumbnailUrl`/`fileUrl` for a local
+ * `blob:`/`data:` object URL (preview only); echoing that to the server
+ * would persist a dead local reference, so we drop anything non-http.
+ */
+function persistableUrl(url: string | null): string | null {
+  if (!url) return null;
+  return /^https?:\/\//i.test(url) ? url : null;
+}
+
+/**
  * Serialize form entries to the `tapVideosInput` shape for create/update.
- * Existing `_id`s are re-sent (subdocument arrays are replaced wholesale);
- * `thumbnail` and `captions[].file` are intentionally never written from
- * the form — the REST upload endpoints own those fields.
+ * Existing `_id`s are re-sent (subdocument arrays are replaced wholesale).
+ *
+ * Cover-persistence fix (verify-before-fix, change #3): the whole `videos`
+ * array is replaced on every `TapUpdateOne`, so previously we dropped the
+ * REST-owned `thumbnail` / `captions[].file` and a later tap save wiped
+ * them. The `tapVideosInput` / `UpdateByIdtapInput` schemas DO accept
+ * `thumbnail` and `captions[].file` (graphql.ts:11231-11250, 8474-8487),
+ * so we echo back the EXISTING server value when present — we never write
+ * new upload values from the form (the REST endpoints still own uploads).
+ * This makes the wholesale array replace non-destructive.
+ *
+ * NOTE: the live upload→save→reload persistence probe is still pending
+ * manual verification (no test backend available to this step).
  */
 export function serializeVideoEntries(entries: VideoEntry[]): tapVideosInput[] {
-  return entries.map((entry) => ({
-    ...(entry._id ? { _id: entry._id } : {}),
-    url: entry.url.trim() || null,
-    skip: parseOptionalNumber(entry.skip),
-    type: entry.type.trim() || null,
-    narrator: entry.narrator,
-    captions: entry.captions.map((caption) => ({
-      language: caption.language.trim() || null,
-      available: caption.available,
-    })),
-  }));
+  return entries.map((entry) => {
+    const thumbnailUrl = persistableUrl(entry.thumbnailUrl);
+    return {
+      ...(entry._id ? { _id: entry._id } : {}),
+      url: entry.url.trim() || null,
+      skip: parseOptionalNumber(entry.skip),
+      type: entry.type.trim() || null,
+      narrator: entry.narrator,
+      // Echo back the server-assigned cover so the array replace can't wipe it.
+      ...(thumbnailUrl ? { thumbnail: { url: thumbnailUrl } } : {}),
+      captions: entry.captions.map((caption) => {
+        const fileUrl = persistableUrl(caption.fileUrl);
+        return {
+          language: caption.language.trim() || null,
+          available: caption.available,
+          // Echo back the server-assigned caption file when present.
+          ...(fileUrl ? { file: { url: fileUrl } } : {}),
+        };
+      }),
+    };
+  });
 }
 
 function emptyVideoEntry(): VideoEntry {
@@ -417,6 +448,20 @@ export function TapVideosSubform({
                     placeholder="https://bucket.s3.amazonaws.com/video.mp4"
                     className="h-9 text-sm"
                   />
+                  {/* Inline native preview — `controls` only, no autoplay or
+                      custom transport. Skipped entirely for an empty URL so we
+                      never mount a broken `<video src="">`. */}
+                  {entry.url.trim() ? (
+                    entry.type.startsWith("audio/") ? (
+                      <audio controls src={entry.url} className="w-full" />
+                    ) : (
+                      <video
+                        controls
+                        src={entry.url}
+                        className="w-full max-h-48 rounded-md bg-black"
+                      />
+                    )
+                  ) : null}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
