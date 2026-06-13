@@ -140,7 +140,10 @@ export function serializeVideoEntries(entries: VideoEntry[]): tapVideosInput[] {
     const thumbnailUrl = persistableUrl(entry.thumbnailUrl);
     return {
       ...(entry._id ? { _id: entry._id } : {}),
-      url: entry.url.trim() || null,
+      // A fresh upload sets `url` to a local `blob:` preview; like the cover
+      // and caption, drop non-http urls so we never persist a dead local
+      // reference (the canonical server url arrives via refetch/reopen).
+      url: persistableUrl(entry.url.trim() || null),
       skip: parseOptionalNumber(entry.skip),
       type: entry.type.trim() || null,
       narrator: entry.narrator,
@@ -423,23 +426,18 @@ export function TapVideosSubform({
       fd.append("file", file);
       fd.append("id", tapId);
       fd.append("video", videoId);
-      const res = await uploadWithProgress("/admin/tap-video", fd, {
-        onProgress: (pct) => setUploadProgress(pct),
-      });
-      // The endpoint response shape is unconfirmed; conservatively use a
-      // top-level http(s) `url` string if present, otherwise a local blob
-      // preview. `persistableUrl` strips non-http urls on serialize, so the
-      // blob never persists — the canonical server url arrives on the next
-      // tap refetch/reopen (consistent with the thumbnail/caption flow).
-      const responseUrl =
-        res &&
-        typeof res === "object" &&
-        "url" in res &&
-        typeof (res as { url: unknown }).url === "string" &&
-        (res as { url: string }).url.startsWith("http")
-          ? (res as { url: string }).url
-          : null;
-      const newUrl = responseUrl ?? URL.createObjectURL(file);
+      const res = await uploadWithProgress<{ url?: string }>(
+        "/admin/tap-video",
+        fd,
+        { onProgress: (pct) => setUploadProgress(pct) },
+      );
+      // The endpoint response shape is unconfirmed; use a server-assigned
+      // http(s) url if present, else a local blob preview. `persistableUrl`
+      // reuses the http(s) test, and (paired with the serialize-side
+      // `persistableUrl` on `url`) guarantees a blob preview is never
+      // persisted — the canonical server url arrives on the next tap
+      // refetch/reopen (consistent with the thumbnail/caption flow).
+      const newUrl = persistableUrl(res?.url ?? null) ?? URL.createObjectURL(file);
       onChange((prev) =>
         prev.map((v, i) =>
           i === index
@@ -464,6 +462,7 @@ export function TapVideosSubform({
           variant="ghost"
           size="sm"
           onClick={addEntry}
+          disabled={uploadingKey !== null}
           className="h-7 px-2 text-xs text-stone-500 hover:text-stone-700"
         >
           <Plus className="h-3 w-3" />
@@ -496,6 +495,10 @@ export function TapVideosSubform({
                     variant="ghost"
                     size="icon"
                     onClick={() => removeEntry(vi)}
+                    // Disabled during any in-flight upload: removing an entry
+                    // would shift array indices out from under the index-keyed
+                    // upload handler, landing the result on the wrong row.
+                    disabled={uploadingKey !== null}
                     aria-label={`Remove video ${vi + 1}`}
                     className="h-7 w-7 text-stone-400 hover:bg-stone-100 hover:text-red-600"
                   >
