@@ -527,12 +527,19 @@ export function TapVideosSubform({
                       never mount a broken `<video src="">`. */}
                   {entry.url.trim() ? (
                     entry.type.startsWith("audio/") ? (
-                      <audio controls src={entry.url} className="w-full" />
+                      // Native audio players read as bare on the card; frame it
+                      // in a white box — the transport centered on both axes
+                      // with extra side padding so it doesn't run to the edges.
+                      <div className="flex min-h-16 items-center justify-center rounded-md border border-border bg-card px-6 py-3">
+                        <audio controls src={entry.url} className="w-full max-w-md" />
+                      </div>
                     ) : (
+                      // Video preview: a 16:9 framed box, letterboxed on black
+                      // so any source ratio fits without cropping.
                       <video
                         controls
                         src={entry.url}
-                        className="w-full max-h-48 rounded-md bg-black"
+                        className="aspect-video w-full rounded-md bg-black object-contain"
                       />
                     )
                   ) : null}
