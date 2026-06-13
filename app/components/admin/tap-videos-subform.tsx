@@ -20,6 +20,37 @@ const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 // client guard so valid uploads aren't blocked — server is the real backstop.
 const MAX_VIDEO_UPLOAD_BYTES = 500 * 1024 * 1024;
 
+// Unambiguous audio file extensions, used to recognize an audio entry from a
+// pasted URL when the MIME `type` is unknown (uploads set `type` from the
+// file; free-text URLs usually don't). `.ogg`/`.opus` are treated as audio;
+// `.webm`/`.mp4` stay video.
+const AUDIO_EXTENSIONS = new Set([
+  "mp3",
+  "m4a",
+  "aac",
+  "wav",
+  "ogg",
+  "oga",
+  "opus",
+  "flac",
+  "weba",
+  "wma",
+]);
+
+/**
+ * Whether an entry should render with an `<audio>` player instead of
+ * `<video>`. Trust the MIME `type` first; fall back to the URL's file
+ * extension (e.g. `.mp3`) when the type is unknown.
+ */
+function isAudioEntry(entry: { type: string; url: string }): boolean {
+  if (entry.type.startsWith("audio/")) return true;
+  if (entry.type.startsWith("video/")) return false;
+  const path = entry.url.split(/[?#]/)[0] ?? "";
+  const file = path.split("/").pop() ?? "";
+  const ext = file.includes(".") ? (file.split(".").pop() ?? "").toLowerCase() : "";
+  return AUDIO_EXTENSIONS.has(ext);
+}
+
 type NarratorItem = narratorsFindManyQuery["narratorsFindMany"][number];
 
 export type CaptionEntry = {
@@ -526,7 +557,7 @@ export function TapVideosSubform({
                       custom transport. Skipped entirely for an empty URL so we
                       never mount a broken `<video src="">`. */}
                   {entry.url.trim() ? (
-                    entry.type.startsWith("audio/") ? (
+                    isAudioEntry(entry) ? (
                       // Native audio players read as bare on the card; frame it
                       // in a white box — the transport centered on both axes
                       // with extra side padding so it doesn't run to the edges.
