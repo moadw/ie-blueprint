@@ -5,6 +5,16 @@
 // consumed by the player + post-playback stub screens. See
 // `thoughts/sergio/plans/2026-06-02-classroom-lesson-player.md` Phase 1.
 
+// Shared seed data lives in `~/components/lesson/fixtures` (single source of
+// truth, consumed by the screens + the standalone journal / achievement
+// routes). Re-exported here so existing importers (player, in-player stage)
+// keep their import paths unchanged.
+export {
+  SAMPLE_VIDEO_URL,
+  MOCK_MILESTONE,
+} from "~/components/lesson/fixtures";
+export type { MockMilestone } from "~/components/lesson/fixtures";
+
 export type LessonMediaType = "audio" | "video";
 
 export interface MockLesson {
@@ -34,7 +44,6 @@ export interface MockLesson {
 // the real short CC0 audio clip is a follow-up for the data-wiring plan. The
 // audio-path still background reuses the existing `glass-background.webp`
 // asset (served from `app/assets/`, imported where the still is rendered).
-export const SAMPLE_VIDEO_URL = "/media/sample-lesson.mp4";
 export const SAMPLE_AUDIO_URL = "/media/sample-lesson.mp4";
 
 export const MOCK_LESSON: MockLesson = {
@@ -51,28 +60,6 @@ export const MOCK_LESSON: MockLesson = {
   mediaType: "video",
 };
 
-// Milestone / achievement fixture for the post-playback "milestone" screen.
-// Stands in for the future achievements document. `iconKey` indexes the small
-// icon map in `milestone-badge.tsx` (defaults to Trophy on miss); `color` /
-// `glowColor` drive the gradient badge tile and its glow.
-export interface MockMilestone {
-  /** Badge title (large serif). */
-  title: string;
-  /** Body copy under the badge. */
-  message: string;
-  /** Key into the milestone icon map (falls back to `trophy`). */
-  iconKey: string;
-  /** Badge tile gradient seed color. */
-  color: string;
-  /** Badge glow color. */
-  glowColor: string;
-}
-
-export const MOCK_MILESTONE: MockMilestone = {
-  title: "Steady Progress",
-  message:
-    "Three days of showing up for yourself. Each breath you notice builds a calmer, more focused mind.",
-  iconKey: "trophy",
-  color: "hsl(45, 90%, 55%)",
-  glowColor: "rgba(234, 179, 8, 0.4)",
-};
+// Milestone / achievement seed data (`MockMilestone` + `MOCK_MILESTONE`) now
+// lives in `~/components/lesson/fixtures` and is re-exported at the top of this
+// file so the in-player milestone stage keeps importing it from here.

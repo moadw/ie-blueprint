@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { X } from "lucide-react";
 import glassBackground from "~/assets/glass-background.webp";
-import { useHydrated } from "./use-hydrated";
+import { useHydrated } from "~/hooks/use-hydrated";
 import { useMediaPlayer } from "./use-media-player";
 import {
   getBackgroundStyle,

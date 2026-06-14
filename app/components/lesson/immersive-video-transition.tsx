@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import { useHydrated } from "./use-hydrated";
+import { useHydrated } from "~/hooks/use-hydrated";
 
 type TransitionPhase = "entering" | "playing" | "ending" | "content";
 

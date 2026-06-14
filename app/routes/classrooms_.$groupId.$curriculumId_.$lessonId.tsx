@@ -2,10 +2,15 @@ import { useCallback, useState } from "react";
 import { useLoaderData, useNavigate, useSearchParams } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { requireSessionToken } from "~/lib/session.server";
+import { JournalScreen } from "~/components/lesson/journal-screen";
+import { MilestoneScreen } from "~/components/lesson/milestone-screen";
 import { PlayerStage } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/player-stage";
-import { JournalScreen } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/journal-screen";
-import { MilestoneScreen } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/milestone-screen";
 import { FeedbackOverlay } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/feedback-overlay";
+import {
+  MOCK_LESSON,
+  MOCK_MILESTONE,
+  SAMPLE_VIDEO_URL,
+} from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/fixtures";
 
 type AfterScreen = "journal" | "milestone" | "feedback";
 type MediaType = "audio" | "video";
@@ -68,9 +73,24 @@ export default function LessonPlayerRoute() {
         />
       ) : null}
 
-      {stage === "journal" ? <JournalScreen onExit={exitToCurriculum} /> : null}
+      {stage === "journal" ? (
+        <JournalScreen
+          prompt={MOCK_LESSON.journalPrompt}
+          videoUrl={SAMPLE_VIDEO_URL}
+          onSubmit={exitToCurriculum}
+          onSkip={exitToCurriculum}
+        />
+      ) : null}
       {stage === "milestone" ? (
-        <MilestoneScreen onContinue={exitToCurriculum} />
+        <MilestoneScreen
+          title={MOCK_MILESTONE.title}
+          message={MOCK_MILESTONE.message}
+          iconKey={MOCK_MILESTONE.iconKey}
+          color={MOCK_MILESTONE.color}
+          glowColor={MOCK_MILESTONE.glowColor}
+          subtitle={`Day ${MOCK_LESSON.order} Complete`}
+          onContinue={exitToCurriculum}
+        />
       ) : null}
       {showFeedback ? <FeedbackOverlay onExit={exitToCurriculum} /> : null}
     </div>
