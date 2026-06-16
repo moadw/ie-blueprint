@@ -50,3 +50,13 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
 }
+
+/* Sonner: pin the toast close button to the top-right corner with a 12px
+   inset, kept inside the toast. Default places it top-left and bleeds it
+   outside via translate(-35%, -35%); these win over sonner's :where() rules. */
+[data-sonner-toast] [data-close-button] {
+  left: unset;
+  right: 12px;
+  top: 12px;
+  transform: none;
+}

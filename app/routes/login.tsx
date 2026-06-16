@@ -71,7 +71,11 @@ export async function action({ request }: ActionFunctionArgs) {
   const user = userResp.UsersFindOne;
   if (!user?.platform || user.platform !== env.PLATFORM) {
     return Response.json(
-      { error: "This account isn't available on this site." },
+      {
+        title: "Not allowed",
+        error:
+          "This account isn't available on this site. Contact support@innerexplorer.com to request access.",
+      },
       { status: 403 },
     );
   }
