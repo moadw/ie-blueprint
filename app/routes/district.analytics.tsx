@@ -2,6 +2,8 @@ import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { AnalyticsHeader } from "~/routes/district.analytics/_components/analytics-header";
 import { AnalyticsCardPlaceholder } from "~/routes/district.analytics/_components/analytics-card-placeholder";
+import { AdoptionFunnelCard } from "~/routes/district.analytics/_components/adoption-funnel-card";
+import { MindfulMinutesCard } from "~/routes/district.analytics/_components/mindful-minutes-card";
 import { getDistrictAnalytics, type AnalyticsParams } from "~/lib/district-analytics.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -68,8 +70,8 @@ export default function DistrictAnalyticsRoute() {
         ) : (
           <>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
-              <AnalyticsCardPlaceholder title="Adoption Funnel" className="min-h-[360px]" />
-              <AnalyticsCardPlaceholder title="Mindful Minutes" className="min-h-[360px]" />
+              <AdoptionFunnelCard adoptionFunnel={data.adoptionFunnel} />
+              <MindfulMinutesCard mindfulMinutes={data.mindfulMinutes} />
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
