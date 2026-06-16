@@ -14,7 +14,7 @@ export function ActiveEducatorsCard({ activeEducators }: ActiveEducatorsCardProp
     <div className="bg-white rounded-[24px] border border-border shadow-xs p-5 flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-1">
-        <h3 className="font-serif text-xl text-foreground">Active Educators</h3>
+        <h3 className="font-display text-xl text-foreground">Active Educators</h3>
         <button
           type="button"
           className="text-muted-foreground/40 hover:text-muted-foreground transition-colors"
@@ -31,7 +31,7 @@ export function ActiveEducatorsCard({ activeEducators }: ActiveEducatorsCardProp
 
       {/* Stat */}
       <div className="flex items-baseline justify-between mb-3">
-        <span className="font-serif text-4xl font-bold text-foreground tabular-nums leading-none">
+        <span className="font-display text-4xl font-bold text-foreground tabular-nums leading-none">
           {formatCompactTotal(total)}
         </span>
         <div className="flex flex-col items-end gap-0.5">

@@ -87,7 +87,7 @@ export function InsightCard({ insights }: InsightCardProps) {
         </div>
 
         <div className="mt-auto flex flex-col gap-2">
-          <span className="font-serif text-6xl font-bold text-white leading-none transition-opacity duration-300">
+          <span className="font-display text-6xl font-bold text-white leading-none transition-opacity duration-300">
             {slide.stat}
           </span>
           <p className="text-white font-semibold text-sm leading-snug transition-opacity duration-300">

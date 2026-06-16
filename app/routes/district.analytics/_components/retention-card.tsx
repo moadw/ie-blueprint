@@ -48,7 +48,7 @@ export function RetentionCard({ retention }: RetentionCardProps) {
     <div className="bg-white rounded-[24px] border border-border shadow-xs p-5 flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-1">
-        <h3 className="font-serif text-xl text-foreground">Retention</h3>
+        <h3 className="font-display text-xl text-foreground">Retention</h3>
         <button
           type="button"
           className="text-muted-foreground/40 hover:text-muted-foreground transition-colors"

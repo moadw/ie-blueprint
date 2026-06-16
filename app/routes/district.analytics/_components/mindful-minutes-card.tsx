@@ -15,7 +15,7 @@ export function MindfulMinutesCard({ mindfulMinutes }: MindfulMinutesCardProps) 
     <div className="bg-white rounded-[24px] border border-border shadow-xs p-6 flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-1">
-        <h3 className="font-serif text-xl text-foreground">Mindful Minutes</h3>
+        <h3 className="font-display text-xl text-foreground">Mindful Minutes</h3>
         <button
           type="button"
           className="text-muted-foreground/40 hover:text-muted-foreground transition-colors"
@@ -27,7 +27,7 @@ export function MindfulMinutesCard({ mindfulMinutes }: MindfulMinutesCardProps) 
 
       {/* Headline */}
       <div className="flex items-baseline gap-3 mb-6">
-        <span className="font-serif text-7xl font-bold text-foreground tabular-nums">
+        <span className="font-display text-7xl font-bold text-foreground tabular-nums">
           {total.toLocaleString()}
         </span>
         <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-semibold">
