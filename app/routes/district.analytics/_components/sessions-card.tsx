@@ -1,0 +1,65 @@
+import { MoreHorizontal } from "lucide-react";
+import { DotGrid } from "./dot-grid";
+import type { AnalyticsDashboardData } from "~/lib/district-analytics.server";
+
+interface SessionsCardProps {
+  sessions: AnalyticsDashboardData["sessions"];
+}
+
+function formatCompactTotal(value: number): string {
+  if (value >= 10000) {
+    const k = value / 1000;
+    return `${Number.isInteger(k) ? k.toFixed(0) : k.toFixed(1).replace(/\.0$/, "")}k`;
+  }
+  return value.toLocaleString();
+}
+
+function formatDelta(value: number): string {
+  const sign = value >= 0 ? "+" : "";
+  return `${sign}${value.toLocaleString()}`;
+}
+
+export function SessionsCard({ sessions }: SessionsCardProps) {
+  const { total, deltaVsPrev, peakLabel, grid } = sessions;
+
+  return (
+    <div className="bg-white rounded-[24px] border border-border shadow-xs p-5 flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="font-serif text-xl text-foreground">Practice Sessions</h3>
+        <button
+          type="button"
+          className="text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+          aria-label="More options"
+        >
+          <MoreHorizontal size={16} />
+        </button>
+      </div>
+
+      {/* Badge */}
+      <span className="inline-flex items-center self-start rounded-full border border-border bg-white px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground mb-3">
+        Peak: {peakLabel}
+      </span>
+
+      {/* Stat */}
+      <div className="flex items-baseline justify-between mb-3">
+        <span className="font-serif text-4xl font-bold text-foreground tabular-nums leading-none">
+          {formatCompactTotal(total)}
+        </span>
+        <div className="flex flex-col items-end gap-0.5">
+          <span className="text-[11px] text-muted-foreground">vs last period</span>
+          <span className="text-base font-bold text-foreground tabular-nums">
+            {formatDelta(deltaVsPrev)}
+          </span>
+        </div>
+      </div>
+
+      {/* Dot grid pushed to bottom */}
+      <div className="mt-auto">
+        <DotGrid data={grid} color="var(--color-primary)" highlightColor="var(--color-primary)" />
+      </div>
+    </div>
+  );
+}
+
+export default SessionsCard;

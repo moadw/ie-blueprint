@@ -1,9 +1,12 @@
 import { useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { AnalyticsHeader } from "~/routes/district.analytics/_components/analytics-header";
-import { AnalyticsCardPlaceholder } from "~/routes/district.analytics/_components/analytics-card-placeholder";
 import { AdoptionFunnelCard } from "~/routes/district.analytics/_components/adoption-funnel-card";
 import { MindfulMinutesCard } from "~/routes/district.analytics/_components/mindful-minutes-card";
+import { RetentionCard } from "~/routes/district.analytics/_components/retention-card";
+import { SessionsCard } from "~/routes/district.analytics/_components/sessions-card";
+import { ActiveEducatorsCard } from "~/routes/district.analytics/_components/active-educators-card";
+import { InsightCard } from "~/routes/district.analytics/_components/insight-card";
 import { getDistrictAnalytics, type AnalyticsParams } from "~/lib/district-analytics.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -75,10 +78,10 @@ export default function DistrictAnalyticsRoute() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <AnalyticsCardPlaceholder title="Retention" className="min-h-[280px]" />
-              <AnalyticsCardPlaceholder title="Sessions" className="min-h-[280px]" />
-              <AnalyticsCardPlaceholder title="Active Educators" className="min-h-[280px]" />
-              <AnalyticsCardPlaceholder title="Insights" className="min-h-[280px]" />
+              <RetentionCard retention={data.retention} />
+              <SessionsCard sessions={data.sessions} />
+              <ActiveEducatorsCard activeEducators={data.activeEducators} />
+              <InsightCard insights={data.insights} />
             </div>
           </>
         )}
