@@ -40,8 +40,17 @@ export function InsightCard({ insights }: InsightCardProps) {
     <div
       className="rounded-[24px] p-5 flex flex-col h-full relative overflow-hidden select-none touch-none"
       style={{
-        background:
-          "linear-gradient(155deg, hsl(30 40% 55%) 0%, var(--color-primary) 50%, hsl(200 40% 55%) 100%)",
+        background: `linear-gradient(155deg,
+          hsl(25, 50%, 62%) 0%,
+          hsl(30, 40%, 55%) 18%,
+          hsl(35, 28%, 50%) 32%,
+          hsl(45, 20%, 52%) 45%,
+          hsl(60, 18%, 58%) 55%,
+          hsl(120, 12%, 55%) 65%,
+          hsl(170, 20%, 55%) 78%,
+          hsl(190, 25%, 58%) 88%,
+          hsl(200, 18%, 52%) 100%
+        )`,
       }}
       onPointerDown={handleSwipe}
     >

@@ -76,8 +76,8 @@ export function RetentionCard({ retention }: RetentionCardProps) {
         >
           <defs>
             <linearGradient id="retentionLineGrad" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.85} />
-              <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={1} />
+              <stop offset="0%" stopColor="#f472b6" stopOpacity={0.9} />
+              <stop offset="100%" stopColor="#f472b6" stopOpacity={1} />
             </linearGradient>
           </defs>
 

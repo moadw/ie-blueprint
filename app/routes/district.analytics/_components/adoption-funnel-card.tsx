@@ -21,29 +21,34 @@ function niceTicks(maxValue: number): { max: number; ticks: number[] } {
     return { max: 1, ticks: [0, 1] };
   }
 
-  const target = maxValue * 1.12;
-  const exponent = Math.floor(Math.log10(target));
-  const fraction = target / Math.pow(10, exponent);
-  let niceFraction: number;
+  // Choose the smallest "nice" step (family 1/2/2.5/5 × 10^n) such that
+  // step * 5 covers maxValue. Prototype uses 0..2500 with step 500 for ~2400.
+  const fractions = [1, 2, 2.5, 5];
+  const floorExp = Math.floor(Math.log10(maxValue));
+  const exponents = [floorExp - 1, floorExp, floorExp + 1];
 
-  if (fraction <= 1) {
-    niceFraction = 1;
-  } else if (fraction <= 2) {
-    niceFraction = 2;
-  } else if (fraction <= 5) {
-    niceFraction = 5;
-  } else {
-    niceFraction = 10;
+  let step = Infinity;
+  for (const exp of exponents) {
+    const base = Math.pow(10, exp);
+    for (const f of fractions) {
+      const candidate = f * base;
+      if (candidate * 5 >= maxValue && candidate < step) {
+        step = candidate;
+      }
+    }
   }
 
-  const niceMax = niceFraction * Math.pow(10, exponent);
-  const step = niceMax / 5;
+  if (!isFinite(step) || step <= 0) {
+    step = 1;
+  }
+
+  const max = step * 5;
   const ticks: number[] = [];
   for (let i = 0; i <= 5; i++) {
-    ticks.push(Math.round(step * i));
+    ticks.push(Number((step * i).toFixed(10)));
   }
 
-  return { max: niceMax, ticks };
+  return { max, ticks };
 }
 
 function formatTick(t: number): string {

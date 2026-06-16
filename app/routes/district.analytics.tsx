@@ -51,11 +51,6 @@ export default function DistrictAnalyticsRoute() {
   const navigation = useNavigation();
   const isLoading = navigation.state === "loading";
 
-  const totalsSubtitle =
-    data?.meta.sources.totals === "real" && data.totals
-      ? `${data.totals.schools.toLocaleString()} schools · ${data.totals.groups.toLocaleString()} groups`
-      : null;
-
   return (
     <div className="h-full overflow-auto">
       <div className="p-6 max-w-[1440px] mx-auto space-y-6">
@@ -66,10 +61,6 @@ export default function DistrictAnalyticsRoute() {
           {...(params.compareStart ? { compareStart: params.compareStart } : {})}
           {...(params.compareEnd ? { compareEnd: params.compareEnd } : {})}
         />
-
-        {totalsSubtitle ? (
-          <p className="text-xs text-muted-foreground -mt-4">{totalsSubtitle}</p>
-        ) : null}
 
         {loadError ? (
           <div className="rounded-xl border-2 border-dashed border-red-200 bg-red-50 py-4 px-4">

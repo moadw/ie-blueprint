@@ -112,11 +112,11 @@ function generateMindfulMinutes(rng: () => number): AnalyticsDashboardData["mind
   const trendPct = Math.round((15 + (rng() - 0.5) * 10) * 10) / 10;
 
   const segments = [
-    { label: "Elementary", base: 0.35, hue: 160 },
-    { label: "Middle", base: 0.25, hue: 170 },
-    { label: "High", base: 0.2, hue: 145 },
-    { label: "Early Learning", base: 0.12, hue: 150 },
-    { label: "Support Staff", base: 0.08, hue: 140 },
+    { label: "Elementary Schools", base: 0.35, color: "var(--color-primary)" },
+    { label: "Middle Schools", base: 0.25, color: "hsl(220 70% 55%)" },
+    { label: "High Schools", base: 0.2, color: "hsl(340 75% 55%)" },
+    { label: "Early Learning", base: 0.12, color: "hsl(275 55% 55%)" },
+    { label: "Support Staff", base: 0.08, color: "hsl(35 75% 55%)" },
   ];
 
   let remaining = total;
@@ -128,7 +128,7 @@ function generateMindfulMinutes(rng: () => number): AnalyticsDashboardData["mind
     return {
       label: seg.label,
       value: Math.max(0, value),
-      color: `hsl(${seg.hue} 60% ${40 + Math.round(rng() * 10)}%)`,
+      color: seg.color,
     };
   });
 
