@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { Calendar, ChevronDown, Plus } from "lucide-react";
 import {
@@ -6,6 +6,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import { DateRangePopover } from "./date-range-popover";
 
 export interface AnalyticsHeaderProps {
   startDate: string;
@@ -48,45 +49,20 @@ export function AnalyticsHeader({
   compareEnd,
 }: AnalyticsHeaderProps) {
   const [searchParams, setSearchParams] = useSearchParams();
-
-  const [dateOpen, setDateOpen] = useState(false);
-  const [compareOpen, setCompareOpen] = useState(false);
   const [granularityOpen, setGranularityOpen] = useState(false);
 
-  const [draftStart, setDraftStart] = useState(startDate);
-  const [draftEnd, setDraftEnd] = useState(endDate);
-  const [draftCompareStart, setDraftCompareStart] = useState(compareStart ?? "");
-  const [draftCompareEnd, setDraftCompareEnd] = useState(compareEnd ?? "");
-
-  useEffect(() => {
-    setDraftStart(startDate);
-    setDraftEnd(endDate);
-    setDraftCompareStart(compareStart ?? "");
-    setDraftCompareEnd(compareEnd ?? "");
-  }, [startDate, endDate, compareStart, compareEnd]);
-
-  function applyPrimaryDates() {
+  function applyPrimaryDates(nextStart: string, nextEnd: string) {
     const next = new URLSearchParams(searchParams);
-    next.set("start", draftStart);
-    next.set("end", draftEnd);
+    next.set("start", nextStart);
+    next.set("end", nextEnd);
     setSearchParams(next, { replace: true });
-    setDateOpen(false);
   }
 
-  function applyCompareDates() {
+  function applyCompareDates(nextStart: string, nextEnd: string) {
     const next = new URLSearchParams(searchParams);
-    if (draftCompareStart) {
-      next.set("compareStart", draftCompareStart);
-    } else {
-      next.delete("compareStart");
-    }
-    if (draftCompareEnd) {
-      next.set("compareEnd", draftCompareEnd);
-    } else {
-      next.delete("compareEnd");
-    }
+    next.set("compareStart", nextStart);
+    next.set("compareEnd", nextEnd);
     setSearchParams(next, { replace: true });
-    setCompareOpen(false);
   }
 
   function applyGranularity(value: "daily" | "weekly" | "monthly") {
@@ -102,80 +78,30 @@ export function AnalyticsHeader({
 
       <div className="flex flex-wrap items-center gap-2">
         {/* Primary date range pill */}
-        <Popover open={dateOpen} onOpenChange={setDateOpen}>
-          <PopoverTrigger asChild>
-            <button type="button" className={pillClass}>
-              <Calendar size={14} />
-              {formatRange(startDate, endDate)}
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto bg-card border border-border rounded-xl shadow-lg p-4">
-            <div className="flex flex-col gap-3">
-              <span className="text-xs font-medium text-muted-foreground">Date range</span>
-              <div className="flex items-center gap-2">
-                <input
-                  type="date"
-                  value={draftStart}
-                  onChange={(e) => setDraftStart(e.target.value)}
-                  className="h-9 px-2 text-xs bg-card border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-                <span className="text-muted-foreground">→</span>
-                <input
-                  type="date"
-                  value={draftEnd}
-                  onChange={(e) => setDraftEnd(e.target.value)}
-                  className="h-9 px-2 text-xs bg-card border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={applyPrimaryDates}
-                className="self-end rounded-full bg-foreground text-background px-4 py-1.5 text-xs font-medium hover:bg-foreground/90 transition-colors"
-              >
-                Apply
-              </button>
-            </div>
-          </PopoverContent>
-        </Popover>
+        <DateRangePopover
+          start={startDate}
+          end={endDate}
+          onApply={applyPrimaryDates}
+        >
+          <button type="button" className={pillClass}>
+            <Calendar size={14} />
+            {formatRange(startDate, endDate)}
+          </button>
+        </DateRangePopover>
 
         <span className="text-xs text-muted-foreground">compared to</span>
 
         {/* Compare date range pill */}
-        <Popover open={compareOpen} onOpenChange={setCompareOpen}>
-          <PopoverTrigger asChild>
-            <button type="button" className={pillClass}>
-              <Calendar size={14} />
-              {formatRange(compareStart, compareEnd)}
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto bg-card border border-border rounded-xl shadow-lg p-4">
-            <div className="flex flex-col gap-3">
-              <span className="text-xs font-medium text-muted-foreground">Compared to</span>
-              <div className="flex items-center gap-2">
-                <input
-                  type="date"
-                  value={draftCompareStart}
-                  onChange={(e) => setDraftCompareStart(e.target.value)}
-                  className="h-9 px-2 text-xs bg-card border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-                <span className="text-muted-foreground">→</span>
-                <input
-                  type="date"
-                  value={draftCompareEnd}
-                  onChange={(e) => setDraftCompareEnd(e.target.value)}
-                  className="h-9 px-2 text-xs bg-card border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={applyCompareDates}
-                className="self-end rounded-full bg-foreground text-background px-4 py-1.5 text-xs font-medium hover:bg-foreground/90 transition-colors"
-              >
-                Apply
-              </button>
-            </div>
-          </PopoverContent>
-        </Popover>
+        <DateRangePopover
+          start={compareStart ?? startDate}
+          end={compareEnd ?? endDate}
+          onApply={applyCompareDates}
+        >
+          <button type="button" className={pillClass}>
+            <Calendar size={14} />
+            {formatRange(compareStart, compareEnd)}
+          </button>
+        </DateRangePopover>
 
         {/* Granularity pill */}
         <Popover open={granularityOpen} onOpenChange={setGranularityOpen}>

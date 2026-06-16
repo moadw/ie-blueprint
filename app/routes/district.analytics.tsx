@@ -29,18 +29,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
       ? granularity
       : "daily";
 
-  const params: AnalyticsParams = {
-    startDate: start ?? formatDate(defaultStart),
-    endDate: end ?? formatDate(today),
-    granularity: validatedGranularity,
-  };
+  const startDate = start ?? formatDate(defaultStart);
+  const endDate = end ?? formatDate(today);
 
-  if (compareStart) {
-    params.compareStart = compareStart;
-  }
-  if (compareEnd) {
-    params.compareEnd = compareEnd;
-  }
+  // Default comparison period: immediately before the primary range, same length.
+  const primaryStart = new Date(`${startDate}T00:00:00`);
+  const primaryEnd = new Date(`${endDate}T00:00:00`);
+  const lengthDays =
+    Math.floor((primaryEnd.getTime() - primaryStart.getTime()) / 86_400_000) + 1;
+
+  const defaultCompareEnd = new Date(primaryStart);
+  defaultCompareEnd.setDate(primaryStart.getDate() - 1);
+  const defaultCompareStart = new Date(defaultCompareEnd);
+  defaultCompareStart.setDate(defaultCompareEnd.getDate() - (lengthDays - 1));
+
+  const params: AnalyticsParams = {
+    startDate,
+    endDate,
+    granularity: validatedGranularity,
+    compareStart: compareStart ?? formatDate(defaultCompareStart),
+    compareEnd: compareEnd ?? formatDate(defaultCompareEnd),
+  };
 
   const analyticsResult = await getDistrictAnalytics(request, params);
   return { ...analyticsResult, params };
