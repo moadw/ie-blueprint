@@ -36,6 +36,7 @@
 
   --font-sans: "Inter", "Helvetica Neue", system-ui, sans-serif;
   --font-serif: "Instrument Serif", Georgia, serif;
+  --font-display: "Libre Caslon Display", Georgia, serif;
 }
 
 :root {
