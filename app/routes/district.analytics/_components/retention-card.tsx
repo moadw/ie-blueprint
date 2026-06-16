@@ -25,7 +25,10 @@ export function RetentionCard({ retention }: RetentionCardProps) {
   const yMax = niceYMax(peakPct);
   const count = Math.max(series.length, 1);
 
-  const xFor = (i: number) => PAD_LEFT + (i / (count - 1)) * CHART_W;
+  const xFor = (i: number) =>
+    count <= 1
+      ? PAD_LEFT + CHART_W / 2
+      : PAD_LEFT + (i / (count - 1)) * CHART_W;
   const yFor = (rate: number) => PAD_TOP + CHART_H - (rate / yMax) * CHART_H;
 
   const pathD = series

@@ -1,22 +1,10 @@
 import { MoreHorizontal } from "lucide-react";
 import { DotGrid } from "./dot-grid";
+import { formatCompactTotal, formatDelta } from "./format";
 import type { AnalyticsDashboardData } from "~/lib/district-analytics.server";
 
 interface ActiveEducatorsCardProps {
   activeEducators: AnalyticsDashboardData["activeEducators"];
-}
-
-function formatCompactTotal(value: number): string {
-  if (value >= 10000) {
-    const k = value / 1000;
-    return `${Number.isInteger(k) ? k.toFixed(0) : k.toFixed(1).replace(/\.0$/, "")}k`;
-  }
-  return value.toLocaleString();
-}
-
-function formatDelta(value: number): string {
-  const sign = value >= 0 ? "+" : "";
-  return `${sign}${value.toLocaleString()}`;
 }
 
 export function ActiveEducatorsCard({ activeEducators }: ActiveEducatorsCardProps) {

@@ -1,4 +1,4 @@
-import { useLoaderData } from "react-router";
+import { useLoaderData, useNavigation } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { AnalyticsHeader } from "~/routes/district.analytics/_components/analytics-header";
 import { AdoptionFunnelCard } from "~/routes/district.analytics/_components/adoption-funnel-card";
@@ -48,6 +48,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function DistrictAnalyticsRoute() {
   const { district, data, loadError, params } = useLoaderData<typeof loader>();
+  const navigation = useNavigation();
+  const isLoading = navigation.state === "loading";
+
+  const totalsSubtitle =
+    data?.meta.sources.totals === "real" && data.totals
+      ? `${data.totals.schools.toLocaleString()} schools · ${data.totals.groups.toLocaleString()} groups`
+      : null;
 
   return (
     <div className="h-full overflow-auto">
@@ -60,6 +67,10 @@ export default function DistrictAnalyticsRoute() {
           {...(params.compareEnd ? { compareEnd: params.compareEnd } : {})}
         />
 
+        {totalsSubtitle ? (
+          <p className="text-xs text-muted-foreground -mt-4">{totalsSubtitle}</p>
+        ) : null}
+
         {loadError ? (
           <div className="rounded-xl border-2 border-dashed border-red-200 bg-red-50 py-4 px-4">
             <p className="text-xs text-red-600">{loadError}</p>
@@ -71,7 +82,11 @@ export default function DistrictAnalyticsRoute() {
             <p className="text-sm text-muted-foreground">Could not load analytics data.</p>
           </div>
         ) : (
-          <>
+          <div
+            className={`space-y-6 transition-opacity duration-200 ${
+              isLoading ? "opacity-60" : "opacity-100"
+            }`}
+          >
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
               <AdoptionFunnelCard adoptionFunnel={data.adoptionFunnel} />
               <MindfulMinutesCard mindfulMinutes={data.mindfulMinutes} />
@@ -83,7 +98,7 @@ export default function DistrictAnalyticsRoute() {
               <ActiveEducatorsCard activeEducators={data.activeEducators} />
               <InsightCard insights={data.insights} />
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>

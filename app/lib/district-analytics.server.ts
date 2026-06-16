@@ -303,6 +303,6 @@ export async function getDistrictAnalytics(
   return {
     district: districtInfo,
     data: makeMockData(params, totals),
-    loadError: totalsResult.error,
+    loadError: null,
   };
 }
