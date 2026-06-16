@@ -74,7 +74,9 @@ export function AnalyticsHeader({
 
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-      <h1 className="font-serif text-4xl text-foreground lg:text-5xl">Overview</h1>
+      <h1 className="font-serif text-5xl text-foreground lg:text-6xl leading-[1.05] tracking-[0.01em]">
+        Overview
+      </h1>
 
       <div className="flex flex-wrap items-center gap-2">
         {/* Primary date range pill */}
