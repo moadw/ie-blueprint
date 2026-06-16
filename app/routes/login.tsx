@@ -46,16 +46,42 @@ export async function action({ request }: ActionFunctionArgs) {
       { status: 502 },
     );
   }
+  if (!env.PLATFORM) {
+    return Response.json(
+      { error: "Platform is not configured. Please contact your administrator." },
+      { status: 500 },
+    );
+  }
+  let userResp;
+  try {
+    userResp = await gqlClient.request(
+      UsersFindOneDocument,
+      {},
+      { "access-token": body.token },
+    );
+  } catch {
+    return Response.json(
+      {
+        error:
+          "We couldn't verify your account right now. Please try again or contact your administrator.",
+      },
+      { status: 502 },
+    );
+  }
+  const user = userResp.UsersFindOne;
+  if (!user?.platform || user.platform !== env.PLATFORM) {
+    return Response.json(
+      {
+        title: "Not allowed",
+        error:
+          "This account isn't available on this site. Contact support@innerexplorer.com to request access.",
+      },
+      { status: 403 },
+    );
+  }
   const session = await getSession(request);
   await setSessionToken(session, body.token);
-  const userResp = await gqlClient.request(
-    UsersFindOneDocument,
-    {},
-    { "access-token": body.token },
-  );
-  const target = homePathForIdentifier(
-    userResp.UsersFindOne?.typeObj?.identifier,
-  );
+  const target = homePathForIdentifier(user.typeObj?.identifier);
   return redirect(target, {
     headers: { "Set-Cookie": await commitSession(session) },
   });
