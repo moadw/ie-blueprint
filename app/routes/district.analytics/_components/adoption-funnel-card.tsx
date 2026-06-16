@@ -179,14 +179,15 @@ export function AdoptionFunnelCard({ adoptionFunnel }: AdoptionFunnelCardProps) 
               patternUnits="userSpaceOnUse"
               patternTransform="rotate(45)"
             >
-              <line x1="0" y1="0" x2="0" y2="5" stroke="var(--color-primary)" strokeWidth="1.8" />
+              <line x1="0" y1="0" x2="0" y2="5" stroke="hsl(145, 63%, 42%)" strokeWidth="1.8" />
             </pattern>
 
             {/* Selected bar gradient */}
             <linearGradient id="selectedGrad" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={1} />
-              <stop offset="55%" stopColor="var(--color-primary)" stopOpacity={0.85} />
-              <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.7} />
+              <stop offset="0%" stopColor="hsl(145, 70%, 28%)" />
+              <stop offset="30%" stopColor="hsl(145, 65%, 38%)" />
+              <stop offset="55%" stopColor="hsl(145, 58%, 46%)" />
+              <stop offset="100%" stopColor="hsl(145, 50%, 55%)" />
             </linearGradient>
 
             {/* Glossy top highlight */}
@@ -197,8 +198,8 @@ export function AdoptionFunnelCard({ adoptionFunnel }: AdoptionFunnelCardProps) 
 
             {/* Background wash */}
             <linearGradient id="washGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.08} />
-              <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0.01} />
+              <stop offset="0%" stopColor="hsl(145, 63%, 45%)" stopOpacity={0.08} />
+              <stop offset="100%" stopColor="hsl(145, 63%, 45%)" stopOpacity={0.01} />
             </linearGradient>
 
             {/* Glow filter for selected bar */}
@@ -207,7 +208,7 @@ export function AdoptionFunnelCard({ adoptionFunnel }: AdoptionFunnelCardProps) 
               <feColorMatrix
                 in="blur"
                 type="matrix"
-                values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.4 0"
+                values="0 0 0 0 0.22  0 0 0 0 0.55  0 0 0 0 0.30  0 0 0 0.4 0"
                 result="glow"
               />
               <feMerge>
@@ -223,9 +224,9 @@ export function AdoptionFunnelCard({ adoptionFunnel }: AdoptionFunnelCardProps) 
 
             {/* Column hover glow */}
             <radialGradient id="colGlow" cx="0.5" cy="0.45" r="0.55" fx="0.5" fy="0.4">
-              <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.12} />
-              <stop offset="60%" stopColor="var(--color-primary)" stopOpacity={0.05} />
-              <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
+              <stop offset="0%" stopColor="hsl(145, 55%, 50%)" stopOpacity={0.12} />
+              <stop offset="60%" stopColor="hsl(145, 50%, 55%)" stopOpacity={0.05} />
+              <stop offset="100%" stopColor="hsl(145, 45%, 60%)" stopOpacity={0} />
             </radialGradient>
           </defs>
 
@@ -262,7 +263,7 @@ export function AdoptionFunnelCard({ adoptionFunnel }: AdoptionFunnelCardProps) 
           {/* Ambient wash glow behind bars */}
           <polygon
             points={washPolygon}
-            fill="var(--color-primary)"
+            fill="hsl(145, 63%, 45%)"
             opacity={0.06}
             filter="url(#washGlow)"
           />
@@ -329,8 +330,8 @@ export function AdoptionFunnelCard({ adoptionFunnel }: AdoptionFunnelCardProps) 
                       y={top + 2}
                       width={3}
                       height={h - 4}
-                      fill="black"
-                      opacity={0.2}
+                      fill="hsl(145, 70%, 24%)"
+                      opacity={0.35}
                       rx={1}
                     />
                     <rect
@@ -351,8 +352,8 @@ export function AdoptionFunnelCard({ adoptionFunnel }: AdoptionFunnelCardProps) 
                       width={barWidth}
                       height={h}
                       rx={3}
-                      fill="var(--color-primary)"
-                      opacity={opacity * 0.15}
+                      fill="hsl(145, 50%, 93%)"
+                      opacity={opacity}
                     />
                     <rect
                       x={x}
@@ -361,7 +362,7 @@ export function AdoptionFunnelCard({ adoptionFunnel }: AdoptionFunnelCardProps) 
                       height={h}
                       rx={3}
                       fill="url(#hatch)"
-                      opacity={opacity * 0.35}
+                      opacity={opacity * 0.4}
                     />
                     <rect
                       x={x}
@@ -382,8 +383,8 @@ export function AdoptionFunnelCard({ adoptionFunnel }: AdoptionFunnelCardProps) 
                   width={30}
                   height={15}
                   rx={7.5}
-                  fill="var(--color-primary)"
-                  opacity={isSelected ? 1 : opacity * 0.6 + 0.2}
+                  fill={isSelected ? "hsl(145, 63%, 42%)" : "hsl(145, 45%, 78%)"}
+                  opacity={isSelected ? 1 : opacity}
                 />
                 <text
                   x={x + barWidth / 2}
