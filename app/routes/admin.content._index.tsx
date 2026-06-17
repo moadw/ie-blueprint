@@ -17,6 +17,7 @@ import { readPageFromRequest } from "~/lib/pagination";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
 import { CurriculumsFindManyDocument } from "~/queries/curriculums";
+import { ClassesAdminFindManyDocument } from "~/queries/classes";
 import { curriculumsSortEnum } from "~/gql/graphql";
 import { Button } from "~/components/ui/button";
 import { SeriesCard } from "~/components/admin/series-card";
@@ -27,6 +28,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!env.PLATFORM) {
     return {
       curriculums: [],
+      practiceCounts: {} as Record<string, number>,
       error: "Platform is not configured. Please contact your administrator.",
       page: 1,
       hasMore: false,
@@ -57,8 +59,36 @@ export async function loader({ request }: LoaderFunctionArgs) {
         (c): c is NonNullable<typeof c> => Boolean(c),
       )
     : [];
+
+  // The curriculum doc's `totalLesson` aggregate is stale/inaccurate, so derive
+  // each series' practice count the same way the detail route does: the number
+  // of non-deleted `classes` for that curriculum (`ClassesAdminFindMany`
+  // filtered by `curriculum` + `!deleted`). One safe() request per series keeps
+  // a flaky downstream from white-screening the list — a failed fetch just
+  // omits that series from the map and the card falls back to `totalLesson`.
+  const countEntries = await Promise.all(
+    curriculums.map(async (c) => {
+      const r = await safe(
+        gqlClient.request(
+          ClassesAdminFindManyDocument,
+          { filter: { curriculum: c._id, platform: env.PLATFORM }, limit: 100 },
+          { "access-token": token },
+        ),
+      );
+      if (!r.ok) return null;
+      const count = (r.data.ClassesAdminFindMany ?? []).filter(
+        (x) => !x.deleted,
+      ).length;
+      return [c._id, count] as const;
+    }),
+  );
+  const practiceCounts: Record<string, number> = Object.fromEntries(
+    countEntries.filter((e): e is NonNullable<typeof e> => e !== null),
+  );
+
   return {
     curriculums,
+    practiceCounts,
     error: result.error,
     page,
     hasMore: false,
@@ -66,7 +96,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AdminContentIndex() {
-  const { curriculums, error, page, hasMore } = useLoaderData<typeof loader>();
+  const { curriculums, practiceCounts, error, page, hasMore } =
+    useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const navigation = useNavigation();
   const revalidator = useRevalidator();
@@ -115,7 +146,11 @@ export default function AdminContentIndex() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {curriculums.map((c) => (
-            <SeriesCard key={c._id} curriculum={c} />
+            <SeriesCard
+              key={c._id}
+              curriculum={c}
+              practiceCount={practiceCounts[c._id]}
+            />
           ))}
         </div>
       )}

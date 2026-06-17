@@ -10,15 +10,21 @@ type Curriculum = NonNullable<
 
 export interface SeriesCardProps {
   curriculum: Curriculum;
+  /**
+   * Live count of non-deleted practices for this series (matches the detail
+   * route). `undefined` when the per-series fetch failed — we then fall back
+   * to the curriculum's stale `totalLesson` aggregate.
+   */
+  practiceCount: number | undefined;
 }
 
-export function SeriesCard({ curriculum }: SeriesCardProps) {
+export function SeriesCard({ curriculum, practiceCount }: SeriesCardProps) {
   const status = statusFromActiveHidden({
     active: curriculum.active,
     hidden: curriculum.hidden,
   });
   const isLive = status === "live";
-  const total = curriculum.totalLesson ?? 0;
+  const total = practiceCount ?? curriculum.totalLesson ?? 0;
   const description = curriculum.description?.trim()
     ? curriculum.description
     : "No description";
