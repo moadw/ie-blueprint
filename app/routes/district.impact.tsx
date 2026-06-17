@@ -12,8 +12,8 @@ export default function DistrictImpactRoute() {
   const { data, loadError } = useLoaderData<typeof loader>();
 
   return (
-    <div className="h-full overflow-auto">
-      <div className="p-6 max-w-[1440px] mx-auto space-y-6">
+    <div className="h-full overflow-auto print:h-auto print:overflow-visible">
+      <div className="p-6 max-w-[1440px] mx-auto space-y-6 print:max-w-none">
         <ImpactHeader districtName={data?.districtName ?? null} />
 
         {loadError ? (

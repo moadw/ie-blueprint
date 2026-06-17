@@ -15,8 +15,8 @@ export function DistrictShell({ children }: DistrictShellProps) {
   const navigate = useNavigate();
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-white">
-      <header className="flex items-center justify-between px-4 md:px-6 h-16 bg-white border-b border-border shrink-0">
+    <div className="h-screen flex flex-col overflow-hidden bg-white print:h-auto print:overflow-visible">
+      <header className="flex items-center justify-between px-4 md:px-6 h-16 bg-white border-b border-border shrink-0 print:hidden">
         <div className="flex items-center gap-4 md:gap-8 min-w-0">
           <Logo className="h-8 shrink-0" />
           <DistrictNav />
@@ -42,7 +42,7 @@ export function DistrictShell({ children }: DistrictShellProps) {
           </div>
         </div>
       </header>
-      <div className="flex-1 min-h-0 overflow-auto">{children}</div>
+      <div className="flex-1 min-h-0 overflow-auto print:overflow-visible">{children}</div>
     </div>
   );
 }
