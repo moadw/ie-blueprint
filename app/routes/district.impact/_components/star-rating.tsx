@@ -6,10 +6,7 @@ interface StarRatingProps {
 
 export function StarRating({ rating }: StarRatingProps) {
   return (
-    <div
-      className="flex items-center gap-0.5"
-      aria-label={`Rating: ${rating} out of 5`}
-    >
+    <div className="flex gap-0.5" aria-label={`Rating: ${rating} out of 5`}>
       {Array.from({ length: 5 }, (_, i) => (
         <Star
           key={i}

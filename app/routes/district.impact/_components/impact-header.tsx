@@ -13,9 +13,11 @@ export function ImpactHeader({ districtName }: ImpactHeaderProps) {
   };
 
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 className="font-display text-5xl text-foreground">Impact Hub</h1>
+        <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
+          Impact Hub
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Stories, reflections, and moments from across {name}
         </p>
@@ -23,7 +25,7 @@ export function ImpactHeader({ districtName }: ImpactHeaderProps) {
       <Button
         variant="outline"
         onClick={handleExport}
-        className="h-9 gap-1.5 rounded-full px-4 text-sm"
+        className="h-9 gap-1.5 rounded-lg px-3.5 text-sm self-start sm:self-auto print:hidden"
       >
         <FileDown className="h-4 w-4" />
         Export Report
