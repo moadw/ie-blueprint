@@ -2,8 +2,6 @@ import { gqlClient } from "~/lib/graphql";
 import { resolveDistrictAdmin } from "~/lib/district-admin.server";
 import { safe } from "~/lib/safe-loader";
 import { ImpactFindManyDocument } from "~/queries/impact";
-import { UsersFindOneDocument, UserTypesFindManyDocument } from "~/queries/users";
-import { SchoolFindManyDocument } from "~/queries/schools";
 
 /**
  * Costura de datos del Impact Hub de distrito (solo lectura).
@@ -17,11 +15,9 @@ import { SchoolFindManyDocument } from "~/queries/schools";
  * Limitaciones conocidas (follow-ups, ver research 2026-06-17):
  *  - `impact` no tiene `district` → v1 lee con `deleted:false`; scoping estricto
  *    por distrito pendiente de backend.
- *  - con data real, `user`/`school`/`userType` vienen como IDs → se resuelven a
- *    nombre/rol/escuela vía UsersFindOne + UserTypesFindMany + SchoolFindMany.
- *    OJO: el esquema `impact` no tiene nombre de autor propio; el autor sale del
- *    `user` referenciado. Para historias sembradas con user=admin, el autor sale
- *    como el admin (los autores ficticios del demo no son usuarios reales).
+ *  - convención (acordada con backend, 2026-06-17): `user`/`userType`/`school`
+ *    guardan TEXTO directo (nombre de autor / rol / nombre de escuela), NO IDs —
+ *    el userId no aportaba para este hub. La costura los mapea 1:1 a la card.
  */
 
 export type ImpactStoryType =
@@ -185,92 +181,22 @@ export async function getDistrictImpact(request: Request): Promise<{
 
   let realStories: ImpactStory[] = [];
   if (impactResult.ok && impactResult.data.ImpactFindMany) {
-    const rawList = impactResult.data.ImpactFindMany;
-
-    // `impact` guarda `user`/`school`/`userType` como IDs. Resolvemos solo los
-    // IDs distintos realmente referenciados (escala con el contenido, no con el
-    // tamaño del distrito). Todo vía safe(): si algo falla, el campo queda null.
-    const userIds = [
-      ...new Set(rawList.map((r) => r.user).filter((x): x is string => !!x)),
-    ];
-    const schoolIds = [
-      ...new Set(rawList.map((r) => r.school).filter((x): x is string => !!x)),
-    ];
-
-    const [typesRes, userEntries, schoolEntries] = await Promise.all([
-      safe(
-        gqlClient.request(
-          UserTypesFindManyDocument,
-          { limit: 200 },
-          { "access-token": token },
-        ),
-      ),
-      Promise.all(
-        userIds.map((id) =>
-          safe(
-            gqlClient.request(
-              UsersFindOneDocument,
-              { _id: id },
-              { "access-token": token },
-            ),
-          ).then((r) => [id, r] as const),
-        ),
-      ),
-      Promise.all(
-        schoolIds.map((id) =>
-          safe(
-            gqlClient.request(
-              SchoolFindManyDocument,
-              { filter: { _id: id }, limit: 1 },
-              { "access-token": token },
-            ),
-          ).then((r) => [id, r] as const),
-        ),
-      ),
-    ]);
-
-    // userType ID → label legible
-    const roleLabel = new Map<string, string>();
-    if (typesRes.ok) {
-      for (const t of typesRes.data.UserTypesFindMany ?? []) {
-        if (t?._id && t.label) roleLabel.set(t._id, t.label);
-      }
-    }
-
-    // user ID → { nombre, typeId }
-    const userInfo = new Map<string, { name: string | null; typeId: string | null }>();
-    for (const [id, r] of userEntries) {
-      if (r.ok && r.data.UsersFindOne) {
-        const u = r.data.UsersFindOne;
-        const name =
-          [u.firstName, u.lastName].filter(Boolean).join(" ").trim() || null;
-        userInfo.set(id, { name, typeId: u.type ?? null });
-      }
-    }
-
-    // school ID → nombre
-    const schoolName = new Map<string, string>();
-    for (const [id, r] of schoolEntries) {
-      if (r.ok) {
-        const sc = (r.data.SchoolFindMany ?? [])[0];
-        if (sc?.name) schoolName.set(id, sc.name);
-      }
-    }
-
-    realStories = rawList.map((raw) => {
+    // user/userType/school traen TEXTO directo (nombre/rol/escuela) → mapeo 1:1.
+    // Ordenamos por `order` para un layout estable.
+    const sorted = [...impactResult.data.ImpactFindMany].sort(
+      (a, b) => (a.order ?? 0) - (b.order ?? 0),
+    );
+    realStories = sorted.map((raw) => {
       const type = normalizeType(raw.type);
-      const u = raw.user ? userInfo.get(raw.user) : undefined;
-      // Rol: preferimos el `userType` del registro; si no, el tipo del autor.
-      const roleId = raw.userType ?? u?.typeId ?? null;
       return {
         id: raw._id,
         type,
         title: raw.title ?? null,
         body: raw.description ?? null,
         imageUrl: raw.cover?.url ?? null,
-        authorName: u?.name ?? null,
-        authorRole: roleId ? (roleLabel.get(roleId) ?? null) : null,
-        schoolName: raw.school ? (schoolName.get(raw.school) ?? null) : null,
+        authorName: raw.user ?? null,
+        authorRole: raw.userType ?? null,
+        schoolName: raw.school ?? null,
         rating: parseRating(type, raw.title ?? null),
         isSample: false,
       } satisfies ImpactStory;
