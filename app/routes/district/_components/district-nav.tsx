@@ -5,7 +5,9 @@ const TABS = [
   { to: "/district/home", label: "Home" },
   { to: "/district/admin", label: "Admin" },
   { to: "/district/analytics", label: "Analytics" },
-  { to: "/district/engagement", label: "Engagement" },
+  // Engagement está oculto temporalmente (la ruta /district/engagement sigue
+  // existiendo; solo se quita del nav). Restaurar descomentando esta línea.
+  // { to: "/district/engagement", label: "Engagement" },
   { to: "/district/impact", label: "Impact" },
 ] as const;
 
