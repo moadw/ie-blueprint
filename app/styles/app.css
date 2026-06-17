@@ -61,3 +61,26 @@ body {
   top: 12px;
   transform: none;
 }
+
+/* Impact Hub: fade-up de las cards al montar (reemplaza framer-motion del
+   prototipo). El delay por card se pasa inline (animationDelay). */
+@keyframes impactFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.impact-card-enter {
+  animation: impactFadeUp 0.4s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .impact-card-enter {
+    animation: none;
+  }
+}
