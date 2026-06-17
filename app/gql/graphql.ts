@@ -325,6 +325,31 @@ export type CreateOnefavoritesPayload = {
   recordId?: Maybe<Scalars['String']['output']>;
 };
 
+export type CreateOneimpactInput = {
+  cover?: InputMaybe<impactCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  school?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+  userType?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type CreateOneimpactPayload = {
+  __typename?: 'CreateOneimpactPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Created document */
+  record?: Maybe<impact>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
 export type CreateOnelessonInput = {
   class?: InputMaybe<Scalars['String']['input']>;
   classificationType?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
@@ -1472,6 +1497,7 @@ export type FilterFindManygradeInput = {
   createdAt?: InputMaybe<Scalars['Date']['input']>;
   identifier?: InputMaybe<Scalars['String']['input']>;
   label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
   updatedAt?: InputMaybe<Scalars['Date']['input']>;
 };
 
@@ -1481,6 +1507,48 @@ export type FilterFindManygradeOperatorsInput = {
 };
 
 export type FilterFindManygrade_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindManyimpactCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindManyimpactInput = {
+  AND?: InputMaybe<Array<FilterFindManyimpactInput>>;
+  OR?: InputMaybe<Array<FilterFindManyimpactInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindManyimpactOperatorsInput>;
+  cover?: InputMaybe<FilterFindManyimpactCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  school?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+  userType?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindManyimpactOperatorsInput = {
+  _id?: InputMaybe<FilterFindManyimpact_idOperatorsInput>;
+};
+
+export type FilterFindManyimpact_idOperatorsInput = {
   exists?: InputMaybe<Scalars['Boolean']['input']>;
   gt?: InputMaybe<Scalars['String']['input']>;
   gte?: InputMaybe<Scalars['String']['input']>;
@@ -3303,6 +3371,7 @@ export type FilterFindOnegradeInput = {
   createdAt?: InputMaybe<Scalars['Date']['input']>;
   identifier?: InputMaybe<Scalars['String']['input']>;
   label?: InputMaybe<Scalars['String']['input']>;
+  platform?: InputMaybe<Scalars['String']['input']>;
   updatedAt?: InputMaybe<Scalars['Date']['input']>;
 };
 
@@ -3312,6 +3381,48 @@ export type FilterFindOnegradeOperatorsInput = {
 };
 
 export type FilterFindOnegrade_idOperatorsInput = {
+  exists?: InputMaybe<Scalars['Boolean']['input']>;
+  gt?: InputMaybe<Scalars['String']['input']>;
+  gte?: InputMaybe<Scalars['String']['input']>;
+  in?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  lt?: InputMaybe<Scalars['String']['input']>;
+  lte?: InputMaybe<Scalars['String']['input']>;
+  ne?: InputMaybe<Scalars['String']['input']>;
+  nin?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+  regex?: InputMaybe<Scalars['RegExpAsString']['input']>;
+};
+
+export type FilterFindOneimpactCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type FilterFindOneimpactInput = {
+  AND?: InputMaybe<Array<FilterFindOneimpactInput>>;
+  OR?: InputMaybe<Array<FilterFindOneimpactInput>>;
+  _id?: InputMaybe<Scalars['String']['input']>;
+  /** List of *indexed* fields that can be filtered via operators. */
+  _operators?: InputMaybe<FilterFindOneimpactOperatorsInput>;
+  cover?: InputMaybe<FilterFindOneimpactCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  school?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+  userType?: InputMaybe<Scalars['String']['input']>;
+};
+
+/** For performance reason this type contains only *indexed* fields. */
+export type FilterFindOneimpactOperatorsInput = {
+  _id?: InputMaybe<FilterFindOneimpact_idOperatorsInput>;
+};
+
+export type FilterFindOneimpact_idOperatorsInput = {
   exists?: InputMaybe<Scalars['Boolean']['input']>;
   gt?: InputMaybe<Scalars['String']['input']>;
   gte?: InputMaybe<Scalars['String']['input']>;
@@ -4637,6 +4748,11 @@ export type Mutation = {
   GroupLockOrUnLockClassesMany?: Maybe<Scalars['String']['output']>;
   GroupNextChapter?: Maybe<Scalars['Boolean']['output']>;
   GroupUpdateOne?: Maybe<Scalars['String']['output']>;
+  /** Create one document with mongoose defaults, setters, hooks and validation */
+  ImpactCreateOne?: Maybe<CreateOneimpactPayload>;
+  ImpactDeleteOne?: Maybe<Scalars['String']['output']>;
+  /** Update one document: 1) Retrieve one document by findById. 2) Apply updates to mongoose document. 3) Mongoose applies defaults, setters, hooks and validation. 4) And save it. */
+  ImpactUpdateOne?: Maybe<UpdateByIdimpactPayload>;
   InfluenceCreateOne?: Maybe<user>;
   InsertUserInGroupOne?: Maybe<usergroups>;
   JournalsCreateOne?: Maybe<JournalProgressCheck>;
@@ -5216,6 +5332,22 @@ export type MutationGroupUpdateOneArgs = {
   organization?: InputMaybe<Scalars['String']['input']>;
   platform?: InputMaybe<Scalars['String']['input']>;
   teacher?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationImpactCreateOneArgs = {
+  record: CreateOneimpactInput;
+};
+
+
+export type MutationImpactDeleteOneArgs = {
+  id: Scalars['String']['input'];
+};
+
+
+export type MutationImpactUpdateOneArgs = {
+  _id: Scalars['String']['input'];
+  record: UpdateByIdimpactInput;
 };
 
 
@@ -5961,6 +6093,8 @@ export type Query = {
   GroupProgressFindMany?: Maybe<Array<Maybe<groupprogress>>>;
   GroupProgressFindOne?: Maybe<groupprogress>;
   GroupUserFindOne?: Maybe<groups>;
+  ImpactFindMany: Array<impact>;
+  ImpactFindOne?: Maybe<impact>;
   InfluencesFindOne?: Maybe<user>;
   JournalsFindMany: Array<journals>;
   JournalsFindOne?: Maybe<journals>;
@@ -6349,6 +6483,21 @@ export type QueryGroupProgressFindManyArgs = {
 
 export type QueryGroupProgressFindOneArgs = {
   filter?: InputMaybe<groupprogressInput>;
+};
+
+
+export type QueryImpactFindManyArgs = {
+  filter?: InputMaybe<FilterFindManyimpactInput>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindManyimpactInput>;
+};
+
+
+export type QueryImpactFindOneArgs = {
+  filter?: InputMaybe<FilterFindOneimpactInput>;
+  skip?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<SortFindOneimpactInput>;
 };
 
 
@@ -7153,6 +7302,11 @@ export enum SortFindManygradeInput {
   _ID_DESC = '_ID_DESC'
 }
 
+export enum SortFindManyimpactInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
 export enum SortFindManyjournalsInput {
   _ID_ASC = '_ID_ASC',
   _ID_DESC = '_ID_DESC'
@@ -7376,6 +7530,11 @@ export enum SortFindOnedistrictprofileInput {
 }
 
 export enum SortFindOnegradeInput {
+  _ID_ASC = '_ID_ASC',
+  _ID_DESC = '_ID_DESC'
+}
+
+export enum SortFindOneimpactInput {
   _ID_ASC = '_ID_ASC',
   _ID_DESC = '_ID_DESC'
 }
@@ -7938,6 +8097,36 @@ export type UpdateByIddistrictPayload = {
   error?: Maybe<ErrorInterface>;
   /** Updated document */
   record?: Maybe<district>;
+  /** Document ID */
+  recordId?: Maybe<Scalars['String']['output']>;
+};
+
+export type UpdateByIdimpactCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdimpactInput = {
+  cover?: InputMaybe<UpdateByIdimpactCoverInput>;
+  createdAt?: InputMaybe<Scalars['Date']['input']>;
+  deleted?: InputMaybe<Scalars['Boolean']['input']>;
+  deletedAt?: InputMaybe<Scalars['Date']['input']>;
+  description?: InputMaybe<Scalars['String']['input']>;
+  order?: InputMaybe<Scalars['Float']['input']>;
+  school?: InputMaybe<Scalars['String']['input']>;
+  title?: InputMaybe<Scalars['String']['input']>;
+  type?: InputMaybe<Scalars['String']['input']>;
+  updatedAt?: InputMaybe<Scalars['Date']['input']>;
+  user?: InputMaybe<Scalars['String']['input']>;
+  userType?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type UpdateByIdimpactPayload = {
+  __typename?: 'UpdateByIdimpactPayload';
+  /** Error that may occur during operation. If you request this field in GraphQL query, you will receive typed error in payload; otherwise error will be provided in root `errors` field of GraphQL response. */
+  error?: Maybe<ErrorInterface>;
+  /** Updated document */
+  record?: Maybe<impact>;
   /** Document ID */
   recordId?: Maybe<Scalars['String']['output']>;
 };
@@ -9963,6 +10152,7 @@ export type grade = {
   createdAt?: Maybe<Scalars['Date']['output']>;
   identifier?: Maybe<Scalars['String']['output']>;
   label?: Maybe<Scalars['String']['output']>;
+  platform?: Maybe<Scalars['String']['output']>;
   updatedAt?: Maybe<Scalars['Date']['output']>;
 };
 
@@ -10058,6 +10248,34 @@ export type groupsInput = {
   platform?: InputMaybe<Scalars['String']['input']>;
   school?: InputMaybe<Scalars['String']['input']>;
   updatedAt?: InputMaybe<Scalars['Date']['input']>;
+};
+
+export type impact = {
+  __typename?: 'impact';
+  _id: Scalars['String']['output'];
+  cover?: Maybe<impactCover>;
+  createdAt?: Maybe<Scalars['Date']['output']>;
+  deleted?: Maybe<Scalars['Boolean']['output']>;
+  deletedAt?: Maybe<Scalars['Date']['output']>;
+  description?: Maybe<Scalars['String']['output']>;
+  order?: Maybe<Scalars['Float']['output']>;
+  school?: Maybe<Scalars['String']['output']>;
+  title?: Maybe<Scalars['String']['output']>;
+  type?: Maybe<Scalars['String']['output']>;
+  updatedAt?: Maybe<Scalars['Date']['output']>;
+  user?: Maybe<Scalars['String']['output']>;
+  userType?: Maybe<Scalars['String']['output']>;
+};
+
+export type impactCover = {
+  __typename?: 'impactCover';
+  type?: Maybe<Scalars['String']['output']>;
+  url?: Maybe<Scalars['String']['output']>;
+};
+
+export type impactCoverInput = {
+  type?: InputMaybe<Scalars['String']['input']>;
+  url?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type journals = {
@@ -11804,6 +12022,20 @@ export type ClassesAdminFindOneQueryVariables = Exact<{
 
 export type ClassesAdminFindOneQuery = { __typename?: 'Query', ClassesAdminFindOne?: { __typename?: 'classes', _id?: string | null, title?: string | null, description?: string | null, order?: number | null, free?: boolean | null, deleted?: boolean | null, curriculum?: string | null, cover?: { __typename?: 'classesCover', type?: string | null, url?: string | null } | null } | null };
 
+export type ClassesByCurriculumFindOneQueryVariables = Exact<{
+  curriculum: Scalars['String']['input'];
+}>;
+
+
+export type ClassesByCurriculumFindOneQuery = { __typename?: 'Query', ClassesByCurriculumFindOne?: Array<{ __typename?: 'classes', _id?: string | null, title?: string | null, description?: string | null, order?: number | null, free?: boolean | null, deleted?: boolean | null, curriculum?: string | null, cover?: { __typename?: 'classesCover', type?: string | null, url?: string | null } | null } | null> | null };
+
+export type ClassesFindOneQueryVariables = Exact<{
+  _id: Scalars['String']['input'];
+}>;
+
+
+export type ClassesFindOneQuery = { __typename?: 'Query', ClassesFindOne?: { __typename?: 'classes', _id?: string | null, title?: string | null, description?: string | null, order?: number | null, free?: boolean | null, deleted?: boolean | null, curriculum?: string | null, cover?: { __typename?: 'classesCover', type?: string | null, url?: string | null } | null } | null };
+
 export type curriculumCollectionFindManyQueryVariables = Exact<{
   filter?: InputMaybe<FilterFindManycurriculumcollectionInput>;
   skip?: InputMaybe<Scalars['Int']['input']>;
@@ -12186,6 +12418,8 @@ export const SchoolUserDeleteOneDocument = {"kind":"Document","definitions":[{"k
 export const SetUserSchoolDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SetUserSchool"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"school"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"user"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"SetUserSchool"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"school"},"value":{"kind":"Variable","name":{"kind":"Name","value":"school"}}},{"kind":"Argument","name":{"kind":"Name","value":"user"},"value":{"kind":"Variable","name":{"kind":"Name","value":"user"}}}]}]}}]} as unknown as DocumentNode<SetUserSchoolMutation, SetUserSchoolMutationVariables>;
 export const ClassesAdminFindManyDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ClassesAdminFindMany"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"FilterFindManyclassesInput"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sort"}},"type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SortFindManyclassesInput"}}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"ClassesAdminFindMany"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}},{"kind":"Argument","name":{"kind":"Name","value":"sort"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sort"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"_id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"order"}},{"kind":"Field","name":{"kind":"Name","value":"free"}},{"kind":"Field","name":{"kind":"Name","value":"deleted"}},{"kind":"Field","name":{"kind":"Name","value":"curriculum"}},{"kind":"Field","name":{"kind":"Name","value":"cover"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}}]}}]} as unknown as DocumentNode<ClassesAdminFindManyQuery, ClassesAdminFindManyQueryVariables>;
 export const ClassesAdminFindOneDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ClassesAdminFindOne"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"FilterFindOneclassesInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"ClassesAdminFindOne"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"_id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"order"}},{"kind":"Field","name":{"kind":"Name","value":"free"}},{"kind":"Field","name":{"kind":"Name","value":"deleted"}},{"kind":"Field","name":{"kind":"Name","value":"curriculum"}},{"kind":"Field","name":{"kind":"Name","value":"cover"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}}]}}]} as unknown as DocumentNode<ClassesAdminFindOneQuery, ClassesAdminFindOneQueryVariables>;
+export const ClassesByCurriculumFindOneDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ClassesByCurriculumFindOne"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"curriculum"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"ClassesByCurriculumFindOne"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"curriculum"},"value":{"kind":"Variable","name":{"kind":"Name","value":"curriculum"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"_id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"order"}},{"kind":"Field","name":{"kind":"Name","value":"free"}},{"kind":"Field","name":{"kind":"Name","value":"deleted"}},{"kind":"Field","name":{"kind":"Name","value":"curriculum"}},{"kind":"Field","name":{"kind":"Name","value":"cover"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}}]}}]} as unknown as DocumentNode<ClassesByCurriculumFindOneQuery, ClassesByCurriculumFindOneQueryVariables>;
+export const ClassesFindOneDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"ClassesFindOne"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"_id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"ClassesFindOne"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"_id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"_id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"_id"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"order"}},{"kind":"Field","name":{"kind":"Name","value":"free"}},{"kind":"Field","name":{"kind":"Name","value":"deleted"}},{"kind":"Field","name":{"kind":"Name","value":"curriculum"}},{"kind":"Field","name":{"kind":"Name","value":"cover"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"url"}}]}}]}}]}}]} as unknown as DocumentNode<ClassesFindOneQuery, ClassesFindOneQueryVariables>;
 export const curriculumCollectionFindManyDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"curriculumCollectionFindMany"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"FilterFindManycurriculumcollectionInput"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"skip"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"limit"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"curriculumCollectionFindMany"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}},{"kind":"Argument","name":{"kind":"Name","value":"skip"},"value":{"kind":"Variable","name":{"kind":"Name","value":"skip"}}},{"kind":"Argument","name":{"kind":"Name","value":"limit"},"value":{"kind":"Variable","name":{"kind":"Name","value":"limit"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"_id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"gradeLevel"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"active"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<curriculumCollectionFindManyQuery, curriculumCollectionFindManyQueryVariables>;
 export const curriculumCollectionFindOneDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"curriculumCollectionFindOne"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"FilterFindOnecurriculumcollectionInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"curriculumCollectionFindOne"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"_id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"gradeLevel"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"active"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<curriculumCollectionFindOneQuery, curriculumCollectionFindOneQueryVariables>;
 export const curriculumCollectionCreateOneDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"curriculumCollectionCreateOne"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"record"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"curriculumcollectionInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","alias":{"kind":"Name","value":"curriculumCollectionCreateOne"},"name":{"kind":"Name","value":"CurriculumCollectionCreateOne"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"record"},"value":{"kind":"Variable","name":{"kind":"Name","value":"record"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"_id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"gradeLevel"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"active"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<curriculumCollectionCreateOneMutation, curriculumCollectionCreateOneMutationVariables>;

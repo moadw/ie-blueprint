@@ -6,6 +6,7 @@ import {
 } from "react";
 import type { CSSProperties, TouchEvent } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router";
 import { LessonGlassCard } from "./lesson-glass-card";
 
 export interface SliderLesson {
@@ -18,6 +19,8 @@ export interface SliderLesson {
 
 interface CurriculumSliderProps {
   lessons: SliderLesson[];
+  groupId: string;
+  curriculumId: string;
 }
 
 // Glass-theme arrow token literals (prototype `PlayerThemeContext.glass`).
@@ -95,7 +98,12 @@ function getCardStyle(
   };
 }
 
-export function CurriculumSlider({ lessons }: CurriculumSliderProps) {
+export function CurriculumSlider({
+  lessons,
+  groupId,
+  curriculumId,
+}: CurriculumSliderProps) {
+  const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isReady, setIsReady] = useState(false);
@@ -256,9 +264,12 @@ export function CurriculumSlider({ lessons }: CurriculumSliderProps) {
                 key={lesson._id ?? index}
                 onClick={() => {
                   if (isActive) {
-                    // TODO(lesson-detail): open the lesson player. Intentionally
-                    // a no-op for this step — the lesson route is a separate
-                    // follow-up; never wire it here.
+                    // The active (centered) card opens the practice detail
+                    // route for that class id; inactive cards just recenter.
+                    if (lesson._id)
+                      navigate(
+                        `/classrooms/${groupId}/${curriculumId}/${lesson._id}`,
+                      );
                   } else {
                     goToIndex(index);
                   }
