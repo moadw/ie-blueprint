@@ -44,6 +44,8 @@ export interface DistrictImpactData {
   districtName: string | null;
   stories: ImpactStory[];
   source: "real" | "sample";
+  // Identidad del admin logeado, para autofill del autor al crear (read-only).
+  currentUser: { name: string | null; role: string | null };
 }
 
 const KNOWN_TYPES: ImpactStoryType[] = [
@@ -169,7 +171,7 @@ export async function getDistrictImpact(request: Request): Promise<{
     };
   }
 
-  const { token, district } = result;
+  const { token, district, currentUser } = result;
 
   const impactResult = await safe(
     gqlClient.request(
@@ -210,6 +212,7 @@ export async function getDistrictImpact(request: Request): Promise<{
       districtName: district.name,
       stories: useReal ? realStories : SAMPLE_STORIES,
       source: useReal ? "real" : "sample",
+      currentUser,
     },
     loadError: null,
   };

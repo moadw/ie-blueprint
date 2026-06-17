@@ -14,7 +14,10 @@ export default function DistrictImpactRoute() {
   return (
     <div className="h-full overflow-auto print:h-auto print:overflow-visible">
       <div className="p-6 max-w-[1440px] mx-auto space-y-6 print:max-w-none">
-        <ImpactHeader districtName={data?.districtName ?? null} />
+        <ImpactHeader
+          districtName={data?.districtName ?? null}
+          currentUser={data?.currentUser ?? null}
+        />
 
         {loadError ? (
           <div className="rounded-xl border-2 border-dashed border-red-200 bg-red-50 py-4 px-4">
