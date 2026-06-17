@@ -8,9 +8,8 @@ import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
 import { GroupFindOneDocument } from "~/queries/groups";
 import { CurriculumsFindOneDocument } from "~/queries/curriculums";
-import { LessonFindManyDocument } from "~/queries/lessons";
+import { ClassesByCurriculumFindOneDocument } from "~/queries/classes";
 import { UsersFindOneDocument } from "~/queries/users";
-import { lessonSortEnumTC } from "~/gql/graphql";
 import { CurriculumBackground } from "./classrooms_.$groupId.$curriculumId/_components/curriculum-background";
 import { CurriculumSlider } from "./classrooms_.$groupId.$curriculumId/_components/curriculum-slider";
 import { ClassroomHeader } from "./classrooms_.$groupId.$curriculumId/_components/classroom-header";
@@ -36,16 +35,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       token,
       group: null,
       curriculum: null,
-      lessons: [],
+      classes: [],
       user: null,
       groupError: null,
       curriculumError:
         "Platform is not configured. Please contact your administrator.",
-      lessonsError: null,
+      classesError: null,
     };
   }
 
-  const [groupResult, curriculumResult, lessonsResult, userResult] =
+  const [groupResult, curriculumResult, classesResult, userResult] =
     await Promise.all([
       safe(
         gqlClient.request(
@@ -62,13 +61,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ),
       ),
       safe(
+        // Teacher-safe endpoint (the admin `ClassesAdminFindMany` is role-gated).
+        // Returns the curriculum's classes as an array; takes only `curriculum`,
+        // so deleted-filtering and order-sorting happen client-side below.
         gqlClient.request(
-          LessonFindManyDocument,
-          {
-            filter: { curriculum: curriculumId },
-            limit: 100,
-            sort: lessonSortEnumTC.ORDER_ASC,
-          },
+          ClassesByCurriculumFindOneDocument,
+          { curriculum: curriculumId },
           headers,
         ),
       ),
@@ -79,10 +77,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const curriculum = curriculumResult.ok
     ? curriculumResult.data.CurriculumsFindOne
     : null;
-  const lessons = lessonsResult.ok
-    ? (lessonsResult.data.LessonFindMany ?? []).filter(
-        (l): l is NonNullable<typeof l> => Boolean(l),
-      )
+  const classes = classesResult.ok
+    ? (classesResult.data.ClassesByCurriculumFindOne ?? [])
+        .filter((c): c is NonNullable<typeof c> => c != null && !c.deleted)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     : [];
   // The header user is non-critical chrome — a failed fetch degrades the menu
   // to a generic "Account" label rather than surfacing an error card.
@@ -92,25 +90,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     token,
     group,
     curriculum,
-    lessons,
+    classes,
     user,
     groupError: groupResult.error,
     curriculumError: curriculumResult.error,
-    lessonsError: lessonsResult.error,
+    classesError: classesResult.error,
   };
 }
 
 export default function ClassroomCurriculumRoute() {
-  const {
-    token,
-    group,
-    curriculum,
-    lessons,
-    user,
-    groupError,
-    curriculumError,
-    lessonsError,
-  } = useLoaderData<typeof loader>();
+  const { token, group, curriculum, classes, user, groupError, curriculumError } =
+    useLoaderData<typeof loader>();
   const params = useParams();
   const groupId = params.groupId ?? "";
   const curriculumId = params.curriculumId ?? "";
@@ -120,7 +110,11 @@ export default function ClassroomCurriculumRoute() {
   }, [token]);
 
   const backgroundImage = curriculum?.bgImage?.url ?? curriculum?.cover?.url;
-  const hasErrors = Boolean(groupError || curriculumError || lessonsError);
+  // A failed classes fetch is NOT surfaced as a top error card — it falls
+  // through to the "No practices…" empty state below (per product: the empty
+  // copy is enough, no red banner above the header). Only the page-level
+  // group/curriculum failures warrant a card.
+  const hasErrors = Boolean(groupError || curriculumError);
   const sidebarCurriculums: SidebarCurriculum[] = (
     group?.curriculumsObj ?? []
   ).filter((c): c is SidebarCurriculum => Boolean(c?._id));
@@ -134,9 +128,6 @@ export default function ClassroomCurriculumRoute() {
           ) : null}
           {curriculumError ? (
             <ErrorCard label="curriculum" message={curriculumError} />
-          ) : null}
-          {lessonsError ? (
-            <ErrorCard label="lessons" message={lessonsError} />
           ) : null}
         </div>
       ) : null}
@@ -153,12 +144,17 @@ export default function ClassroomCurriculumRoute() {
         />
 
         <main className="relative z-10 flex flex-1 flex-col items-center pt-[clamp(0.5rem,2vh,1.5rem)]">
-          {lessons.length > 0 ? (
-            <CurriculumSlider key={curriculum?._id} lessons={lessons} />
+          {classes.length > 0 ? (
+            <CurriculumSlider
+              key={curriculum?._id}
+              lessons={classes}
+              groupId={groupId}
+              curriculumId={curriculumId}
+            />
           ) : (
             <div className="flex flex-1 items-center justify-center px-6 text-center">
               <p className="font-serif text-xl text-white/70">
-                No lessons in this curriculum yet.
+                No practices in this curriculum yet.
               </p>
             </div>
           )}
@@ -193,11 +189,15 @@ export default function ClassroomCurriculumRoute() {
               </p>
             </div>
 
-            {lessons.length > 0 ? (
-              <LessonGrid lessons={lessons} />
+            {classes.length > 0 ? (
+              <LessonGrid
+                lessons={classes}
+                groupId={groupId}
+                curriculumId={curriculumId}
+              />
             ) : (
               <p className="font-serif text-base text-zinc-400">
-                No lessons in this curriculum yet.
+                No practices in this curriculum yet.
               </p>
             )}
           </main>
