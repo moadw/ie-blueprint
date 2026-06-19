@@ -13,6 +13,7 @@ import { uploadWithProgress } from "~/lib/upload";
 import { gqlClient } from "~/lib/graphql";
 import { cn } from "~/lib/utils";
 import { NarratorsFindManyDocument } from "~/queries/narrators";
+import { TapFindManyDocument } from "~/queries/taps";
 import type { narratorsFindManyQuery, tapVideosInput } from "~/gql/graphql";
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
@@ -468,32 +469,75 @@ export function TapVideosSubform({
     setUploadProgress(0);
     try {
       const fd = new FormData();
-      // Endpoint contract (verified via /doc): `id` = tap _id + `file` only.
-      // The upload creates the tap's video subdocument, so it works before the
-      // entry has its own `_id` (only the tap must be saved). When replacing an
-      // existing entry, pass its `video` _id so the backend updates that subdoc
-      // instead of creating another.
+      // Endpoint contract (verified via /doc): `/admin/tap-video` takes only
+      // `id` (tap _id) + `file`, returns no usable body, and APPENDS a video
+      // subdocument server-side. We still pass `video` when re-uploading into
+      // an existing entry as a best-effort hint (the backend may update that
+      // subdoc in place); the refetch below reconciles either outcome.
       fd.append("file", file);
       fd.append("id", tapId);
       if (videoId) fd.append("video", videoId);
-      const res = await uploadWithProgress<{ url?: string }>(
-        "/admin/tap-video",
-        fd,
-        { onProgress: (pct) => setUploadProgress(pct) },
+      await uploadWithProgress("/admin/tap-video", fd, {
+        onProgress: (pct) => setUploadProgress(pct),
+      });
+
+      // The upload persisted the file into a new (or updated) video subdoc,
+      // but the response carries neither its `_id` nor a URL. Re-query the tap
+      // so this row picks up the server `_id` + canonical URL. This is the
+      // load-bearing fix: without it the row keeps a `blob:` preview with
+      // `_id: null`, and the next TapUpdateOne — which replaces the `videos`
+      // array wholesale — drops the row, wiping the just-uploaded video.
+      const priorIds = new Set(
+        value.map((v) => v._id).filter((id): id is string => Boolean(id)),
       );
-      // The endpoint response shape is unconfirmed; use a server-assigned
-      // http(s) url if present, else a local blob preview. `persistableUrl`
-      // reuses the http(s) test, and (paired with the serialize-side
-      // `persistableUrl` on `url`) guarantees a blob preview is never
-      // persisted — the canonical server url arrives on the next tap
-      // refetch/reopen (consistent with the thumbnail/caption flow).
-      const newUrl = persistableUrl(res?.url ?? null) ?? URL.createObjectURL(file);
+      let serverVideos: VideoEntry[] | null = null;
+      try {
+        const data = await gqlClient.request(TapFindManyDocument, {
+          filter: { _id: tapId },
+          limit: 1,
+        });
+        const fresh = data.TapFindMany?.[0];
+        if (fresh) serverVideos = videoEntriesFromTap(fresh.videos);
+      } catch {
+        // Refetch failed — fall back to a local blob preview below. The save
+        // can still wipe it in this rare double-failure case, but the upload
+        // itself succeeded, so reopening the tap will show the persisted video.
+      }
+
+      // Prefer the freshly-created subdoc (an `_id` we hadn't seen before);
+      // fall back to the same-`_id` row when the backend updated in place.
+      const localRow = value[index];
+      const canonical =
+        serverVideos?.find((s) => s._id && !priorIds.has(s._id)) ??
+        (localRow?._id
+          ? serverVideos?.find((s) => s._id === localRow._id)
+          : undefined);
+
+      // Side effects (allocate/revoke object URLs) stay OUT of the state
+      // updater so it remains pure. Only allocate a fallback blob when the
+      // refetch couldn't resolve a server row.
+      const prevUrl = localRow?.url ?? "";
+      const fallbackUrl = canonical ? null : URL.createObjectURL(file);
+      if (prevUrl.startsWith("blob:")) URL.revokeObjectURL(prevUrl);
+
       onChange((prev) =>
-        prev.map((v, i) =>
-          i === index
-            ? { ...v, url: newUrl, type: v.type.trim() ? v.type : file.type }
-            : v,
-        ),
+        prev.map((v, i) => {
+          if (i !== index) return v;
+          if (canonical) {
+            return {
+              ...canonical,
+              // Preserve metadata the user set on the row before uploading.
+              narrator: v.narrator.length ? v.narrator : canonical.narrator,
+              skip: v.skip.trim() ? v.skip : canonical.skip,
+              type: v.type.trim() ? v.type : canonical.type || file.type,
+            };
+          }
+          return {
+            ...v,
+            url: fallbackUrl ?? v.url,
+            type: v.type.trim() ? v.type : file.type,
+          };
+        }),
       );
       toast.success("Video uploaded");
     } catch (err) {
