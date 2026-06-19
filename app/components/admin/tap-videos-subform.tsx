@@ -167,7 +167,14 @@ function persistableUrl(url: string | null): string | null {
  * manual verification (no test backend available to this step).
  */
 export function serializeVideoEntries(entries: VideoEntry[]): tapVideosInput[] {
-  return entries.map((entry) => {
+  return entries
+    // Drop entries with neither a server `_id` nor a persistable (http) url:
+    // an empty row, or one whose only content is a just-uploaded file. The
+    // /admin/tap-video upload already created that subdocument server-side, so
+    // re-sending it here without an `_id` would duplicate it (the canonical
+    // row, with its `_id` + url, arrives on the next refetch/reopen).
+    .filter((entry) => Boolean(entry._id) || Boolean(persistableUrl(entry.url)))
+    .map((entry) => {
     const thumbnailUrl = persistableUrl(entry.thumbnailUrl);
     return {
       ...(entry._id ? { _id: entry._id } : {}),
@@ -216,18 +223,27 @@ export interface TapVideosSubformProps {
     update: VideoEntry[] | ((prev: VideoEntry[]) => VideoEntry[]),
   ) => void;
   /**
-   * Tap `_id` in edit mode; null in create mode. Uploads require both the
-   * tap id and the server-assigned video `_id`, so they stay disabled
-   * until the tap (and the video entry) has been saved once.
+   * Tap `_id` in edit mode; null in create mode. The video FILE upload only
+   * needs the tap id (the endpoint creates the video subdoc). Cover/caption
+   * additionally need the server-assigned video `_id`, so they stay disabled
+   * until the entry has been saved once.
    */
   tapId?: string | null;
+  /**
+   * The tap's type identifier (e.g. "video", "full-audio"). The video FILE
+   * upload is available for any media tap, but the cover (thumbnail) and
+   * captions are only shown for `type === "video"`.
+   */
+  tapType?: string | null;
 }
 
 export function TapVideosSubform({
   value,
   onChange,
   tapId,
+  tapType,
 }: TapVideosSubformProps) {
+  const isVideoType = (tapType ?? "").trim() === "video";
   const [narrators, setNarrators] = useState<NarratorItem[]>([]);
   const [narratorsLoading, setNarratorsLoading] = useState(true);
   const [narratorsError, setNarratorsError] = useState(false);
@@ -442,7 +458,7 @@ export function TapVideosSubform({
     e.target.value = "";
     const entry = value[index];
     const videoId = entry?._id;
-    if (!file || !tapId || !videoId || uploadingKey) return;
+    if (!file || !tapId || uploadingKey) return;
     if (file.size > MAX_VIDEO_UPLOAD_BYTES) {
       toast.error("Video must be 500 MB or smaller.");
       return;
@@ -452,11 +468,14 @@ export function TapVideosSubform({
     setUploadProgress(0);
     try {
       const fd = new FormData();
-      // Endpoint contract (INFERRED by sibling analogy — see plan appendix):
-      // `id` = tap _id, `video` = video subdocument _id.
+      // Endpoint contract (verified via /doc): `id` = tap _id + `file` only.
+      // The upload creates the tap's video subdocument, so it works before the
+      // entry has its own `_id` (only the tap must be saved). When replacing an
+      // existing entry, pass its `video` _id so the backend updates that subdoc
+      // instead of creating another.
       fd.append("file", file);
       fd.append("id", tapId);
-      fd.append("video", videoId);
+      if (videoId) fd.append("video", videoId);
       const res = await uploadWithProgress<{ url?: string }>(
         "/admin/tap-video",
         fd,
@@ -506,7 +525,13 @@ export function TapVideosSubform({
       ) : (
         <div className="space-y-3">
           {value.map((entry, vi) => {
+            // Cover/caption target an existing video subdocument, so they need
+            // both the tap and the entry's server `_id`. The video FILE upload
+            // only needs the tap (the /admin/tap-video endpoint creates the
+            // subdoc from `id` + `file`), so it unlocks as soon as the tap is
+            // saved — even for a freshly-added entry.
             const canUpload = Boolean(tapId && entry._id);
+            const canUploadVideo = Boolean(tapId);
             const thumbUploading = uploadingKey === `thumb-${vi}`;
             const videoUploading = uploadingKey === `video-${vi}`;
             // Detail fields stay hidden until the entry has a url (set by
@@ -579,7 +604,7 @@ export function TapVideosSubform({
                       styling and "Save first to upload" hint. Free-text URL
                       input above is kept (decision: both paths). */}
                   <div className="flex flex-wrap items-center gap-3">
-                    {canUpload ? (
+                    {canUploadVideo ? (
                       <label
                         className={cn(
                           "inline-flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-border bg-card px-3 py-2 text-xs text-muted-foreground transition-colors hover:border-foreground/30 focus-within:ring-2 focus-within:ring-primary/30",
@@ -734,6 +759,9 @@ export function TapVideosSubform({
                       )}
                     </div>
 
+                    {/* Cover (thumbnail) + captions only apply to video taps. */}
+                    {isVideoType ? (
+                      <>
                     <div className="flex flex-col gap-1.5">
                       <p className="text-xs font-medium text-muted-foreground">
                         Thumbnail
@@ -908,6 +936,8 @@ export function TapVideosSubform({
                         </div>
                       )}
                     </div>
+                      </>
+                    ) : null}
                   </>
                 ) : null}
               </div>

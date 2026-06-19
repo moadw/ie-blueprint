@@ -148,9 +148,9 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
     setError(null);
     try {
       const { active, hidden } = activeHiddenFromStatus(status);
+      const trimmedSlug = slug.trim();
       const record = {
         title: title.trim(),
-        slug: slug.trim() || null,
         description: description.trim() || null,
         category,
         grade,
@@ -158,6 +158,11 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
         hidden,
         order,
         platform: env.PLATFORM,
+        // `slug` has a sparse-unique index on the backend: an explicit null
+        // collides with any other slug-less record (E11000). Omit it when empty
+        // so the backend auto-generates one (create) / leaves it unchanged
+        // (update) — matches the tap-dialog fix.
+        ...(trimmedSlug ? { slug: trimmedSlug } : {}),
       };
 
       let recordId: string | null | undefined;
@@ -394,7 +399,7 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
               </span>
               <input
                 type="file"
-                accept="image/png,image/jpeg"
+                accept="image/png,image/jpeg,image/webp"
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0] ?? null;
@@ -446,7 +451,7 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
               </span>
               <input
                 type="file"
-                accept="image/png,image/jpeg"
+                accept="image/png,image/jpeg,image/webp"
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0] ?? null;

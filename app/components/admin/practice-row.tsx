@@ -59,6 +59,7 @@ const ACCESS_OPTIONS = [
 
 export function PracticeRow({ practice, onChange }: PracticeRowProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const bgInputRef = useRef<HTMLInputElement | null>(null);
   const practiceId = practice._id ?? "";
 
   const [expanded, setExpanded] = useState(false);
@@ -81,6 +82,21 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
   const [deleting, setDeleting] = useState(false);
   const [titleEditing, setTitleEditing] = useState(false);
   const [titleSaving, setTitleSaving] = useState(false);
+
+  // The class background is upload-only: `PUT /admin/class-background` accepts it,
+  // but the GraphQL `classes` type exposes no background field to read it back.
+  // So unlike the cover (which refetches from `practice.cover.url`), we show an
+  // optimistic local preview of the just-uploaded file. It survives parent
+  // revalidation (the row is keyed by `_id`, so it isn't remounted) but resets
+  // on a full reload — acceptable given the backend has no read path.
+  const [bgPreview, setBgPreview] = useState<string | null>(null);
+  const [bgUploading, setBgUploading] = useState(false);
+
+  // Revoke the previous object URL whenever the preview changes or on unmount.
+  useEffect(() => {
+    if (!bgPreview) return;
+    return () => URL.revokeObjectURL(bgPreview);
+  }, [bgPreview]);
 
   // Re-sync local state if practice changes from parent revalidate.
   useEffect(() => {
@@ -199,6 +215,27 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
     }
   }
 
+  async function handleBgPick(file: File) {
+    // Optimistic preview — there's no GraphQL field to read the background back.
+    setBgPreview(URL.createObjectURL(file));
+    setBgUploading(true);
+    try {
+      const fd = new FormData();
+      // /admin/class-background mirrors /admin/class-cover: field "class" = class _id.
+      fd.append("class", practiceId);
+      fd.append("file", file);
+      await api("/admin/class-background", { method: "PUT", body: fd });
+      toast.success("Background updated");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Background upload failed";
+      console.error("[class-background] upload failed", err);
+      toast.error(msg);
+      setBgPreview(null); // revert — no server value to fall back to
+    } finally {
+      setBgUploading(false);
+    }
+  }
+
   return (
     <div
       className={cn(
@@ -219,7 +256,7 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/png,image/jpeg"
+          accept="image/png,image/jpeg,image/webp"
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];
@@ -251,16 +288,47 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
           </div>
         </button>
 
-        <div
-          className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded bg-stone-100"
-          aria-label="Background image (visual placeholder)"
-          title="Background image (coming soon)"
+        <input
+          ref={bgInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleBgPick(file);
+            e.target.value = "";
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => bgInputRef.current?.click()}
+          disabled={bgUploading}
+          className="group relative h-12 w-12 flex-shrink-0 cursor-pointer overflow-hidden rounded bg-stone-100 transition-all disabled:cursor-wait"
+          aria-label="Upload background"
+          title="Background image — click to upload"
         >
-          <div className="flex h-full w-full flex-col items-center justify-center rounded border-2 border-dashed border-stone-200">
-            <ImageIcon className="h-4 w-4 text-stone-300" />
-            <span className="mt-0.5 text-[8px] text-stone-400">BG</span>
-          </div>
-        </div>
+          {bgPreview ? (
+            <img
+              src={bgPreview}
+              alt={`${practice.title ?? "Practice"} background`}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center rounded border-2 border-dashed border-stone-200">
+              <ImageIcon className="h-4 w-4 text-stone-300" />
+              <span className="mt-0.5 text-[8px] text-stone-400">BG</span>
+            </div>
+          )}
+          {bgUploading ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+              <Loader2 className="h-3 w-3 animate-spin text-white" />
+            </div>
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+              <ImageOverlay className="h-3 w-3 text-white" />
+            </div>
+          )}
+        </button>
 
         <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-stone-100 font-serif text-sm font-semibold text-stone-700">
           {dayValue}
