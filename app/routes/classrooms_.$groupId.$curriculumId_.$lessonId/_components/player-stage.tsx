@@ -85,6 +85,7 @@ export function PlayerStage({
     skip,
     handleProgressClick,
     setVolume,
+    play,
     pause,
     formatTime,
     mediaEventHandlers,
@@ -105,12 +106,13 @@ export function PlayerStage({
     const timer = setTimeout(() => {
       if (hasAutoPlayedRef.current || !mediaRef.current) return;
       hasAutoPlayedRef.current = true;
-      mediaRef.current.play().catch(() => {
-        // Autoplay can be blocked by the browser — the user can press play.
-      });
+      // Route through the hook's play() so it records play intent (and handles
+      // a blocked autoplay). Keeps the wake-from-sleep guard consistent: only
+      // intent-bearing play() calls are allowed to start playback.
+      play();
     }, AUTOPLAY_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [hydrated, phase, mediaRef]);
+  }, [hydrated, phase, mediaRef, play]);
 
   // Idle detection: hide the chrome after 5s of no pointer movement.
   useEffect(() => {
