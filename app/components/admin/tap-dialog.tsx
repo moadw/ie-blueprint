@@ -125,7 +125,10 @@ export function TapDialog({
     let cancelled = false;
     setTypesLoading(true);
     gqlClient
-      .request(TapTypeFindManyDocument, { limit: 100 })
+      .request(TapTypeFindManyDocument, {
+        filter: { platform: env.PLATFORM },
+        limit: 100,
+      })
       .then((data) => {
         if (cancelled) return;
         setTapTypes(data.TapTypeFindMany ?? []);
@@ -161,6 +164,7 @@ export function TapDialog({
     setSubmitting(true);
     setError(null);
     try {
+      const trimmedSlug = form.slug.trim();
       const scalars = {
         title: trimmedTitle,
         order: Math.max(1, Math.round(form.order || 1)),
@@ -169,7 +173,11 @@ export function TapDialog({
         time: parseOptionalNumber(form.time), // minutes (plain number)
         intro: form.intro.trim() || null,
         description: form.description.trim() || null,
-        slug: form.slug.trim() || null,
+        // `slug` has a sparse-unique index on the backend: an explicit null
+        // collides with any other slug-less tap (E11000 dup key on slug:null).
+        // Omit it when empty so the backend auto-generates a unique slug on
+        // create (and leaves the existing slug untouched on update).
+        ...(trimmedSlug ? { slug: trimmedSlug } : {}),
       };
 
       // extraQuestions is replaced wholesale on every save: send the full
@@ -354,6 +362,7 @@ export function TapDialog({
             value={videos}
             onChange={setVideos}
             tapId={tap?._id ?? null}
+            tapType={form.type.trim()}
           />
 
           <TapQuestionsSubform

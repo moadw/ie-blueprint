@@ -74,7 +74,10 @@ export function TapBlocks({ classId }: TapBlocksProps) {
   useEffect(() => {
     let cancelled = false;
     gqlClient
-      .request(TapTypeFindManyDocument, { limit: 100 })
+      .request(TapTypeFindManyDocument, {
+        filter: { platform: env.PLATFORM },
+        limit: 100,
+      })
       .then((data) => {
         if (cancelled) return;
         setTapTypes(data.TapTypeFindMany ?? []);
