@@ -1,26 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import {
-  AlertCircle,
-  BookOpen,
   Check,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
-  Clock,
-  Film,
   GripVertical,
   Image as ImageIcon,
   ImageIcon as ImageOverlay,
   Loader2,
-  Music,
   Trash2,
-  Volume2,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
+import { TapBlocks } from "~/components/admin/tap-blocks";
+import { AchievementBlock } from "~/components/admin/achievement-block";
 import { api } from "~/lib/api";
 import { gqlClient } from "~/lib/graphql";
 import { ClassesUpdateOneDocument } from "~/mutations/classes";
@@ -36,17 +32,6 @@ export interface PracticeRowProps {
   onChange: () => void;
 }
 
-const CATEGORY_OPTIONS = [
-  "transition",
-  "sound",
-  "focus",
-  "gratitude",
-  "nature",
-  "kindness",
-  "energy",
-  "calm",
-] as const;
-
 const GRADE_OPTIONS = [
   { value: "early_learning", label: "Early Learning" },
   { value: "elementary", label: "Elementary" },
@@ -56,13 +41,9 @@ const GRADE_OPTIONS = [
   { value: "sports", label: "Sports" },
 ] as const;
 
-const ACCESS_OPTIONS = [
-  { value: "free", label: "Free" },
-  { value: "premium", label: "Premium" },
-] as const;
-
 export function PracticeRow({ practice, onChange }: PracticeRowProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const bgInputRef = useRef<HTMLInputElement | null>(null);
   const practiceId = practice._id ?? "";
 
   const [expanded, setExpanded] = useState(false);
@@ -80,13 +61,25 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
   const [category, setCategory] = useState<string>("");
   const [gradeLevel, setGradeLevel] = useState<string>("all_levels");
   const [active, setActive] = useState<boolean>(true);
-  const [hasJournal, setHasJournal] = useState<boolean>(false);
-  const [journalPrompt, setJournalPrompt] = useState<string>("");
 
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [titleEditing, setTitleEditing] = useState(false);
   const [titleSaving, setTitleSaving] = useState(false);
+
+  // The class background persists like the cover: `PUT /admin/class-background`
+  // writes it, and the GraphQL `classes` type exposes `background { url type }`
+  // to read it back. `bgPreview` is an optimistic local preview of the
+  // just-uploaded file shown until the parent revalidates and
+  // `practice.background.url` refetches.
+  const [bgPreview, setBgPreview] = useState<string | null>(null);
+  const [bgUploading, setBgUploading] = useState(false);
+
+  // Revoke the previous object URL whenever the preview changes or on unmount.
+  useEffect(() => {
+    if (!bgPreview) return;
+    return () => URL.revokeObjectURL(bgPreview);
+  }, [bgPreview]);
 
   // Re-sync local state if practice changes from parent revalidate.
   useEffect(() => {
@@ -98,17 +91,18 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
   const dayValue = Math.max(1, Math.round(day || 1));
   const completeness = (() => {
     const hasImage = Boolean(practice.cover?.url);
-    const hasMedia = false; // TODO(media): wire when LessonMedia lands
     const hasDescription = Boolean(practice.description);
     const hasCategory = Boolean(category);
     const missing: string[] = [];
     if (!hasImage) missing.push("Cover image");
-    if (!hasMedia) missing.push("Audio/Video");
     if (!hasDescription) missing.push("Description");
     if (!hasCategory) missing.push("Category");
-    return { isComplete: missing.length === 0, missing, hasMedia };
+    return { isComplete: missing.length === 0, missing };
   })();
   const isComplete = completeness.isComplete;
+
+  // Prefer the optimistic just-uploaded preview, else the persisted background.
+  const bgUrl = bgPreview ?? practice.background?.url ?? null;
 
   async function persistTitle(nextTitle: string) {
     const trimmed = nextTitle.trim();
@@ -147,7 +141,7 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
           description: description.trim() || null,
           order: dayValue,
           free: accessLevel === "free",
-          // Category, Grade, Active, Journal are visual-only (I2/I3).
+          // Category, Grade, Active are visual-only (I2/I3).
           // `deleted` is not written here — soft delete is the Delete button's job (I3).
         },
       });
@@ -207,6 +201,28 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
     }
   }
 
+  async function handleBgPick(file: File) {
+    // Optimistic preview until the parent revalidates and `background.url` refetches.
+    setBgPreview(URL.createObjectURL(file));
+    setBgUploading(true);
+    try {
+      const fd = new FormData();
+      // /admin/class-background mirrors /admin/class-cover: field "class" = class _id.
+      fd.append("class", practiceId);
+      fd.append("file", file);
+      await api("/admin/class-background", { method: "PUT", body: fd });
+      toast.success("Background updated");
+      onChange();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Background upload failed";
+      console.error("[class-background] upload failed", err);
+      toast.error(msg);
+      setBgPreview(null); // revert — no server value to fall back to
+    } finally {
+      setBgUploading(false);
+    }
+  }
+
   return (
     <div
       className={cn(
@@ -227,7 +243,7 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/png,image/jpeg"
+          accept="image/png,image/jpeg,image/webp"
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];
@@ -259,16 +275,47 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
           </div>
         </button>
 
-        <div
-          className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded bg-stone-100"
-          aria-label="Background image (visual placeholder)"
-          title="Background image (coming soon)"
+        <input
+          ref={bgInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleBgPick(file);
+            e.target.value = "";
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => bgInputRef.current?.click()}
+          disabled={bgUploading}
+          className="group relative h-12 w-12 flex-shrink-0 cursor-pointer overflow-hidden rounded bg-stone-100 transition-all disabled:cursor-wait"
+          aria-label="Upload background"
+          title="Background image — click to upload"
         >
-          <div className="flex h-full w-full flex-col items-center justify-center rounded border-2 border-dashed border-stone-200">
-            <ImageIcon className="h-4 w-4 text-stone-300" />
-            <span className="mt-0.5 text-[8px] text-stone-400">BG</span>
-          </div>
-        </div>
+          {bgUrl ? (
+            <img
+              src={bgUrl}
+              alt={`${practice.title ?? "Practice"} background`}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center rounded border-2 border-dashed border-stone-200">
+              <ImageIcon className="h-4 w-4 text-stone-300" />
+              <span className="mt-0.5 text-[8px] text-stone-400">BG</span>
+            </div>
+          )}
+          {bgUploading ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+              <Loader2 className="h-3 w-3 animate-spin text-white" />
+            </div>
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+              <ImageOverlay className="h-3 w-3 text-white" />
+            </div>
+          )}
+        </button>
 
         <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-stone-100 font-serif text-sm font-semibold text-stone-700">
           {dayValue}
@@ -337,23 +384,6 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
             <Badge shape="tag" className="bg-transparent text-stone-500 border-stone-300">
               {GRADE_OPTIONS.find((g) => g.value === gradeLevel)?.label ?? "All Levels"}
             </Badge>
-            {completeness.hasMedia ? (
-              <Badge shape="tag" className="bg-blue-100 text-blue-700 border-blue-200">
-                <Volume2 className="w-3 h-3" />
-                {/* TODO(media): show count + langs */}
-              </Badge>
-            ) : (
-              <Badge shape="tag" className="bg-amber-50 text-amber-600 border-amber-300">
-                <AlertCircle className="w-3 h-3" />
-                No audio
-              </Badge>
-            )}
-            {hasJournal ? (
-              <Badge shape="tag" className="bg-amber-100 text-amber-700 border-amber-200">
-                <BookOpen className="w-3 h-3" />
-                Journal
-              </Badge>
-            ) : null}
             {isComplete ? (
               <Badge shape="tag" className="bg-emerald-100 text-emerald-700 border-emerald-200">
                 <CheckCircle2 className="w-3 h-3" />
@@ -364,39 +394,6 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
                 Missing: {completeness.missing.join(", ")}
               </span>
             )}
-          </div>
-        </div>
-
-        <div className="flex flex-shrink-0 items-center gap-1.5">
-          <div
-            className="flex h-12 w-12 flex-col items-center justify-center rounded border-2 border-dashed border-stone-300 bg-stone-100"
-            aria-label="Full audio (visual placeholder)"
-            title="Full audio (coming soon)"
-          >
-            <Music className="h-4 w-4 text-stone-400" />
-            <span className="mt-0.5 text-[8px] font-medium text-stone-400">
-              Full
-            </span>
-          </div>
-          <div
-            className="flex h-12 w-12 flex-col items-center justify-center rounded border-2 border-dashed border-stone-300 bg-stone-100"
-            aria-label="Short audio (visual placeholder)"
-            title="5-min audio (coming soon)"
-          >
-            <Clock className="h-4 w-4 text-stone-400" />
-            <span className="mt-0.5 text-[8px] font-medium text-stone-400">
-              5min
-            </span>
-          </div>
-          <div
-            className="flex h-12 w-12 flex-col items-center justify-center rounded border-2 border-dashed border-stone-300 bg-stone-100"
-            aria-label="Video (visual placeholder)"
-            title="Video (coming soon)"
-          >
-            <Film className="h-4 w-4 text-stone-400" />
-            <span className="mt-0.5 text-[8px] font-medium text-stone-400">
-              Video
-            </span>
           </div>
         </div>
 
@@ -433,71 +430,20 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
 
       {expanded ? (
         <div className="space-y-4 border-t border-stone-100 px-4 pt-2 pb-4">
-          <div className="grid grid-cols-4 gap-3">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-stone-600">
-                Day
-              </label>
-              <input
-                type="number"
-                min={1}
-                step={1}
-                value={day}
-                onChange={(e) =>
-                  setDay(Math.max(1, Number(e.target.value) || 1))
-                }
-                className="w-full rounded-md border border-stone-200 bg-card px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-stone-600">
-                Category
-              </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full rounded-md border border-stone-200 bg-card px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                <option value="">—</option>
-                {CATEGORY_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-stone-600">
-                Grade
-              </label>
-              <select
-                value={gradeLevel}
-                onChange={(e) => setGradeLevel(e.target.value)}
-                className="w-full rounded-md border border-stone-200 bg-card px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                {GRADE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-stone-600">
-                Access
-              </label>
-              <select
-                value={accessLevel}
-                onChange={(e) => setAccessLevel(e.target.value)}
-                className="w-full rounded-md border border-stone-200 bg-card px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                {ACCESS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="w-32">
+            <label className="mb-1 block text-xs font-medium text-stone-600">
+              Day
+            </label>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={day}
+              onChange={(e) =>
+                setDay(Math.max(1, Number(e.target.value) || 1))
+              }
+              className="w-full rounded-md border border-stone-200 bg-card px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
           </div>
 
           <div className="flex items-center justify-between rounded-md border border-stone-200 bg-stone-50/40 px-3 py-2">
@@ -516,28 +462,26 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
             />
           </div>
 
-          <div className="space-y-2 rounded-md border border-amber-200 bg-amber-50/40 p-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-amber-800">
-                Journal
-              </span>
-              <Switch checked={hasJournal} onCheckedChange={setHasJournal} />
-            </div>
-            {hasJournal ? (
-              <textarea
-                placeholder="Journal prompt"
-                value={journalPrompt}
-                onChange={(e) => setJournalPrompt(e.target.value)}
-                className="h-16 w-full rounded-md border border-amber-200 bg-card p-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-200/50"
-              />
-            ) : null}
+          {/* Taps persist via their own mutations — independent of the
+              practice Save button below. */}
+          <div>
+            <label className="mb-1 block text-xs font-medium text-stone-600">
+              Content
+            </label>
+            <TapBlocks classId={practiceId} />
           </div>
 
-          <div className="rounded-md border border-blue-200 bg-blue-50/40 p-3 text-sm text-blue-700">
-            Add translation
+          {/* The achievement (pin) persists via its own mutations —
+              independent of the practice Save button below. */}
+          <div>
+            <label className="mb-1 block text-xs font-medium text-stone-600">
+              Achievement
+            </label>
+            <AchievementBlock
+              classId={practiceId}
+              curriculumId={practice.curriculum ?? null}
+            />
           </div>
-
-          <p className="text-xs text-stone-400">No media</p>
 
           <div className="flex justify-end">
             <Button

@@ -53,6 +53,7 @@ export interface UseMediaPlayerReturn {
     onLoadedMetadata: () => void;
     onEnded: () => void;
     onWaiting: () => void;
+    onPlay: () => void;
     onPlaying: () => void;
     onPause: () => void;
   };
@@ -82,6 +83,13 @@ export function useMediaPlayer({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
+  // Whether the user/page actually intends playback. Mutated ONLY by the
+  // explicit play()/pause() controls and natural end — never by media events.
+  // Used to reject playback the browser starts on its own (notably auto-resume
+  // when the machine wakes from sleep): the user paused, so it stays paused
+  // until they press play again.
+  const intendedPlayingRef = useRef(false);
+
   // Sync volume to the media element and persist it.
   useEffect(() => {
     if (mediaRef.current) {
@@ -107,13 +115,25 @@ export function useMediaPlayer({
   }, [volume]);
 
   const handleEnded = useCallback(() => {
+    intendedPlayingRef.current = false;
     setIsPlaying(false);
     setCurrentTime(0);
     onEnded?.();
   }, [onEnded]);
 
   const handleWaiting = useCallback(() => setIsBuffering(true), []);
+
+  // Playback began. If it started without an explicit play() recording intent
+  // (e.g. the browser auto-resuming after the machine wakes), re-pause so a
+  // user-paused track never resumes on its own.
+  const handlePlay = useCallback(() => {
+    if (!intendedPlayingRef.current) mediaRef.current?.pause();
+  }, []);
   const handlePlaying = useCallback(() => {
+    if (!intendedPlayingRef.current) {
+      mediaRef.current?.pause();
+      return;
+    }
     setIsBuffering(false);
     setIsPlaying(true);
   }, []);
@@ -121,13 +141,20 @@ export function useMediaPlayer({
 
   // Playback controls.
   const play = useCallback(() => {
-    if (mediaRef.current) {
-      void mediaRef.current.play();
-      setIsPlaying(true);
-    }
+    const el = mediaRef.current;
+    if (!el) return;
+    intendedPlayingRef.current = true;
+    setIsPlaying(true);
+    void el.play().catch(() => {
+      // Playback blocked (e.g. browser autoplay policy) — reflect reality so
+      // the controls show "play" and the intent flag doesn't lie.
+      intendedPlayingRef.current = false;
+      setIsPlaying(false);
+    });
   }, []);
 
   const pause = useCallback(() => {
+    intendedPlayingRef.current = false;
     if (mediaRef.current) {
       mediaRef.current.pause();
       setIsPlaying(false);
@@ -205,6 +232,7 @@ export function useMediaPlayer({
       onLoadedMetadata: handleLoadedMetadata,
       onEnded: handleEnded,
       onWaiting: handleWaiting,
+      onPlay: handlePlay,
       onPlaying: handlePlaying,
       onPause: handlePause,
     },

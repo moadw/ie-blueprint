@@ -1,24 +1,42 @@
 import { ImmersiveVideoTransition } from "./immersive-video-transition";
 import { MilestoneBadge } from "./milestone-badge";
-import { MOCK_LESSON, MOCK_MILESTONE } from "./fixtures";
 
 interface MilestoneScreenProps {
+  title: string;
+  message: string;
+  iconKey: string;
+  color: string;
+  glowColor: string;
+  /** e.g. "Day 3 Complete". */
+  subtitle: string;
+  /** `undefined` → no-video warm-gradient path. */
+  videoUrl?: string | undefined;
   /** Continue → curriculum page. */
   onContinue: () => void;
 }
 
 /**
  * Post-playback milestone / achievement screen. Rebuilt from the prototype's
- * `MilestoneRewardCard` + `MilestoneReward` page no-video case (visual
- * reference only). Uses the shared `ImmersiveVideoTransition` with no
- * `videoUrl` (warm-gradient path) so it skips straight to content. A centered
- * column holds the gradient badge tile, fixture title + message, and a glass
- * Continue pill → curriculum page. UI ONLY.
+ * `MilestoneRewardCard` + `MilestoneReward` page (visual reference only). Uses
+ * the shared `ImmersiveVideoTransition`; when no `videoUrl` is passed it takes
+ * the warm-gradient no-video path (skips straight to content). A centered
+ * column holds the gradient badge tile, title + message, and a glass Continue
+ * pill → curriculum page. UI ONLY.
  */
-export function MilestoneScreen({ onContinue }: MilestoneScreenProps) {
+export function MilestoneScreen({
+  title,
+  message,
+  iconKey,
+  color,
+  glowColor,
+  subtitle,
+  videoUrl,
+  onContinue,
+}: MilestoneScreenProps) {
   return (
     <ImmersiveVideoTransition
-      glowColors={[MOCK_MILESTONE.glowColor, "rgba(168, 85, 247, 0.12)"]}
+      videoUrl={videoUrl}
+      glowColors={[glowColor, "rgba(168, 85, 247, 0.12)"]}
       entranceDelay={300}
       endingDuration={800}
     >
@@ -32,11 +50,11 @@ export function MilestoneScreen({ onContinue }: MilestoneScreenProps) {
           `}</style>
 
           <MilestoneBadge
-            iconKey={MOCK_MILESTONE.iconKey}
-            title={MOCK_MILESTONE.title}
-            subtitle={`Day ${MOCK_LESSON.order} Complete`}
-            color={MOCK_MILESTONE.color}
-            glowColor={MOCK_MILESTONE.glowColor}
+            iconKey={iconKey}
+            title={title}
+            subtitle={subtitle}
+            color={color}
+            glowColor={glowColor}
           />
 
           <p
@@ -46,7 +64,7 @@ export function MilestoneScreen({ onContinue }: MilestoneScreenProps) {
                 "milestone-screen-fade-up 500ms cubic-bezier(0.16, 1, 0.3, 1) 700ms both",
             }}
           >
-            {MOCK_MILESTONE.message}
+            {message}
           </p>
 
           <button

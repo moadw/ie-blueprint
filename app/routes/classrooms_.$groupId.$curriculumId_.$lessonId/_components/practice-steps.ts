@@ -1,0 +1,201 @@
+// Pure, testable mapping from a class's taps (+ optional pin) to an ordered
+// list of "practice steps" the detail route renders. Keeping the tap-type →
+// screen mapping here (not inline in the route) makes the rules reviewable in
+// one place and lets the route be a thin index-driven renderer.
+//
+// Tap-type mapping (plan "Implementation Approach", verify in QA): branch on
+// the resolved `tap.type` slug — `video` → video player, `audio`/`5min-audio`
+// → audio player, `journal` → JournalScreen. Any unknown non-journal type
+// defaults to the player. Media URL = first `tap.videos[]` entry
+// (`videos[0].url`); audio-vs-video derived from the resolved type (fallback
+// `videos[0].type`). Journal prompt = `tap.intro` (fallback first
+// `extraQuestions[].question`).
+//
+// Robust tap-type resolution: `tap.type` may hold EITHER the tap-type
+// identifier slug ("audio"/"5min-audio"/"video"/"journal") OR a tap-type
+// `_id`. The admin `tap-blocks.tsx` resolves labels against BOTH `tt.identifier`
+// and `tt._id`, so we mirror that here: `buildTapTypeResolver` produces a
+// Map from BOTH `tt._id → tt.identifier` AND `tt.identifier → tt.identifier`,
+// and `resolveTapType` maps a raw `tap.type` to its canonical slug before
+// branching. When the resolver is empty or a type is unknown, the raw value is
+// returned unchanged (a no-op when `tap.type` is already a slug), and the
+// existing fallback (infer audio/video from `videos[0].type`) still applies.
+
+import type {
+  TapFindManyQuery,
+  PinFindManyQuery,
+  TapTypeFindManyQuery,
+} from "~/gql/graphql";
+import {
+  ACHIEVEMENT_DEFAULTS,
+  type AchievementDefaults,
+} from "./achievement-defaults";
+
+/** A single tap as returned by `TapFindMany` (generated result element type). */
+export type PracticeTap = TapFindManyQuery["TapFindMany"][number];
+/** A single pin as returned by `PinFindMany` (generated result element type). */
+export type PracticePin = PinFindManyQuery["PinFindMany"][number];
+/** A single tap-type as returned by `TapTypeFindMany` (generated element type). */
+export type PracticeTapType = TapTypeFindManyQuery["TapTypeFindMany"][number];
+
+export type MediaKind = "audio" | "video";
+
+/** Ordered, typed step the practice runner renders one at a time. */
+export type PracticeStep =
+  | { kind: "player"; media: MediaKind; tap: PracticeTap }
+  | { kind: "journal"; tap: PracticeTap }
+  | { kind: "achievement"; pin: PracticePin };
+
+/** Tap-type slugs that route to the journal screen. */
+const JOURNAL_TYPES: ReadonlySet<string> = new Set(["journal"]);
+/** Tap-type slugs that route to the video player. */
+const VIDEO_TYPES: ReadonlySet<string> = new Set(["video"]);
+/** Tap-type slugs that route to the audio player. */
+const AUDIO_TYPES: ReadonlySet<string> = new Set(["audio", "5min-audio"]);
+
+/**
+ * Build a resolver Map from a `TapTypeFindMany` result that maps a raw
+ * `tap.type` value to its canonical identifier slug. Mirrors the admin
+ * `tap-blocks.tsx` lookup (matches on BOTH `tt._id` and `tt.identifier`) so
+ * resolution is correct whether `tap.type` carries a slug or a type `_id`:
+ *   - `tt._id` → `tt.identifier`
+ *   - `tt.identifier` → `tt.identifier`
+ * Entries with no `identifier` are skipped (nothing canonical to resolve to).
+ */
+export function buildTapTypeResolver(
+  tapTypes: readonly PracticeTapType[],
+): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const tt of tapTypes) {
+    if (!tt.identifier) continue;
+    map.set(tt.identifier, tt.identifier);
+    if (tt._id) map.set(tt._id, tt.identifier);
+  }
+  return map;
+}
+
+/**
+ * Resolve a tap's raw `type` to its canonical identifier slug using the
+ * resolver Map. Falls back to the raw `tap.type` (lower-cased for matching)
+ * when there is no map entry — a no-op when `tap.type` is already a slug or the
+ * map is empty.
+ */
+export function resolveTapType(
+  tap: PracticeTap,
+  resolver?: ReadonlyMap<string, string>,
+): string | undefined {
+  const raw = tap.type ?? undefined;
+  if (!raw) return undefined;
+  return resolver?.get(raw) ?? raw;
+}
+
+/** True when a resolved tap-type slug routes to the journal screen. */
+function isJournalType(type: string | undefined): boolean {
+  return type != null && JOURNAL_TYPES.has(type);
+}
+
+/**
+ * True when this tap should render in the journal screen rather than the
+ * player. Pass the resolver so a tap whose `type` is a `_id` resolves to its
+ * `journal` slug before the check.
+ */
+export function isJournalTap(
+  tap: PracticeTap,
+  resolver?: ReadonlyMap<string, string>,
+): boolean {
+  return isJournalType(resolveTapType(tap, resolver));
+}
+
+/**
+ * Audio vs video for a player tap. Derived from the resolved `tap.type` slug;
+ * when the type is unknown, fall back to the first video entry's `type`,
+ * defaulting to `video`.
+ */
+export function mediaForTap(
+  tap: PracticeTap,
+  resolver?: ReadonlyMap<string, string>,
+): MediaKind {
+  const type = resolveTapType(tap, resolver);
+  if (type && VIDEO_TYPES.has(type)) return "video";
+  if (type && AUDIO_TYPES.has(type)) return "audio";
+  // Unknown type: infer from the first video element's declared type.
+  const firstVideoType = tap.videos?.[0]?.type ?? undefined;
+  if (firstVideoType && firstVideoType.toLowerCase().includes("audio")) {
+    return "audio";
+  }
+  return "video";
+}
+
+/**
+ * Source URL for a player tap's media. The schema models a tap's media as a
+ * `videos[]` array for both audio and video taps; the first entry's `url` is
+ * the playable source. Returns `""` when no playable url exists (guarded for
+ * `noUncheckedIndexedAccess`); the caller decides how to handle an empty src.
+ */
+export function mediaUrlForTap(tap: PracticeTap): string {
+  return tap.videos?.[0]?.url ?? "";
+}
+
+/**
+ * Prompt text for a journal tap: `tap.intro` first, then the first
+ * `extraQuestions[].question`. Returns `""` when neither is present.
+ */
+export function journalPromptForTap(tap: PracticeTap): string {
+  if (tap.intro) return tap.intro;
+  const firstQuestion = tap.extraQuestions?.find(
+    (q): q is NonNullable<typeof q> => Boolean(q?.question),
+  )?.question;
+  return firstQuestion ?? "";
+}
+
+/** `MilestoneScreen` props derived from a pin + class title. */
+export interface MilestoneProps extends AchievementDefaults {
+  title: string;
+  subtitle: string;
+  videoUrl?: string;
+}
+
+/**
+ * Map an `achievement` step's pin → `MilestoneScreen` props. The pin supplies
+ * the title (`pin.label`) and optional celebration media (`pin.video`, then
+ * `pin.cover`); the badge body/icon/colors come from `ACHIEVEMENT_DEFAULTS`.
+ * `subtitle` is the class title, falling back to "Practice Complete".
+ *
+ * `videoUrl` is omitted entirely (not set to `undefined`) when the pin has no
+ * media, per `exactOptionalPropertyTypes`.
+ */
+export function milestonePropsForPin(
+  pin: PracticePin,
+  classTitle: string | null | undefined,
+): MilestoneProps {
+  const videoUrl = pin.video?.url ?? pin.cover?.url ?? undefined;
+  const base: MilestoneProps = {
+    ...ACHIEVEMENT_DEFAULTS,
+    title: pin.label ?? "",
+    subtitle: classTitle ?? "Practice Complete",
+  };
+  return videoUrl ? { ...base, videoUrl } : base;
+}
+
+/**
+ * Build the ordered step list for a class. Taps are mapped in their given
+ * order (the caller is responsible for sorting by `order` first); an optional
+ * non-deleted pin appends a final `achievement` step. Pass the tap-type
+ * `resolver` so taps whose `type` is a `_id` resolve to their canonical slug
+ * before branching (no-op when `tap.type` is already a slug or the map empty).
+ */
+export function buildPracticeSteps(
+  taps: readonly PracticeTap[],
+  pin: PracticePin | null,
+  resolver?: ReadonlyMap<string, string>,
+): PracticeStep[] {
+  const steps: PracticeStep[] = taps.map((tap) =>
+    isJournalTap(tap, resolver)
+      ? { kind: "journal", tap }
+      : { kind: "player", media: mediaForTap(tap, resolver), tap },
+  );
+  if (pin) {
+    steps.push({ kind: "achievement", pin });
+  }
+  return steps;
+}

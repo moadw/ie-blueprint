@@ -305,7 +305,7 @@ export function PracticeDialog({
                 <span className="mt-1 text-xs text-stone-500">PNG or JPEG</span>
                 <input
                   type="file"
-                  accept="image/png,image/jpeg"
+                  accept="image/png,image/jpeg,image/webp"
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0] ?? null;

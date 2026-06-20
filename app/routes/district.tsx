@@ -4,7 +4,7 @@ import { gqlClient } from "~/lib/graphql";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
 import { UsersFindOneDocument } from "~/queries/users";
-import { UserDistrictFindOneDocument } from "~/queries/districts";
+import { DistrictFindOneDocument } from "~/queries/districts";
 import { homePathForIdentifier } from "~/lib/user";
 import { DistrictShell } from "~/routes/district/_components/district-shell";
 
@@ -20,14 +20,28 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const id = userResult.data.UsersFindOne?.typeObj?.identifier;
     if (id !== "district-admin") throw redirect(homePathForIdentifier(id));
   }
-  const districtResult = await safe(
-    gqlClient.request(UserDistrictFindOneDocument, {}, { "access-token": token }),
-  );
+  // Reuse the user query's organization to resolve the district. If the user
+  // query failed (authError), district stays null as before.
+  const organization = userResult.ok
+    ? userResult.data.UsersFindOne?.organization ?? null
+    : null;
+  // Sin filtro de platform: paridad con MTW (solo organization).
+  const districtResult = organization
+    ? await safe(
+        gqlClient.request(
+          DistrictFindOneDocument,
+          { filter: { organization } },
+          { "access-token": token },
+        ),
+      )
+    : null;
   return {
-    district: districtResult.ok
-      ? (districtResult.data.UserDistrictFindOne ?? null)
-      : null,
-    error: districtResult.ok ? null : districtResult.error,
+    district:
+      districtResult && districtResult.ok
+        ? (districtResult.data.DistrictFindOne ?? null)
+        : null,
+    error:
+      districtResult && !districtResult.ok ? districtResult.error : null,
     authError: userResult.ok ? null : userResult.error,
   };
 }

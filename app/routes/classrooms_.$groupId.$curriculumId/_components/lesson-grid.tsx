@@ -1,4 +1,5 @@
 import { Play } from "lucide-react";
+import { useNavigate } from "react-router";
 
 export interface GridLesson {
   _id?: string | null;
@@ -10,6 +11,8 @@ export interface GridLesson {
 
 interface LessonGridProps {
   lessons: GridLesson[];
+  groupId: string;
+  curriculumId: string;
 }
 
 /**
@@ -22,9 +25,10 @@ interface LessonGridProps {
  * in parallel and also appends keyframes; a shared global edit would conflict
  * at integration (root.md single-owner-globals rule).
  *
- * Card click is intentionally a no-op for this step.
+ * Clicking a card opens the practice detail route for that class id.
  */
-export function LessonGrid({ lessons }: LessonGridProps) {
+export function LessonGrid({ lessons, groupId, curriculumId }: LessonGridProps) {
+  const navigate = useNavigate();
   return (
     <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {lessons.map((lesson, index) => {
@@ -36,8 +40,10 @@ export function LessonGrid({ lessons }: LessonGridProps) {
             className="group cursor-pointer"
             style={{ animation: `lessonFadeInUp 0.5s ease-out ${index * 0.05}s both` }}
             onClick={() => {
-              // TODO(lesson-detail): open the lesson player. Intentionally a
-              // no-op for this step — the lesson route is a separate follow-up.
+              if (lesson._id)
+                navigate(
+                  `/classrooms/${groupId}/${curriculumId}/${lesson._id}`,
+                );
             }}
           >
             <div className="relative mb-3 aspect-square overflow-hidden rounded-xl transition-transform duration-300 group-hover:scale-105">
