@@ -13,8 +13,13 @@ import { Select } from "~/components/ui/select";
 import { toast } from "~/components/ui/toast";
 import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
-import { TapTypeFindManyDocument } from "~/queries/taps";
+import { TapFindManyDocument, TapTypeFindManyDocument } from "~/queries/taps";
 import { TapCreateOneDocument, TapUpdateOneDocument } from "~/mutations/taps";
+import { QuestionsFindManyDocument } from "~/queries/questions";
+import {
+  QuestionsCreateOneDocument,
+  QuestionsUpdateOneDocument,
+} from "~/mutations/questions";
 import {
   TapVideosSubform,
   serializeVideoEntries,
@@ -29,6 +34,26 @@ import type { TapFindManyQuery, TapTypeFindManyQuery } from "~/gql/graphql";
 
 export type TapItem = TapFindManyQuery["TapFindMany"][number];
 type TapTypeItem = TapTypeFindManyQuery["TapTypeFindMany"][number];
+
+/** Which subform a configured type renders. */
+type TapSubform = "journal" | "video";
+
+/**
+ * Per-type config keyed by the canonical type slug (mirrors the teacher-flow
+ * slugs in `practice-steps.ts`). `title` is the label the admin sees / that is
+ * normalized onto the tap (type is locked, so no custom titles). `subform`
+ * picks which editor to render in edit mode. An unconfigured ("5th") type
+ * resolves to `null` → empty form, Save disabled.
+ */
+// Keyed by the backend `TapType.identifier` (NOT the teacher-flow slugs in
+// practice-steps.ts). Source of truth: `main.taptype` — ie-journal, video,
+// full-audio, 5min-audio. Titles mirror each type's `label`.
+const KNOWN_TYPES: Record<string, { title: string; subform: TapSubform }> = {
+  "ie-journal": { title: "Journal", subform: "journal" },
+  video: { title: "Video", subform: "video" },
+  "full-audio": { title: "Full Audio", subform: "video" },
+  "5min-audio": { title: "5-min Audio", subform: "video" },
+};
 
 export interface TapDialogProps {
   open: boolean;
@@ -67,11 +92,21 @@ function formFromTap(
   };
 }
 
-function parseOptionalNumber(value: string): number | null {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : null;
+/**
+ * Build a resolver Map from a `TapTypeFindMany` result that maps a raw
+ * `tap.type` value (the selected `form.type`, which is `identifier ?? _id`) to
+ * its canonical identifier slug. Mirrors `buildTapTypeResolver` in
+ * `practice-steps.ts`: matches on BOTH `tt.identifier` and `tt._id` so a stored
+ * `_id` resolves to its slug. Entries with no `identifier` are skipped.
+ */
+function buildTapTypeResolver(tapTypes: readonly TapTypeItem[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const tt of tapTypes) {
+    if (!tt.identifier) continue;
+    map.set(tt.identifier, tt.identifier);
+    if (tt._id) map.set(tt._id, tt.identifier);
+  }
+  return map;
 }
 
 // Prefill from the query shape: drop __typename / null wrappers and keep
@@ -85,6 +120,16 @@ function extraQuestionsFromTap(
   );
 }
 
+// Blueprint payloads surface domain errors via `error.message` (the
+// ErrorInterface has no resolveType, so a thrown payload error masks the real
+// message — see CLAUDE.md). Pull it out defensively.
+function payloadErrorMessage(payload: unknown): string | null {
+  const err = (
+    payload as { error?: { message?: string } | null } | null | undefined
+  )?.error;
+  return err?.message ?? null;
+}
+
 export function TapDialog({
   open,
   onOpenChange,
@@ -93,30 +138,67 @@ export function TapDialog({
   tap,
   onSaved,
 }: TapDialogProps) {
-  const isEdit = Boolean(tap?._id);
+  // The just-created tap, tracked internally so create → auto-edit stays inside
+  // this component (the content list behind the dialog is untouched). Reset on
+  // every open.
+  const [createdTap, setCreatedTap] = useState<TapItem | null>(null);
+  // In edit mode the effective tap is the prop (existing) or the one we just
+  // created. `isEdit` drives field visibility + the type lock.
+  const effectiveTap = tap ?? createdTap;
+  const isEdit = Boolean(effectiveTap?._id);
+
   const [form, setForm] = useState<FormState>(() =>
-    formFromTap(tap, defaultOrder),
+    formFromTap(effectiveTap, defaultOrder),
   );
   const [videos, setVideos] = useState<VideoEntry[]>(() =>
-    videoEntriesFromTap(tap?.videos),
+    videoEntriesFromTap(effectiveTap?.videos),
   );
   const [extraQuestions, setExtraQuestions] = useState<ExtraQuestionEntry[]>(
-    () => extraQuestionsFromTap(tap),
+    () => extraQuestionsFromTap(effectiveTap),
   );
   const [tapTypes, setTapTypes] = useState<TapTypeItem[]>([]);
   const [typesLoading, setTypesLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Journal taps own a single question whose text lives on a separate
+  // questions-collection record. We hold the editable text here and resolve /
+  // persist it by id (see the resolution effect + handleSubmit). `extraQuestions`
+  // above still carries the id + points reference that the tap is saved with.
+  const [journalText, setJournalText] = useState("");
+  const [journalResolving, setJournalResolving] = useState(false);
 
-  // Prefill (edit) / reset (create) whenever the dialog opens.
+  // Prefill (edit) / reset (create) on open transitions and when the target
+  // `tap` changes. `defaultOrder` is intentionally NOT a dependency: it is
+  // derived from the parent list length (`taps.length + 1`), so the
+  // post-create `onSaved()` refetch bumps it. If it were a dep, this effect
+  // would re-run mid create→edit transition, `setCreatedTap(null)` would wipe
+  // the freshly-created tap, and the dialog would bounce back to create mode
+  // (spawning a new empty tap on every Save). Order is hidden and read live
+  // from the prop in handleSubmit, so a stale `defaultOrder` here is harmless.
   useEffect(() => {
     if (!open) return;
+    setCreatedTap(null);
     setForm(formFromTap(tap, defaultOrder));
     setVideos(videoEntriesFromTap(tap?.videos));
     setExtraQuestions(extraQuestionsFromTap(tap));
+    setJournalText("");
     setError(null);
     setSubmitting(false);
-  }, [open, tap, defaultOrder]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, tap]);
+
+  // Re-seed form/videos/questions once we hold a freshly-created tap, so the
+  // dialog flips into edit mode showing the new tap's (empty) subform state.
+  // Keyed on `createdTap` only — a created tap always carries its own `order`,
+  // so `defaultOrder` is unused here (and would just cause redundant re-seeds).
+  useEffect(() => {
+    if (!createdTap) return;
+    setForm(formFromTap(createdTap, defaultOrder));
+    setVideos(videoEntriesFromTap(createdTap.videos));
+    setExtraQuestions(extraQuestionsFromTap(createdTap));
+    setJournalText("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createdTap]);
 
   // Fetch tap types on open. On failure or an empty result the type field
   // degrades to a free-text input so the form never dead-ends.
@@ -150,74 +232,153 @@ export function TapDialog({
     label: tt.label ?? tt.identifier ?? tt._id,
   }));
   const showTypeSelect = typesLoading || typeOptions.length > 0;
-  // Edit mode: keep an unknown stored type selectable so saving never
-  // silently clears it.
+  // Keep an unknown stored/selected type selectable so it never silently clears.
   const typeValueUnknown =
     form.type !== "" && !typeOptions.some((opt) => opt.value === form.type);
+
+  // Resolve the selected type to its canonical slug, then look up its config.
+  // A null config = an unconfigured ("5th") type: no subform, Save disabled.
+  const resolver = buildTapTypeResolver(tapTypes);
+  const resolvedSlug = resolver.get(form.type) ?? form.type;
+  const config = KNOWN_TYPES[resolvedSlug] ?? null;
+  const hasType = form.type.trim().length > 0;
+
+  // The single journal question's reference (id + points) and its record id.
+  const journalEntry =
+    config?.subform === "journal" ? extraQuestions[0] : undefined;
+  const journalQuestionId = journalEntry?.question ?? null;
+
+  // Resolve the journal question's text by EXACT id. (A `filter: {}` scan has
+  // no limit arg and may omit a freshly-created record — the cause of the
+  // "Question text unavailable" bug.) A cached `label` (e.g. just saved) is
+  // used directly with no fetch, so user edits are never clobbered.
+  useEffect(() => {
+    if (!open || !journalQuestionId) return;
+    if (journalEntry?.label != null) {
+      setJournalText(journalEntry.label);
+      return;
+    }
+    let cancelled = false;
+    setJournalResolving(true);
+    gqlClient
+      .request(QuestionsFindManyDocument, {
+        filter: { _id: journalQuestionId },
+      })
+      .then((data) => {
+        if (cancelled) return;
+        setJournalText(data.QuestionsFindMany?.[0]?.label ?? "");
+      })
+      .catch(() => {
+        /* leave the textarea empty; the admin can retype */
+      })
+      .finally(() => {
+        if (!cancelled) setJournalResolving(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, journalQuestionId]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting) return;
-    const trimmedTitle = form.title.trim();
-    if (!trimmedTitle) return;
+    // Save is only meaningful for a configured type.
+    if (!config) return;
 
     setSubmitting(true);
     setError(null);
     try {
-      const trimmedSlug = form.slug.trim();
-      const scalars = {
-        title: trimmedTitle,
-        order: Math.max(1, Math.round(form.order || 1)),
-        type: form.type.trim() || null,
-        points: parseOptionalNumber(form.points),
-        time: parseOptionalNumber(form.time), // minutes (plain number)
-        intro: form.intro.trim() || null,
-        description: form.description.trim() || null,
-        // `slug` has a sparse-unique index on the backend: an explicit null
-        // collides with any other slug-less tap (E11000 dup key on slug:null).
-        // Omit it when empty so the backend auto-generates a unique slug on
-        // create (and leaves the existing slug untouched on update).
-        ...(trimmedSlug ? { slug: trimmedSlug } : {}),
-      };
-
-      // extraQuestions is replaced wholesale on every save: send the full
-      // list in tapExtraQuestionsInput shape ({ question, points } only),
-      // dropping the subform's client-only display cache.
-      const extraQuestionsRecord = extraQuestions.map((q) => ({
-        question: q.question,
-        points: q.points,
-      }));
-
       // Subdocument arrays are replaced wholesale on update — re-send the
       // full videos list including server-assigned `_id`s. REST-owned
       // `thumbnail` / `captions[].file` are never written from the form.
       const videosRecord = serializeVideoEntries(videos);
 
-      if (isEdit && tap?._id) {
+      if (isEdit && effectiveTap?._id) {
+        // Default: round-trip whatever the tap already had so non-journal
+        // (video) taps never silently drop existing entries.
+        let extraQuestionsRecord: { question: string; points: number | null }[] =
+          extraQuestions.map((q) => ({ question: q.question, points: q.points }));
+        let nextExtraQuestions: ExtraQuestionEntry[] = extraQuestions;
+        // A journal tap owns exactly one question, stored on a separate
+        // questions-collection record. Persist its text here — create when new,
+        // update when changed — then reference it by id in the tap's
+        // extraQuestions.
+        if (config.subform === "journal") {
+          const text = journalText.trim();
+          const existing = extraQuestions[0];
+          if (text) {
+            let questionId = existing?.question ?? null;
+            if (questionId) {
+              if (text !== existing?.label) {
+                const qd = await gqlClient.request(QuestionsUpdateOneDocument, {
+                  _id: questionId,
+                  record: { label: text },
+                });
+                const m = payloadErrorMessage(qd.QuestionsUpdateOne);
+                if (m) throw new Error(m);
+              }
+            } else {
+              const qd = await gqlClient.request(QuestionsCreateOneDocument, {
+                record: { label: text, platform: env.PLATFORM },
+              });
+              const m = payloadErrorMessage(qd.QuestionsCreateOne);
+              if (m) throw new Error(m);
+              questionId =
+                qd.QuestionsCreateOne?.recordId ??
+                qd.QuestionsCreateOne?.record?._id ??
+                null;
+              if (!questionId)
+                throw new Error("Question record was not created");
+            }
+            // Points UI is hidden — preserve the entry's stored points.
+            const points = existing?.points ?? null;
+            extraQuestionsRecord = [{ question: questionId, points }];
+            nextExtraQuestions = [{ question: questionId, points, label: text }];
+          } else {
+            // Journal question cleared — drop the entry.
+            extraQuestionsRecord = [];
+            nextExtraQuestions = [];
+          }
+        }
+
+        // Send ONLY the fields this streamlined flow owns; omit order/slug/
+        // points/time/intro/description so hidden scalars round-trip
+        // (omitted, never nulled — `slug:null` would also hit the E11000
+        // sparse-unique collision).
         const data = await gqlClient.request(TapUpdateOneDocument, {
-          _id: tap._id,
+          _id: effectiveTap._id,
           record: {
-            ...scalars,
+            title: config.title,
             videos: videosRecord,
             extraQuestions: extraQuestionsRecord,
           },
         });
-        const payload = data.TapUpdateOne;
-        const payloadError = (
-          payload as { error?: { message?: string } | null } | null | undefined
-        )?.error;
-        if (payloadError?.message) throw new Error(payloadError.message);
+        const updateError = payloadErrorMessage(data.TapUpdateOne);
+        if (updateError) throw new Error(updateError);
+        // Reflect the persisted question id locally so a subsequent Save
+        // UPDATES the same record instead of creating a duplicate, and so the
+        // resolution effect reuses the cached label instead of refetching.
+        if (config.subform === "journal") setExtraQuestions(nextExtraQuestions);
         toast.success("Content updated");
+        onSaved();
+        // Stay open; the user closes via Cancel/X.
       } else {
-        // `class` (parent practice) and `platform` are auto-assigned on
-        // create — never rendered as form fields.
+        // Create with auto-assigned values from the config. `class` (parent
+        // practice) and `platform` are auto-assigned; `slug` is omitted (the
+        // backend auto-generates a unique one — an explicit null collides on
+        // the sparse-unique index, E11000).
         const data = await gqlClient.request(TapCreateOneDocument, {
           record: {
             class: classId,
             platform: env.PLATFORM,
-            ...scalars,
-            videos: videosRecord,
-            extraQuestions: extraQuestionsRecord,
+            type: form.type,
+            title: config.title,
+            order: Math.max(1, Math.round(defaultOrder)),
+            points: 100,
+            time: 5,
+            videos: [],
+            extraQuestions: [],
           },
         });
         const payload = data.TapCreateOne;
@@ -225,10 +386,28 @@ export function TapDialog({
           payload as { error?: { message?: string } | null } | null | undefined
         )?.error;
         if (payloadError?.message) throw new Error(payloadError.message);
+        const recordId = payload?.recordId ?? payload?.record?._id;
+        if (!recordId) throw new Error("Content record was not created");
+
+        // Refetch the full tap so the dialog can switch into edit mode with the
+        // server-assigned `_id` (needed for video uploads) and canonical fields.
+        const fresh = await gqlClient.request(TapFindManyDocument, {
+          filter: { _id: recordId },
+          limit: 1,
+        });
+        const freshTap = fresh.TapFindMany?.[0] ?? null;
         toast.success("Content created");
+        // Refresh the list behind the dialog, then flip to edit mode — do NOT
+        // close (the admin fills in the subform next).
+        onSaved();
+        if (freshTap) {
+          setCreatedTap(freshTap);
+        } else {
+          // Refetch returned nothing (rare race) — close so the list reflects
+          // the new tap; the admin can reopen it to edit.
+          onOpenChange(false);
+        }
       }
-      onSaved();
-      onOpenChange(false);
     } catch (err) {
       const message =
         err instanceof Error
@@ -252,123 +431,84 @@ export function TapDialog({
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Type is the first and only field on create; locked after create
+              (the type can't change once a tap exists). */}
           <div className="flex flex-col gap-1.5">
             <Label
-              htmlFor="tap-title"
+              htmlFor="tap-type"
               className="text-sm font-medium text-muted-foreground"
             >
-              Title *
+              Type *
             </Label>
-            <Input
-              id="tap-title"
-              value={form.title}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, title: e.target.value }))
-              }
-              required
-              autoFocus
-              className="h-10 text-sm"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="tap-order"
-                className="text-sm font-medium text-muted-foreground"
-              >
-                Order
-              </Label>
-              <Input
-                id="tap-order"
-                type="number"
-                min={1}
-                step={1}
-                value={form.order}
+            {showTypeSelect ? (
+              <Select
+                id="tap-type"
+                value={form.type}
+                disabled={typesLoading || isEdit}
                 onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    order: Math.max(1, Math.round(Number(e.target.value) || 1)),
-                  }))
+                  setForm((f) => ({ ...f, type: e.target.value }))
                 }
                 className="h-10 text-sm"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="tap-type"
-                className="text-sm font-medium text-muted-foreground"
               >
-                Type
-              </Label>
-              {showTypeSelect ? (
-                <Select
+                <option value="">
+                  {typesLoading ? "Loading types…" : "Select type…"}
+                </option>
+                {typeValueUnknown ? (
+                  <option value={form.type}>{form.type}</option>
+                ) : null}
+                {typeOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </Select>
+            ) : (
+              <>
+                <Input
                   id="tap-type"
                   value={form.type}
-                  disabled={typesLoading}
+                  disabled={isEdit}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, type: e.target.value }))
                   }
+                  placeholder="e.g. video"
                   className="h-10 text-sm"
-                >
-                  <option value="">
-                    {typesLoading ? "Loading types…" : "Select type…"}
-                  </option>
-                  {typeValueUnknown ? (
-                    <option value={form.type}>{form.type}</option>
-                  ) : null}
-                  {typeOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </Select>
-              ) : (
-                <>
-                  <Input
-                    id="tap-type"
-                    value={form.type}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, type: e.target.value }))
-                    }
-                    placeholder="e.g. video"
-                    className="h-10 text-sm"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    No content types available — enter a type identifier.
-                  </p>
-                </>
-              )}
-            </div>
+                />
+                <p className="text-xs text-muted-foreground">
+                  No content types available — enter a type identifier.
+                </p>
+              </>
+            )}
+            {isEdit ? (
+              <p className="text-xs text-muted-foreground">
+                Type can't be changed after creation.
+              </p>
+            ) : hasType && !config ? (
+              <p className="text-xs text-muted-foreground">
+                This content type isn't configured yet.
+              </p>
+            ) : null}
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <Label
-              htmlFor="tap-slug"
-              className="text-sm font-medium text-muted-foreground"
-            >
-              Slug
-            </Label>
-            <Input
-              id="tap-slug"
-              value={form.slug}
-              onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
-              placeholder="my-content-slug"
-              className="h-10 text-sm"
-            />
-          </div>
-
-          <TapVideosSubform
-            value={videos}
-            onChange={setVideos}
-            tapId={tap?._id ?? null}
-            tapType={form.type.trim()}
-          />
-
-          <TapQuestionsSubform
-            value={extraQuestions}
-            onChange={setExtraQuestions}
-          />
+          {/* Subforms render only in edit mode for a configured type. In create
+              mode only the type select + actions show. */}
+          {isEdit && config ? (
+            config.subform === "journal" ? (
+              <TapQuestionsSubform
+                value={journalText}
+                onChange={setJournalText}
+                loading={journalResolving}
+              />
+            ) : (
+              <TapVideosSubform
+                value={videos}
+                onChange={setVideos}
+                maxEntries={1}
+                tapId={effectiveTap?._id ?? null}
+                tapType={form.type.trim()}
+              />
+            )
+          ) : null}
 
           {error ? (
             <p role="alert" className="text-sm text-red-600">
@@ -390,7 +530,7 @@ export function TapDialog({
               type="submit"
               variant="primary"
               loading={submitting}
-              disabled={submitting || !form.title.trim()}
+              disabled={submitting || !config}
               className="h-10 px-4 text-sm font-medium"
             >
               Save

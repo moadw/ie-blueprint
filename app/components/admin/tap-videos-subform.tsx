@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import type { ChangeEvent } from "react";
-import { FileUp, ImagePlus, Loader2, Plus, X } from "lucide-react";
+import { FileUp, ImagePlus, Loader2, Plus } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Progress } from "~/components/ui/progress";
-import { Switch } from "~/components/ui/switch";
 import { toast } from "~/components/ui/toast";
 import { api } from "~/lib/api";
 import { env } from "~/lib/env";
@@ -74,10 +73,8 @@ export type VideoEntry = {
    */
   _id: string | null;
   url: string;
-  /** File MIME format, e.g. "video/mp4". */
+  /** File MIME format, e.g. "video/mp4" — inferred from the url/upload. */
   type: string;
-  /** Skip offset held as a string for the number input (empty = unset). */
-  skip: string;
   /** Selected narrator `_id`s. */
   narrator: string[];
   captions: CaptionEntry[];
@@ -113,7 +110,6 @@ export function videoEntriesFromTap(
         _id: video._id ?? null,
         url: video.url ?? "",
         type: video.type ?? "",
-        skip: video.skip != null ? String(video.skip) : "",
         narrator: (video.narrator ?? []).filter((id): id is string =>
           Boolean(id),
         ),
@@ -133,11 +129,36 @@ export function videoEntriesFromTap(
   });
 }
 
-function parseOptionalNumber(value: string): number | null {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : null;
+// MIME type inferred from a media URL's file extension — the "Format" field
+// is no longer shown, so the type is derived from the url (uploads still set
+// it from the file). Mirrors the extension parsing in `isAudioEntry`.
+const MEDIA_MIME_BY_EXT: Record<string, string> = {
+  // video
+  mp4: "video/mp4",
+  m4v: "video/x-m4v",
+  webm: "video/webm",
+  mov: "video/quicktime",
+  ogv: "video/ogg",
+  // audio
+  mp3: "audio/mpeg",
+  m4a: "audio/mp4",
+  aac: "audio/aac",
+  wav: "audio/wav",
+  ogg: "audio/ogg",
+  oga: "audio/ogg",
+  opus: "audio/opus",
+  flac: "audio/flac",
+  weba: "audio/webm",
+  wma: "audio/x-ms-wma",
+};
+
+function inferMediaType(url: string): string | null {
+  const path = url.split(/[?#]/)[0] ?? "";
+  const file = path.split("/").pop() ?? "";
+  const ext = file.includes(".")
+    ? (file.split(".").pop() ?? "").toLowerCase()
+    : "";
+  return MEDIA_MIME_BY_EXT[ext] ?? null;
 }
 
 /**
@@ -183,8 +204,9 @@ export function serializeVideoEntries(entries: VideoEntry[]): tapVideosInput[] {
       // and caption, drop non-http urls so we never persist a dead local
       // reference (the canonical server url arrives via refetch/reopen).
       url: persistableUrl(entry.url.trim() || null),
-      skip: parseOptionalNumber(entry.skip),
-      type: entry.type.trim() || null,
+      // Format is no longer entered by hand: prefer the upload-set MIME, else
+      // infer it from the url's file extension.
+      type: entry.type.trim() || inferMediaType(entry.url) || null,
       narrator: entry.narrator,
       // Echo back the server-assigned cover so the array replace can't wipe it.
       ...(thumbnailUrl ? { thumbnail: { url: thumbnailUrl } } : {}),
@@ -206,7 +228,6 @@ function emptyVideoEntry(): VideoEntry {
     _id: null,
     url: "",
     type: "",
-    skip: "",
     narrator: [],
     captions: [],
     thumbnailUrl: null,
@@ -236,6 +257,11 @@ export interface TapVideosSubformProps {
    * captions are only shown for `type === "video"`.
    */
   tapType?: string | null;
+  /**
+   * Cap on the number of entries. When `value.length >= maxEntries` the
+   * "Add video" button is hidden. Absent = unlimited (existing behavior).
+   */
+  maxEntries?: number;
 }
 
 export function TapVideosSubform({
@@ -243,8 +269,11 @@ export function TapVideosSubform({
   onChange,
   tapId,
   tapType,
+  maxEntries,
 }: TapVideosSubformProps) {
   const isVideoType = (tapType ?? "").trim() === "video";
+  // Once the cap is reached, hide "Add video" (default: unlimited).
+  const canAddEntry = maxEntries == null || value.length < maxEntries;
   const [narrators, setNarrators] = useState<NarratorItem[]>([]);
   const [narratorsLoading, setNarratorsLoading] = useState(true);
   const [narratorsError, setNarratorsError] = useState(false);
@@ -284,10 +313,6 @@ export function TapVideosSubform({
     onChange((prev) => [...prev, emptyVideoEntry()]);
   }
 
-  function removeEntry(index: number) {
-    onChange((prev) => prev.filter((_, i) => i !== index));
-  }
-
   function patchEntry(index: number, patch: Partial<VideoEntry>) {
     onChange((prev) =>
       prev.map((entry, i) => (i === index ? { ...entry, ...patch } : entry)),
@@ -303,54 +328,6 @@ export function TapVideosSubform({
               narrator: entry.narrator.includes(narratorId)
                 ? entry.narrator.filter((id) => id !== narratorId)
                 : [...entry.narrator, narratorId],
-            }
-          : entry,
-      ),
-    );
-  }
-
-  function addCaption(index: number) {
-    onChange((prev) =>
-      prev.map((entry, i) =>
-        i === index
-          ? {
-              ...entry,
-              captions: [
-                ...entry.captions,
-                { language: "", available: false, fileUrl: null },
-              ],
-            }
-          : entry,
-      ),
-    );
-  }
-
-  function removeCaption(videoIndex: number, captionIndex: number) {
-    onChange((prev) =>
-      prev.map((entry, i) =>
-        i === videoIndex
-          ? {
-              ...entry,
-              captions: entry.captions.filter((_, ci) => ci !== captionIndex),
-            }
-          : entry,
-      ),
-    );
-  }
-
-  function patchCaption(
-    videoIndex: number,
-    captionIndex: number,
-    patch: Partial<CaptionEntry>,
-  ) {
-    onChange((prev) =>
-      prev.map((entry, i) =>
-        i === videoIndex
-          ? {
-              ...entry,
-              captions: entry.captions.map((caption, ci) =>
-                ci === captionIndex ? { ...caption, ...patch } : caption,
-              ),
             }
           : entry,
       ),
@@ -379,72 +356,36 @@ export function TapVideosSubform({
       fd.append("id", tapId);
       fd.append("video", videoId);
       await api("/admin/tap-video-cover", { method: "PUT", body: fd });
-      // Local preview — the canonical server URL arrives on the next
-      // tap refetch (the list refetches on dialog save/close).
-      const previewUrl = URL.createObjectURL(file);
+
+      // Re-query the tap so the row picks up the server's CANONICAL thumbnail
+      // url (an http url). This is load-bearing: a local `blob:` preview is
+      // non-persistable, so `serializeVideoEntries` would drop it and the next
+      // TapUpdateOne — which replaces the videos array wholesale — would wipe
+      // the just-uploaded cover. Echoing the http url back keeps it.
+      let serverThumb: string | null = null;
+      try {
+        const data = await gqlClient.request(TapFindManyDocument, {
+          filter: { _id: tapId },
+          limit: 1,
+        });
+        const match = data.TapFindMany?.[0]?.videos?.find(
+          (v) => v?._id === videoId,
+        );
+        serverThumb = match?.thumbnail?.url ?? null;
+      } catch {
+        // Refetch failed — fall back to a local preview (the cover persisted
+        // server-side; reopening the tap will still show it).
+      }
+      const thumbUrl = serverThumb ?? URL.createObjectURL(file);
       onChange((prev) =>
         prev.map((v, i) =>
-          i === index ? { ...v, thumbnailUrl: previewUrl } : v,
+          i === index ? { ...v, thumbnailUrl: thumbUrl } : v,
         ),
       );
       toast.success("Thumbnail uploaded");
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Thumbnail upload failed",
-      );
-    } finally {
-      setUploadingKey(null);
-    }
-  }
-
-  async function handleCaptionFileChange(
-    videoIndex: number,
-    captionIndex: number,
-    e: ChangeEvent<HTMLInputElement>,
-  ) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    const entry = value[videoIndex];
-    const caption = entry?.captions[captionIndex];
-    const videoId = entry?._id;
-    if (!file || !tapId || !videoId || !caption || uploadingKey) return;
-    if (file.size > MAX_UPLOAD_BYTES) {
-      toast.error("Caption file must be 5 MB or smaller.");
-      return;
-    }
-    const language = caption.language.trim();
-    if (!language) {
-      toast.error("Set the caption language before uploading.");
-      return;
-    }
-    const key = `caption-${videoIndex}-${captionIndex}`;
-    setUploadingKey(key);
-    try {
-      const fd = new FormData();
-      // Endpoint contract: `id` = tap _id, `video` = video subdocument _id.
-      fd.append("file", file);
-      fd.append("id", tapId);
-      fd.append("video", videoId);
-      fd.append("available", String(caption.available));
-      fd.append("language", language);
-      await api("/admin/tap-video-caption", { method: "PUT", body: fd });
-      const uploadedUrl = URL.createObjectURL(file);
-      onChange((prev) =>
-        prev.map((v, i) =>
-          i === videoIndex
-            ? {
-                ...v,
-                captions: v.captions.map((c, ci) =>
-                  ci === captionIndex ? { ...c, fileUrl: uploadedUrl } : c,
-                ),
-              }
-            : v,
-        ),
-      );
-      toast.success("Caption uploaded");
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Caption upload failed",
       );
     } finally {
       setUploadingKey(null);
@@ -461,7 +402,7 @@ export function TapVideosSubform({
     const videoId = entry?._id;
     if (!file || !tapId || uploadingKey) return;
     if (file.size > MAX_VIDEO_UPLOAD_BYTES) {
-      toast.error("Video must be 500 MB or smaller.");
+      toast.error("Media must be 500 MB or smaller.");
       return;
     }
     const key = `video-${index}`;
@@ -528,7 +469,6 @@ export function TapVideosSubform({
               ...canonical,
               // Preserve metadata the user set on the row before uploading.
               narrator: v.narrator.length ? v.narrator : canonical.narrator,
-              skip: v.skip.trim() ? v.skip : canonical.skip,
               type: v.type.trim() ? v.type : canonical.type || file.type,
             };
           }
@@ -539,9 +479,9 @@ export function TapVideosSubform({
           };
         }),
       );
-      toast.success("Video uploaded");
+      toast.success("Media uploaded");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Video upload failed");
+      toast.error(err instanceof Error ? err.message : "Media upload failed");
     } finally {
       setUploadProgress(null);
       setUploadingKey(null);
@@ -551,21 +491,23 @@ export function TapVideosSubform({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-muted-foreground">Videos</p>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={addEntry}
-          disabled={uploadingKey !== null}
-          className="h-7 px-2 text-xs text-stone-500 hover:text-stone-700"
-        >
-          <Plus className="h-3 w-3" />
-          Add video
-        </Button>
+        <p className="text-sm font-medium text-muted-foreground">Media</p>
+        {canAddEntry ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={addEntry}
+            disabled={uploadingKey !== null}
+            className="h-7 px-2 text-xs text-stone-500 hover:text-stone-700"
+          >
+            <Plus className="h-3 w-3" />
+            Add media
+          </Button>
+        ) : null}
       </div>
 
       {value.length === 0 ? (
-        <p className="text-xs text-stone-400">No videos yet.</p>
+        <p className="text-xs text-stone-400">No media yet.</p>
       ) : (
         <div className="space-y-3">
           {value.map((entry, vi) => {
@@ -587,25 +529,6 @@ export function TapVideosSubform({
                 key={vi}
                 className="rounded-lg border border-stone-200 bg-stone-50/40 p-3 space-y-3"
               >
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-                    Video {vi + 1}
-                  </p>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeEntry(vi)}
-                    // Disabled during any in-flight upload: removing an entry
-                    // would shift array indices out from under the index-keyed
-                    // upload handler, landing the result on the wrong row.
-                    disabled={uploadingKey !== null}
-                    aria-label={`Remove video ${vi + 1}`}
-                    className="h-7 w-7 text-stone-400 hover:bg-stone-100 hover:text-red-600"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-
                 <div className="flex flex-col gap-1.5">
                   <Label
                     htmlFor={`tap-video-${vi}-url`}
@@ -663,7 +586,7 @@ export function TapVideosSubform({
                             aria-hidden="true"
                           />
                         )}
-                        {entry.url.trim() ? "Replace video" : "Upload video"}
+                        {entry.url.trim() ? "Replace media" : "Upload media"}
                         <input
                           type="file"
                           accept="video/*,audio/*"
@@ -679,7 +602,7 @@ export function TapVideosSubform({
                             className="h-3.5 w-3.5"
                             aria-hidden="true"
                           />
-                          Upload video
+                          Upload media
                         </span>
                         <span className="text-xs text-stone-400">
                           Save first to upload
@@ -690,52 +613,71 @@ export function TapVideosSubform({
                   {videoUploading ? (
                     <Progress
                       value={uploadProgress ?? 0}
-                      aria-label="Video upload progress"
+                      aria-label="Media upload progress"
                     />
                   ) : null}
                 </div>
 
                 {hasUrl ? (
                   <>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="flex flex-col gap-1.5">
-                        <Label
-                          htmlFor={`tap-video-${vi}-type`}
-                          className="text-xs font-medium text-muted-foreground"
-                        >
-                          Format
-                        </Label>
-                        <Input
-                          id={`tap-video-${vi}-type`}
-                          value={entry.type}
-                          onChange={(e) =>
-                            patchEntry(vi, { type: e.target.value })
-                          }
-                          placeholder="video/mp4"
-                          className="h-9 text-sm"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <Label
-                          htmlFor={`tap-video-${vi}-skip`}
-                          className="text-xs font-medium text-muted-foreground"
-                        >
-                          Skip
-                        </Label>
-                        <Input
-                          id={`tap-video-${vi}-skip`}
-                          type="number"
-                          min={0}
-                          step="any"
-                          value={entry.skip}
-                          onChange={(e) =>
-                            patchEntry(vi, { skip: e.target.value })
-                          }
-                          className="h-9 text-sm"
-                        />
+                    {/* Cover (thumbnail) only applies to video taps. */}
+                    {isVideoType ? (
+                    <div className="flex flex-col gap-1.5">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Thumbnail
+                      </p>
+                      <div className="flex flex-wrap items-center gap-3">
+                        {entry.thumbnailUrl ? (
+                          <img
+                            src={entry.thumbnailUrl}
+                            alt={`Video ${vi + 1} thumbnail`}
+                            className="h-12 w-20 flex-shrink-0 rounded-md border border-stone-200 bg-white object-cover"
+                          />
+                        ) : null}
+                        {canUpload ? (
+                          <label
+                            className={cn(
+                              "inline-flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-border bg-card px-3 py-2 text-xs text-muted-foreground transition-colors hover:border-foreground/30 focus-within:ring-2 focus-within:ring-primary/30",
+                              thumbUploading &&
+                                "pointer-events-none opacity-60",
+                            )}
+                          >
+                            {thumbUploading ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <ImagePlus
+                                className="h-3.5 w-3.5"
+                                aria-hidden="true"
+                              />
+                            )}
+                            {entry.thumbnailUrl
+                              ? "Replace thumbnail"
+                              : "Upload thumbnail"}
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg"
+                              className="sr-only"
+                              disabled={thumbUploading}
+                              onChange={(e) => handleThumbnailChange(vi, e)}
+                            />
+                          </label>
+                        ) : (
+                          <>
+                            <span className="inline-flex cursor-not-allowed items-center gap-2 rounded-md border border-dashed border-border bg-card px-3 py-2 text-xs text-muted-foreground opacity-60">
+                              <ImagePlus
+                                className="h-3.5 w-3.5"
+                                aria-hidden="true"
+                              />
+                              Upload thumbnail
+                            </span>
+                            <span className="text-xs text-stone-400">
+                              Save first to upload
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
-
+                    ) : null}
                     <div className="flex flex-col gap-1.5">
                       <p className="text-xs font-medium text-muted-foreground">
                         Narrators
@@ -802,186 +744,6 @@ export function TapVideosSubform({
                         </div>
                       )}
                     </div>
-
-                    {/* Cover (thumbnail) + captions only apply to video taps. */}
-                    {isVideoType ? (
-                      <>
-                    <div className="flex flex-col gap-1.5">
-                      <p className="text-xs font-medium text-muted-foreground">
-                        Thumbnail
-                      </p>
-                      <div className="flex flex-wrap items-center gap-3">
-                        {entry.thumbnailUrl ? (
-                          <img
-                            src={entry.thumbnailUrl}
-                            alt={`Video ${vi + 1} thumbnail`}
-                            className="h-12 w-20 flex-shrink-0 rounded-md border border-stone-200 bg-white object-cover"
-                          />
-                        ) : null}
-                        {canUpload ? (
-                          <label
-                            className={cn(
-                              "inline-flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-border bg-card px-3 py-2 text-xs text-muted-foreground transition-colors hover:border-foreground/30 focus-within:ring-2 focus-within:ring-primary/30",
-                              thumbUploading &&
-                                "pointer-events-none opacity-60",
-                            )}
-                          >
-                            {thumbUploading ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <ImagePlus
-                                className="h-3.5 w-3.5"
-                                aria-hidden="true"
-                              />
-                            )}
-                            {entry.thumbnailUrl
-                              ? "Replace thumbnail"
-                              : "Upload thumbnail"}
-                            <input
-                              type="file"
-                              accept="image/png,image/jpeg"
-                              className="sr-only"
-                              disabled={thumbUploading}
-                              onChange={(e) => handleThumbnailChange(vi, e)}
-                            />
-                          </label>
-                        ) : (
-                          <>
-                            <span className="inline-flex cursor-not-allowed items-center gap-2 rounded-md border border-dashed border-border bg-card px-3 py-2 text-xs text-muted-foreground opacity-60">
-                              <ImagePlus
-                                className="h-3.5 w-3.5"
-                                aria-hidden="true"
-                              />
-                              Upload thumbnail
-                            </span>
-                            <span className="text-xs text-stone-400">
-                              Save first to upload
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs font-medium text-muted-foreground">
-                          Captions
-                        </p>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => addCaption(vi)}
-                          className="h-7 px-2 text-xs text-stone-500 hover:text-stone-700"
-                        >
-                          <Plus className="h-3 w-3" />
-                          Add caption
-                        </Button>
-                      </div>
-                      {entry.captions.length === 0 ? (
-                        <p className="text-xs text-stone-400">No captions.</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {entry.captions.map((caption, ci) => {
-                            const captionUploading =
-                              uploadingKey === `caption-${vi}-${ci}`;
-                            const languageId = `tap-video-${vi}-caption-${ci}-language`;
-                            const availableId = `tap-video-${vi}-caption-${ci}-available`;
-                            return (
-                              <div
-                                key={ci}
-                                className="flex flex-wrap items-center gap-2"
-                              >
-                                <Input
-                                  id={languageId}
-                                  value={caption.language}
-                                  onChange={(e) =>
-                                    patchCaption(vi, ci, {
-                                      language: e.target.value,
-                                    })
-                                  }
-                                  placeholder="en"
-                                  aria-label="Caption language"
-                                  containerClassName="w-24 flex-none"
-                                  className="h-9 text-sm"
-                                />
-                                <div className="flex items-center gap-1.5">
-                                  <Switch
-                                    id={availableId}
-                                    checked={caption.available}
-                                    onCheckedChange={(checked) =>
-                                      patchCaption(vi, ci, {
-                                        available: checked,
-                                      })
-                                    }
-                                  />
-                                  <Label
-                                    htmlFor={availableId}
-                                    className="text-xs text-muted-foreground cursor-pointer"
-                                  >
-                                    Available
-                                  </Label>
-                                </div>
-                                {canUpload ? (
-                                  <label
-                                    className={cn(
-                                      "inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-dashed border-border bg-card px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:border-foreground/30 focus-within:ring-2 focus-within:ring-primary/30",
-                                      captionUploading &&
-                                        "pointer-events-none opacity-60",
-                                    )}
-                                  >
-                                    {captionUploading ? (
-                                      <Loader2 className="h-3 w-3 animate-spin" />
-                                    ) : (
-                                      <FileUp
-                                        className="h-3 w-3"
-                                        aria-hidden="true"
-                                      />
-                                    )}
-                                    Upload file
-                                    <input
-                                      type="file"
-                                      accept=".vtt,.srt"
-                                      className="sr-only"
-                                      disabled={captionUploading}
-                                      onChange={(e) =>
-                                        handleCaptionFileChange(vi, ci, e)
-                                      }
-                                    />
-                                  </label>
-                                ) : (
-                                  <span
-                                    className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-md border border-dashed border-border bg-card px-2.5 py-1.5 text-xs text-muted-foreground opacity-60"
-                                    title="Save first to upload"
-                                  >
-                                    <FileUp
-                                      className="h-3 w-3"
-                                      aria-hidden="true"
-                                    />
-                                    Upload file
-                                  </span>
-                                )}
-                                {caption.fileUrl ? (
-                                  <span className="text-xs font-medium text-emerald-600">
-                                    Uploaded
-                                  </span>
-                                ) : null}
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => removeCaption(vi, ci)}
-                                  aria-label={`Remove caption ${ci + 1}`}
-                                  className="h-7 w-7 text-stone-400 hover:bg-stone-100 hover:text-red-600"
-                                >
-                                  <X className="h-3.5 w-3.5" />
-                                </Button>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                      </>
-                    ) : null}
                   </>
                 ) : null}
               </div>
