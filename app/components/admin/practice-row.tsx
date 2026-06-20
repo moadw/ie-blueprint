@@ -32,17 +32,6 @@ export interface PracticeRowProps {
   onChange: () => void;
 }
 
-const CATEGORY_OPTIONS = [
-  "transition",
-  "sound",
-  "focus",
-  "gratitude",
-  "nature",
-  "kindness",
-  "energy",
-  "calm",
-] as const;
-
 const GRADE_OPTIONS = [
   { value: "early_learning", label: "Early Learning" },
   { value: "elementary", label: "Elementary" },
@@ -50,11 +39,6 @@ const GRADE_OPTIONS = [
   { value: "high_school", label: "High School" },
   { value: "all_levels", label: "All Levels" },
   { value: "sports", label: "Sports" },
-] as const;
-
-const ACCESS_OPTIONS = [
-  { value: "free", label: "Free" },
-  { value: "premium", label: "Premium" },
 ] as const;
 
 export function PracticeRow({ practice, onChange }: PracticeRowProps) {
@@ -83,12 +67,11 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
   const [titleEditing, setTitleEditing] = useState(false);
   const [titleSaving, setTitleSaving] = useState(false);
 
-  // The class background is upload-only: `PUT /admin/class-background` accepts it,
-  // but the GraphQL `classes` type exposes no background field to read it back.
-  // So unlike the cover (which refetches from `practice.cover.url`), we show an
-  // optimistic local preview of the just-uploaded file. It survives parent
-  // revalidation (the row is keyed by `_id`, so it isn't remounted) but resets
-  // on a full reload — acceptable given the backend has no read path.
+  // The class background persists like the cover: `PUT /admin/class-background`
+  // writes it, and the GraphQL `classes` type exposes `background { url type }`
+  // to read it back. `bgPreview` is an optimistic local preview of the
+  // just-uploaded file shown until the parent revalidates and
+  // `practice.background.url` refetches.
   const [bgPreview, setBgPreview] = useState<string | null>(null);
   const [bgUploading, setBgUploading] = useState(false);
 
@@ -117,6 +100,9 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
     return { isComplete: missing.length === 0, missing };
   })();
   const isComplete = completeness.isComplete;
+
+  // Prefer the optimistic just-uploaded preview, else the persisted background.
+  const bgUrl = bgPreview ?? practice.background?.url ?? null;
 
   async function persistTitle(nextTitle: string) {
     const trimmed = nextTitle.trim();
@@ -216,7 +202,7 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
   }
 
   async function handleBgPick(file: File) {
-    // Optimistic preview — there's no GraphQL field to read the background back.
+    // Optimistic preview until the parent revalidates and `background.url` refetches.
     setBgPreview(URL.createObjectURL(file));
     setBgUploading(true);
     try {
@@ -226,6 +212,7 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
       fd.append("file", file);
       await api("/admin/class-background", { method: "PUT", body: fd });
       toast.success("Background updated");
+      onChange();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Background upload failed";
       console.error("[class-background] upload failed", err);
@@ -307,9 +294,9 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
           aria-label="Upload background"
           title="Background image — click to upload"
         >
-          {bgPreview ? (
+          {bgUrl ? (
             <img
-              src={bgPreview}
+              src={bgUrl}
               alt={`${practice.title ?? "Practice"} background`}
               className="h-full w-full object-cover"
             />
@@ -443,71 +430,20 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
 
       {expanded ? (
         <div className="space-y-4 border-t border-stone-100 px-4 pt-2 pb-4">
-          <div className="grid grid-cols-4 gap-3">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-stone-600">
-                Day
-              </label>
-              <input
-                type="number"
-                min={1}
-                step={1}
-                value={day}
-                onChange={(e) =>
-                  setDay(Math.max(1, Number(e.target.value) || 1))
-                }
-                className="w-full rounded-md border border-stone-200 bg-card px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-stone-600">
-                Category
-              </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full rounded-md border border-stone-200 bg-card px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                <option value="">—</option>
-                {CATEGORY_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-stone-600">
-                Grade
-              </label>
-              <select
-                value={gradeLevel}
-                onChange={(e) => setGradeLevel(e.target.value)}
-                className="w-full rounded-md border border-stone-200 bg-card px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                {GRADE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-stone-600">
-                Access
-              </label>
-              <select
-                value={accessLevel}
-                onChange={(e) => setAccessLevel(e.target.value)}
-                className="w-full rounded-md border border-stone-200 bg-card px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              >
-                {ACCESS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="w-32">
+            <label className="mb-1 block text-xs font-medium text-stone-600">
+              Day
+            </label>
+            <input
+              type="number"
+              min={1}
+              step={1}
+              value={day}
+              onChange={(e) =>
+                setDay(Math.max(1, Number(e.target.value) || 1))
+              }
+              className="w-full rounded-md border border-stone-200 bg-card px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
           </div>
 
           <div className="flex items-center justify-between rounded-md border border-stone-200 bg-stone-50/40 px-3 py-2">
