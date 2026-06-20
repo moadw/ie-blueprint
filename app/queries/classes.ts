@@ -11,6 +11,7 @@ export const ClassesAdminFindManyDocument = graphql(/* GraphQL */ `
       deleted
       curriculum
       cover { type url }
+      background { type url }
     }
   }
 `);
@@ -26,6 +27,7 @@ export const ClassesAdminFindOneDocument = graphql(/* GraphQL */ `
       deleted
       curriculum
       cover { type url }
+      background { type url }
     }
   }
 `);
@@ -46,6 +48,7 @@ export const ClassesByCurriculumFindOneDocument = graphql(/* GraphQL */ `
       deleted
       curriculum
       cover { type url }
+      background { type url }
     }
   }
 `);
@@ -61,6 +64,7 @@ export const ClassesFindOneDocument = graphql(/* GraphQL */ `
       deleted
       curriculum
       cover { type url }
+      background { type url }
     }
   }
 `);

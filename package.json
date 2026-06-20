@@ -8,7 +8,8 @@
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
     "codegen": "graphql-codegen",
-    "codegen:watch": "graphql-codegen --watch"
+    "codegen:watch": "graphql-codegen --watch",
+    "lock": "docker run --rm -v \"$PWD\":/app -w /app node:24-alpine npm install --package-lock-only --no-audit --no-fund"
   },
   "dependencies": {
     "@amplitude/analytics-browser": "^2.44.1",
