@@ -15,6 +15,7 @@ import type { Route } from "./+types/root";
 import stylesheet from "~/styles/app.css?url";
 import { setToken } from "~/lib/auth";
 import { getSessionToken } from "~/lib/session.server";
+import { AmplitudeAnalytics } from "~/components/analytics/amplitude-analytics";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -30,7 +31,7 @@ export const links: Route.LinksFunction = () => [
   },
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Libre+Caslon+Display&display=swap",
   },
 ];
 
@@ -76,6 +77,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <Outlet />
       <Toaster richColors position="top-center" />
+      <AmplitudeAnalytics />
     </QueryClientProvider>
   );
 }

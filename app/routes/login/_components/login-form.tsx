@@ -9,7 +9,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { PasswordInput } from "~/components/ui/password-input";
 
-type LoginActionData = { error: string } | undefined;
+type LoginActionData = { error: string; title?: string } | undefined;
 
 export const loginSchema = z.object({
   email: z.string().email(),
@@ -34,7 +34,18 @@ export function LoginForm() {
   });
 
   useEffect(() => {
-    if (actionData?.error) {
+    if (!actionData?.error) return;
+    // A hard access block (e.g. wrong platform) carries a title — surface it as
+    // a persistent, dismissable toast so it isn't missed; retryable errors stay
+    // as a brief auto-dismissing toast.
+    if (actionData.title) {
+      toast.error(actionData.title, {
+        description: actionData.error,
+        duration: Infinity,
+        closeButton: true,
+        id: "login-blocked",
+      });
+    } else {
       toast.error(actionData.error);
     }
   }, [actionData]);

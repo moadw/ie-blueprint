@@ -13,6 +13,7 @@ export const UsersFindOneDocument = graphql(`
         identifier
       }
       organization
+      platform
       profilePicture {
         url
       }

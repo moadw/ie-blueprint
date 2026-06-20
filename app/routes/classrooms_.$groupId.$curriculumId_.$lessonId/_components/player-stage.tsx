@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { X } from "lucide-react";
 import glassBackground from "~/assets/glass-background.webp";
-import { useHydrated } from "./use-hydrated";
+import { useHydrated } from "~/hooks/use-hydrated";
 import { useMediaPlayer } from "./use-media-player";
 import {
   getBackgroundStyle,
@@ -11,11 +11,27 @@ import {
   type PlayerPhase,
 } from "./player-styles";
 import { PlayerControls } from "./player-controls";
-import { MOCK_LESSON, SAMPLE_AUDIO_URL, SAMPLE_VIDEO_URL } from "./fixtures";
 
 interface PlayerStageProps {
   /** Whether to render the video path or the audio (still-background) path. */
   media: "audio" | "video";
+  /** Serif title shown above the controls. */
+  title: string;
+  /** Supporting copy under the title. */
+  description: string;
+  /** Day badge label, e.g. `Day 3` (rendered uppercased). */
+  dayLabel: string;
+  /** Grade label shown after the day in the badge, e.g. `Grades 3–5`. */
+  gradeLabel: string;
+  /** Series / curriculum display name shown below the controls. */
+  seriesName: string;
+  /** Source URL for the `<video>` / `<audio>` element. */
+  mediaUrl: string;
+  /**
+   * Optional background image for the audio (still-background) path. When
+   * omitted, the bundled `glass-background.webp` asset is used.
+   */
+  backgroundImageUrl?: string;
   /** Whether the feedback overlay is showing — the player stays mounted but its chrome hides. */
   showFeedback?: boolean;
   /** Close (X) → curriculum page. */
@@ -38,13 +54,19 @@ const EXIT_DELAY_MS = 700;
  */
 export function PlayerStage({
   media,
+  title,
+  description,
+  dayLabel,
+  gradeLabel,
+  seriesName,
+  mediaUrl,
+  backgroundImageUrl,
   showFeedback = false,
   onExit,
   onEnded,
 }: PlayerStageProps) {
   const hydrated = useHydrated();
   const isVideo = media === "video";
-  const mediaUrl = isVideo ? SAMPLE_VIDEO_URL : SAMPLE_AUDIO_URL;
 
   const [phase, setPhase] = useState<PlayerPhase>("entering");
   const [isIdle, setIsIdle] = useState(false);
@@ -63,6 +85,7 @@ export function PlayerStage({
     skip,
     handleProgressClick,
     setVolume,
+    play,
     pause,
     formatTime,
     mediaEventHandlers,
@@ -83,12 +106,13 @@ export function PlayerStage({
     const timer = setTimeout(() => {
       if (hasAutoPlayedRef.current || !mediaRef.current) return;
       hasAutoPlayedRef.current = true;
-      mediaRef.current.play().catch(() => {
-        // Autoplay can be blocked by the browser — the user can press play.
-      });
+      // Route through the hook's play() so it records play intent (and handles
+      // a blocked autoplay). Keeps the wake-from-sleep guard consistent: only
+      // intent-bearing play() calls are allowed to start playback.
+      play();
     }, AUTOPLAY_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [hydrated, phase, mediaRef]);
+  }, [hydrated, phase, mediaRef, play]);
 
   // Idle detection: hide the chrome after 5s of no pointer movement.
   useEffect(() => {
@@ -153,7 +177,7 @@ export function PlayerStage({
         <div
           className="absolute inset-0 z-0 bg-cover bg-center transition-all duration-1000 ease-out"
           style={{
-            backgroundImage: `url(${glassBackground})`,
+            backgroundImage: `url(${backgroundImageUrl ?? glassBackground})`,
             ...getBackgroundStyle(styleOptions),
           }}
         />
@@ -206,7 +230,8 @@ export function PlayerStage({
           }}
         >
           <span className="font-sans text-sm tracking-wider text-white/80">
-            DAY {MOCK_LESSON.order} • {MOCK_LESSON.gradeLabel}
+            {dayLabel.toUpperCase()}
+            {gradeLabel ? ` • ${gradeLabel}` : ""}
           </span>
         </div>
 
@@ -216,10 +241,10 @@ export function PlayerStage({
             className="mb-4 font-serif text-4xl text-white drop-shadow-lg md:text-5xl"
             style={{ textShadow: "0 4px 20px rgba(0,0,0,0.3)" }}
           >
-            {MOCK_LESSON.title}
+            {title}
           </h1>
           <p className="font-sans text-base text-white/70 md:text-lg">
-            {MOCK_LESSON.description}
+            {description}
           </p>
         </div>
 
@@ -245,7 +270,7 @@ export function PlayerStage({
           style={{ transitionDelay: "0.25s" }}
         >
           <span className="font-sans text-sm text-white/40">
-            {MOCK_LESSON.seriesName}
+            {seriesName}
           </span>
         </div>
       </div>

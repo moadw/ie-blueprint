@@ -138,9 +138,7 @@ export function ProfileMenu({ user }: ProfileMenuProps) {
         {/* Action rows */}
         <button
           type="button"
-          onClick={() => {
-            // TODO(settings): open the full settings surface.
-          }}
+          onClick={() => navigate("/settings")}
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-white transition-colors duration-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
         >
           <Settings className="h-4 w-4 flex-shrink-0 text-white/80" />
@@ -150,9 +148,7 @@ export function ProfileMenu({ user }: ProfileMenuProps) {
 
         <button
           type="button"
-          onClick={() => {
-            // TODO(profile): open the user's profile.
-          }}
+          onClick={() => navigate("/settings/profile")}
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-white transition-colors duration-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
         >
           <User className="h-4 w-4 flex-shrink-0 text-white/80" />

@@ -1,14 +1,20 @@
 import { useState } from "react";
+import type { ReactNode } from "react";
 import { BookOpen } from "lucide-react";
 import { ImmersiveVideoTransition } from "./immersive-video-transition";
 import { RichTextEditor } from "./rich-text-editor";
 import { JournalMediaUpload } from "./journal-media-upload";
 import type { SelectedMedia } from "./journal-media-upload";
-import { MOCK_LESSON, SAMPLE_VIDEO_URL } from "./fixtures";
 
 interface JournalScreenProps {
-  /** Submit & Skip both → curriculum page. */
-  onExit: () => void;
+  /** Rendered in the prompt block; falsy hides it. `ReactNode` so a caller can italicize a word. */
+  prompt?: ReactNode;
+  /** Passed to `ImmersiveVideoTransition`. Absent → no-video path. */
+  videoUrl?: string | undefined;
+  /** Submit → curriculum page. */
+  onSubmit: () => void;
+  /** Skip → curriculum page. */
+  onSkip: () => void;
 }
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -25,16 +31,20 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
  * a local-preview media dropzone. UI ONLY — Submit and Skip both exit to the
  * curriculum page; nothing is persisted at this stage.
  */
-export function JournalScreen({ onExit }: JournalScreenProps) {
+export function JournalScreen({
+  prompt,
+  videoUrl,
+  onSubmit,
+  onSkip,
+}: JournalScreenProps) {
   const [content, setContent] = useState("");
   const [media, setMedia] = useState<SelectedMedia | null>(null);
 
   const today = dateFormatter.format(new Date());
-  const prompt = MOCK_LESSON.journalPrompt.trim();
 
   return (
     <ImmersiveVideoTransition
-      videoUrl={SAMPLE_VIDEO_URL}
+      videoUrl={videoUrl}
       glowColors={["rgba(134, 239, 172, 0.15)", "rgba(96, 165, 250, 0.12)"]}
       entranceDelay={400}
       endingDuration={1000}
@@ -88,7 +98,7 @@ export function JournalScreen({ onExit }: JournalScreenProps) {
           <div className="flex flex-col gap-3 px-8 pb-8">
             <button
               type="button"
-              onClick={onExit}
+              onClick={onSubmit}
               className="w-full rounded-full py-3.5 font-medium text-white shadow-lg transition-all hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 active:scale-[0.99]"
               style={{
                 background:
@@ -99,7 +109,7 @@ export function JournalScreen({ onExit }: JournalScreenProps) {
             </button>
             <button
               type="button"
-              onClick={onExit}
+              onClick={onSkip}
               className="w-full rounded-full py-2.5 text-sm text-white/50 transition-colors hover:text-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
             >
               Skip for now

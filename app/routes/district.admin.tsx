@@ -1,7 +1,11 @@
-export default function DistrictAdminRoute() {
+import { Outlet } from "react-router";
+import { DistrictAdminTabs } from "~/routes/district.admin/_components/district-admin-tabs";
+
+export default function DistrictAdminLayoutRoute() {
   return (
-    <div className="flex h-full items-center justify-center p-6">
-      <p className="text-sm text-muted-foreground">Coming soon</p>
+    <div className="p-6 max-w-5xl mx-auto w-full space-y-4">
+      <DistrictAdminTabs />
+      <Outlet />
     </div>
   );
 }
