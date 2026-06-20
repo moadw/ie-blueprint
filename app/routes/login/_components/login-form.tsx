@@ -11,6 +11,8 @@ import { PasswordInput } from "~/components/ui/password-input";
 
 type LoginActionData = { error: string; title?: string } | undefined;
 
+type SsoError = { provider: string | null; code: string } | null;
+
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string(),
@@ -18,7 +20,23 @@ export const loginSchema = z.object({
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
 
-export function LoginForm() {
+const SSO_ERROR_MESSAGES: Record<string, string> = {
+  "auth-failed": "We couldn't sign you in. Please try again.",
+  "not-allowed":
+    "This account isn't available on this site. Contact support@innerexplorer.com to request access.",
+  "bad-state": "Your sign-in link expired. Please try again.",
+  "no-token": "We couldn't sign you in. Please try again.",
+  "missing-code": "We couldn't sign you in. Please try again.",
+  "not-configured": "This sign-in option isn't available right now.",
+  "verify-failed":
+    "We couldn't verify your account right now. Please try again or contact your administrator.",
+};
+
+function ssoErrorMessage(code: string): string {
+  return SSO_ERROR_MESSAGES[code] ?? "We couldn't sign you in. Please try again.";
+}
+
+export function LoginForm({ ssoError }: { ssoError?: SsoError }) {
   const navigation = useNavigation();
   const actionData = useActionData() as LoginActionData;
   const submit = useSubmit();
@@ -32,6 +50,16 @@ export function LoginForm() {
     resolver: zodResolver(loginSchema),
     mode: "onTouched",
   });
+
+  useEffect(() => {
+    if (!ssoError) return;
+    // Surface an SSO callback error (arriving via `?sso=&error=`) once on mount.
+    toast.error(ssoErrorMessage(ssoError.code), {
+      id: `sso-${ssoError.code}`,
+    });
+    // Only on the initial render for a given error payload.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!actionData?.error) return;
