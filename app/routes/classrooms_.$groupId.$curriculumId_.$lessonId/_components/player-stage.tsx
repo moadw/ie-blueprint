@@ -27,6 +27,10 @@ interface PlayerStageProps {
   seriesName: string;
   /** Source URL for the `<video>` / `<audio>` element. */
   mediaUrl: string;
+  /** Identifier of the played content (tap `_id`) for the `content_played` event. */
+  contentId?: string;
+  /** Resolved tap-type slug (e.g. `audio`/`video`) for the `content_played` event. */
+  tapType?: string;
   /**
    * Optional background image for the audio (still-background) path. When
    * omitted, the bundled `glass-background.webp` asset is used.
@@ -60,6 +64,8 @@ export function PlayerStage({
   gradeLabel,
   seriesName,
   mediaUrl,
+  contentId,
+  tapType,
   backgroundImageUrl,
   showFeedback = false,
   onExit,
@@ -92,6 +98,8 @@ export function PlayerStage({
   } = useMediaPlayer({
     volumeStorageKey: "practice-volume",
     onEnded,
+    ...(contentId ? { contentId } : {}),
+    ...(tapType ? { tapType } : {}),
   });
 
   // Entrance: flip to `ready` shortly after mount so the CSS transition runs.

@@ -19,6 +19,7 @@ import {
   journalPromptForTap,
   mediaUrlForTap,
   milestonePropsForPin,
+  resolveTapType,
 } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/practice-steps";
 
 /**
@@ -225,6 +226,11 @@ export default function LessonPlayerRoute() {
           gradeLabel=""
           seriesName={seriesName}
           mediaUrl={mediaUrlForTap(current.tap)}
+          {...(current.tap._id ? { contentId: current.tap._id } : {})}
+          {...(() => {
+            const t = resolveTapType(current.tap, resolver);
+            return t ? { tapType: t } : {};
+          })()}
           onExit={exitToCurriculum}
           onEnded={advance}
         />
