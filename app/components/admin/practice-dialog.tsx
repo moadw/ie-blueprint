@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRevalidator } from "react-router";
-import { ChevronDown, Loader2, X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -19,33 +19,6 @@ export interface PracticeDialogProps {
   defaultOrder?: number;
 }
 
-const CATEGORY_OPTIONS = [
-  "transition",
-  "sound",
-  "focus",
-  "gratitude",
-  "nature",
-  "kindness",
-  "energy",
-  "calm",
-] as const;
-
-const GRADE_OPTIONS = [
-  { value: "early_learning", label: "Early Learning" },
-  { value: "elementary", label: "Elementary" },
-  { value: "middle_school", label: "Middle School" },
-  { value: "high_school", label: "High School" },
-  { value: "all_levels", label: "All Levels" },
-  { value: "sports", label: "Sports" },
-] as const;
-
-const ACCESS_OPTIONS = [
-  { value: "free", label: "Free" },
-  { value: "premium", label: "Premium" },
-] as const;
-
-const selectClass =
-  "w-full h-[44px] px-3 pr-9 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground appearance-none focus:outline-none focus:ring-2 focus:ring-primary/30";
 const labelClass = "block text-[14px] text-foreground mb-2 font-medium";
 
 export function PracticeDialog({
@@ -61,11 +34,6 @@ export function PracticeDialog({
   const [day, setDay] = useState<number>(defaultOrder ?? 1);
 
   // Visual-only fields
-  const [category, setCategory] = useState<string>("transition");
-  const [gradeLevel, setGradeLevel] = useState<string>("all_levels");
-  const [accessLevel, setAccessLevel] = useState<string>("free");
-  const [hasJournal, setHasJournal] = useState<boolean>(false);
-  const [journalPrompt, setJournalPrompt] = useState<string>("");
   const [active, setActive] = useState<boolean>(true);
 
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -89,11 +57,6 @@ export function PracticeDialog({
     setTitle("");
     setDescription("");
     setDay(defaultOrder ?? 1);
-    setCategory("transition");
-    setGradeLevel("all_levels");
-    setAccessLevel("free");
-    setHasJournal(false);
-    setJournalPrompt("");
     setActive(true);
     setCoverFile(null);
     setError(null);
@@ -122,8 +85,9 @@ export function PracticeDialog({
           order: dayValue,
           curriculum: curriculumId,
           platform: env.PLATFORM,
-          free: accessLevel === "free",
-          // Category, Grade, Active, Journal are visual-only (I2/I3).
+          // Access is no longer a form field; new practices default to free
+          // (the prior form default). Active is visual-only.
+          free: true,
           // `deleted` is intentionally omitted (I1) — loader treats null/false as visible.
         },
       });
@@ -196,69 +160,6 @@ export function PracticeDialog({
             />
           </div>
 
-          <div>
-            <label className={labelClass} htmlFor="practice-category">
-              Category
-            </label>
-            <div className="relative">
-              <select
-                id="practice-category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className={selectClass}
-              >
-                {CATEGORY_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            </div>
-          </div>
-
-          <div>
-            <label className={labelClass} htmlFor="practice-grade">
-              Grade
-            </label>
-            <div className="relative">
-              <select
-                id="practice-grade"
-                value={gradeLevel}
-                onChange={(e) => setGradeLevel(e.target.value)}
-                className={selectClass}
-              >
-                {GRADE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            </div>
-          </div>
-
-          <div>
-            <label className={labelClass} htmlFor="practice-access">
-              Access
-            </label>
-            <div className="relative">
-              <select
-                id="practice-access"
-                value={accessLevel}
-                onChange={(e) => setAccessLevel(e.target.value)}
-                className={selectClass}
-              >
-                {ACCESS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            </div>
-          </div>
-
           <div className="col-span-2">
             <label className={labelClass} htmlFor="practice-description">
               Description
@@ -314,23 +215,6 @@ export function PracticeDialog({
                 />
               </label>
             )}
-          </div>
-
-          <div className="col-span-2 space-y-2 rounded-md border border-amber-200 bg-amber-50/40 p-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-amber-800">
-                Journal
-              </span>
-              <Switch checked={hasJournal} onCheckedChange={setHasJournal} />
-            </div>
-            {hasJournal ? (
-              <textarea
-                value={journalPrompt}
-                onChange={(e) => setJournalPrompt(e.target.value)}
-                placeholder="Journal prompt"
-                className="h-16 w-full rounded-md border border-amber-200 bg-card p-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-200/50"
-              />
-            ) : null}
           </div>
 
           <div className="col-span-2 flex items-center justify-between rounded-md border border-stone-200 bg-stone-50/40 px-3 py-2">
