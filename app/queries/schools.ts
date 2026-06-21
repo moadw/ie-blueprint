@@ -17,6 +17,15 @@ export const SchoolFindManyDocument = graphql(`
   }
 `);
 
+export const SchoolByUsersFindManyDocument = graphql(`
+  query SchoolByUsersFindMany($user: String) {
+    SchoolByUsersFindMany(user: $user) {
+      _id
+      name
+    }
+  }
+`);
+
 export const SchoolCreateOneDocument = graphql(`
   mutation SchoolCreateOne($record: CreateOneschoolsDataInput!) {
     SchoolCreateOne(record: $record) {
