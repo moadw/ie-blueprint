@@ -1,7 +1,12 @@
+import { Check } from "lucide-react";
+
+export type LessonCardStatus = "watched" | "current" | "none";
+
 interface LessonGlassCardProps {
   image: string | null | undefined;
   title: string;
   isActive: boolean;
+  status: LessonCardStatus;
 }
 
 // Glass-theme token literals ported verbatim from the prototype's
@@ -27,6 +32,7 @@ export function LessonGlassCard({
   image,
   title,
   isActive,
+  status,
 }: LessonGlassCardProps) {
   return (
     <div
@@ -48,6 +54,56 @@ export function LessonGlassCard({
             "linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)",
         }}
       />
+
+      {/* Status badge (top-center). Ported from the prototype
+          `ThemedGlassCard`. Watched wins if both somehow apply; `current`
+          shows on any `nextClass` card regardless of `isActive` (intentional
+          divergence from the prototype, which gates Current on the active
+          card). */}
+      {status === "watched" ? (
+        <div
+          className="absolute left-1/2 top-3 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full px-3 py-1.5"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(134,239,172,0.35) 0%, rgba(74,222,128,0.25) 100%)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            border: "1px solid rgba(134,239,172,0.4)",
+            boxShadow:
+              "inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 12px rgba(74,222,128,0.2)",
+          }}
+        >
+          <div
+            className="flex h-4 w-4 items-center justify-center rounded-full"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(134,239,172,0.8) 0%, rgba(74,222,128,0.9) 100%)",
+              boxShadow: "0 0 8px rgba(134,239,172,0.5)",
+            }}
+          >
+            <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
+          </div>
+          <span className="text-[10px] font-medium uppercase tracking-wide text-white/90">
+            Watched
+          </span>
+        </div>
+      ) : status === "current" ? (
+        <div
+          className="absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-full px-3 py-1.5"
+          style={{
+            background: "rgba(255,255,255,0.25)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            border: "1px solid rgba(255,255,255,0.3)",
+            boxShadow:
+              "inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 12px rgba(0,0,0,0.1)",
+          }}
+        >
+          <span className="text-xs font-medium uppercase tracking-wide text-white/90">
+            Current
+          </span>
+        </div>
+      ) : null}
 
       {/* Shimmer sweep on the active card */}
       {isActive ? (

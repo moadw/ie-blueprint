@@ -8,6 +8,8 @@ import type { CSSProperties, TouchEvent } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router";
 import { LessonGlassCard } from "./lesson-glass-card";
+import type { LessonCardStatus } from "./lesson-glass-card";
+import type { GroupProgress } from "./profile-menu";
 
 export interface SliderLesson {
   _id?: string | null;
@@ -21,6 +23,7 @@ interface CurriculumSliderProps {
   lessons: SliderLesson[];
   groupId: string;
   curriculumId: string;
+  groupProgress: GroupProgress | null | undefined;
 }
 
 // Glass-theme arrow token literals (prototype `PlayerThemeContext.glass`).
@@ -102,8 +105,16 @@ export function CurriculumSlider({
   lessons,
   groupId,
   curriculumId,
+  groupProgress,
 }: CurriculumSliderProps) {
   const navigate = useNavigate();
+  // Membership is derived client-side via `.includes()` — Blueprint array
+  // filters are exact-ordered-match, never "contains", so the watched set
+  // must be checked here rather than queried.
+  const finishedClasses = (groupProgress?.finishedClasses ?? []).filter(
+    (id): id is string => Boolean(id),
+  );
+  const nextClass = groupProgress?.nextClass ?? null;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isReady, setIsReady] = useState(false);
@@ -258,6 +269,16 @@ export function CurriculumSlider({
               ? baseStyle
               : { ...baseStyle, transition: "none" };
             const isActive = index === currentIndex;
+            const lessonId = lesson._id ?? null;
+            const watched = lessonId
+              ? finishedClasses.includes(lessonId)
+              : false;
+            const current = lessonId != null && nextClass === lessonId;
+            const status: LessonCardStatus = watched
+              ? "watched"
+              : current
+                ? "current"
+                : "none";
 
             return (
               <div
@@ -317,6 +338,7 @@ export function CurriculumSlider({
                   image={lesson.cover?.url}
                   title={lesson.title ?? ""}
                   isActive={isActive}
+                  status={status}
                 />
               </div>
             );
