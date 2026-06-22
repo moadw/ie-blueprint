@@ -1,6 +1,7 @@
-import { useCallback, useState } from "react";
-import { useLoaderData, useNavigate } from "react-router";
+import { useCallback, useRef, useState } from "react";
+import { useLoaderData, useNavigate, useRevalidator } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
+import { toast } from "sonner";
 import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
 import { requireSessionToken } from "~/lib/session.server";
@@ -9,6 +10,8 @@ import { ClassesFindOneDocument } from "~/queries/classes";
 import { TapFindManyDocument, TapTypeFindManyDocument } from "~/queries/taps";
 import { PinFindManyDocument } from "~/queries/pins";
 import { CurriculumsFindOneDocument } from "~/queries/curriculums";
+import { GroupProgressFindOneDocument } from "~/queries/groups";
+import { GroupFinishedClassDocument } from "~/mutations/groups";
 import { SortFindManytapInput } from "~/gql/graphql";
 import { JournalScreen } from "~/components/lesson/journal-screen";
 import { MilestoneScreen } from "~/components/lesson/milestone-screen";
@@ -63,8 +66,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     };
   }
 
-  const [classResult, tapsResult, pinResult, tapTypesResult, curriculumResult] =
-    await Promise.all([
+  const [
+    classResult,
+    tapsResult,
+    pinResult,
+    tapTypesResult,
+    curriculumResult,
+    progressResult,
+  ] = await Promise.all([
       safe(
         // Teacher-safe single-class fetch (the admin `ClassesAdminFindOne` is
         // role-gated). `ClassesFindOne` takes `_id` directly (not a filter).
@@ -105,6 +114,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           headers,
         ),
       ),
+      safe(
+        // Group-progress `_id` is needed by the completion mutation
+        // (`GroupFinishedClass`) at the final media step. Non-critical player
+        // chrome — a failure must NOT block playback and renders no error card;
+        // the mutation simply no-ops when the id is missing.
+        gqlClient.request(
+          GroupProgressFindOneDocument,
+          { filter: { group: groupId, curriculum: curriculumId } },
+          headers,
+        ),
+      ),
     ]);
 
   const classItem = classResult.ok ? classResult.data.ClassesFindOne : null;
@@ -135,6 +155,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ? (curriculumResult.data.CurriculumsFindOne?.title ?? null)
     : null;
 
+  // Group-progress `_id` for the completion mutation. Non-critical chrome: on a
+  // failed fetch (or a null record) it stays `null` and the completion call is
+  // skipped — playback is never blocked and no error card is rendered.
+  const groupProgressId = progressResult.ok
+    ? (progressResult.data.GroupProgressFindOne?._id ?? null)
+    : null;
+
   return {
     groupId,
     curriculumId,
@@ -144,6 +171,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     pin,
     tapTypes,
     curriculumTitle,
+    groupProgressId,
     classError: classResult.error,
     tapsError: tapsResult.error,
   };
@@ -153,17 +181,24 @@ export default function LessonPlayerRoute() {
   const {
     groupId,
     curriculumId,
+    lessonId,
     classItem,
     taps,
     pin,
     tapTypes,
     curriculumTitle,
+    groupProgressId,
     classError,
     tapsError,
   } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const revalidator = useRevalidator();
 
   const [stepIndex, setStepIndex] = useState(0);
+
+  // Fire `GroupFinishedClass` at most once per practice completion — a ref (not
+  // state) so re-renders / replays of the final media step don't re-fire it.
+  const finishedRef = useRef(false);
 
   const exitToCurriculum = useCallback(() => {
     navigate(`/classrooms/${groupId}/${curriculumId}`);
@@ -181,6 +216,14 @@ export default function LessonPlayerRoute() {
   const resolver = buildTapTypeResolver(tapTypes);
   const steps = buildPracticeSteps(taps, pin, resolver);
   const current = steps[stepIndex];
+
+  // Index of the LAST media (player) step. Journal/achievement steps are not
+  // media — completion fires only when the final *media* step ends, even if a
+  // journal or milestone step follows it. `-1` when there are no media steps.
+  const lastMediaStepIndex = steps.reduce(
+    (last, step, i) => (step.kind === "player" ? i : last),
+    -1,
+  );
 
   // No taps (and therefore nothing to play before any achievement) → empty state.
   if (taps.length === 0 || steps.length === 0) {
@@ -205,6 +248,45 @@ export default function LessonPlayerRoute() {
       }
       return next;
     });
+  };
+
+  // Record the practice as finished when the final media step ends, then
+  // revalidate so the series page's `GroupProgressFindOne` re-fetches and the
+  // bar/badges update. `:lessonId` IS the class `_id` (see loader note), passed
+  // directly as the mutation's `class` arg. No-ops when `groupProgressId` is
+  // absent (degraded loader fetch) and fires at most once (the ref guard).
+  const recordCompletion = async () => {
+    if (finishedRef.current || !groupProgressId) return;
+    finishedRef.current = true;
+    try {
+      // `gqlClient` middleware injects `access-token` client-side — no header.
+      const result = await gqlClient.request(GroupFinishedClassDocument, {
+        _id: groupProgressId,
+        class: lessonId,
+      });
+      if (result.GroupFinishedClass !== true) {
+        finishedRef.current = false;
+        toast.error("Couldn't record practice completion. Please try again.");
+        return;
+      }
+      revalidator.revalidate();
+    } catch (err) {
+      finishedRef.current = false;
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Couldn't record practice completion. Please try again.";
+      toast.error(message);
+    }
+  };
+
+  // Wrap the media player's end event: when the step that ends is the final
+  // media step, record completion (fire-and-forget) in addition to advancing.
+  const handleMediaEnded = () => {
+    if (stepIndex === lastMediaStepIndex) {
+      void recordCompletion();
+    }
+    advance();
   };
 
   // Class-level chrome stays constant across a class's taps; only the media
@@ -232,7 +314,7 @@ export default function LessonPlayerRoute() {
             return t ? { tapType: t } : {};
           })()}
           onExit={exitToCurriculum}
-          onEnded={advance}
+          onEnded={handleMediaEnded}
         />
       ) : null}
 

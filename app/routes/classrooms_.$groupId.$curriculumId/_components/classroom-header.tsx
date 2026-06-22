@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import { GraduationCap } from "lucide-react";
 import { Logo } from "~/components/ui/logo";
 import { ProfileMenu } from "./profile-menu";
-import type { ProfileMenuUser } from "./profile-menu";
+import type { GroupProgress, ProfileMenuUser } from "./profile-menu";
 
 export interface HeaderCurriculum {
   _id?: string | null;
@@ -19,6 +19,9 @@ interface ClassroomHeaderProps {
   groupId: string;
   curriculumId: string;
   user: ProfileMenuUser | null | undefined;
+  groupProgress: GroupProgress | null | undefined;
+  curriculumTitle: string | null | undefined;
+  totalClasses: number;
 }
 
 // Glass pill literals ported verbatim from the prototype's `ThemedNavbar`
@@ -49,6 +52,9 @@ export function ClassroomHeader({
   groupId,
   curriculumId,
   user,
+  groupProgress,
+  curriculumTitle,
+  totalClasses,
 }: ClassroomHeaderProps) {
   const curriculums = (group?.curriculumsObj ?? []).filter(
     (c): c is HeaderCurriculum => Boolean(c?._id),
@@ -117,7 +123,12 @@ export function ClassroomHeader({
 
           <div className="hidden h-6 w-px bg-white/20 sm:block" />
 
-          <ProfileMenu user={user} />
+          <ProfileMenu
+            user={user}
+            groupProgress={groupProgress}
+            curriculumTitle={curriculumTitle}
+            totalClasses={totalClasses}
+          />
         </div>
       </div>
     </header>
