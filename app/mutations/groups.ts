@@ -5,3 +5,9 @@ export const GroupDeleteOneDocument = graphql(/* GraphQL */ `
     GroupDeleteOne(_id: $_id)
   }
 `);
+
+export const GroupFinishedClassDocument = graphql(/* GraphQL */ `
+  mutation GroupFinishedClass($_id: String, $class: String) {
+    GroupFinishedClass(_id: $_id, class: $class)
+  }
+`);
