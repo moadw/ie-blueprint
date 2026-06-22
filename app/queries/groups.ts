@@ -49,6 +49,19 @@ export const GroupFindOneDocument = graphql(`
   }
 `);
 
+export const GroupProgressFindOneDocument = graphql(`
+  query GroupProgressFindOne($filter: groupprogressInput) {
+    GroupProgressFindOne(filter: $filter) {
+      _id
+      group
+      curriculum
+      progress
+      finishedClasses
+      nextClass
+    }
+  }
+`);
+
 export const GroupCreateOneDocument = graphql(`
   mutation GroupCreateOne(
     $name: String!

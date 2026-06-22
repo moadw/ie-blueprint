@@ -1,5 +1,6 @@
-import { Play } from "lucide-react";
+import { Check, Play } from "lucide-react";
 import { useNavigate } from "react-router";
+import type { GroupProgress } from "./profile-menu";
 
 export interface GridLesson {
   _id?: string | null;
@@ -13,6 +14,7 @@ interface LessonGridProps {
   lessons: GridLesson[];
   groupId: string;
   curriculumId: string;
+  groupProgress: GroupProgress | null | undefined;
 }
 
 /**
@@ -27,13 +29,27 @@ interface LessonGridProps {
  *
  * Clicking a card opens the practice detail route for that class id.
  */
-export function LessonGrid({ lessons, groupId, curriculumId }: LessonGridProps) {
+export function LessonGrid({
+  lessons,
+  groupId,
+  curriculumId,
+  groupProgress,
+}: LessonGridProps) {
   const navigate = useNavigate();
+  // Client-side membership (Blueprint array filters are exact-match, not
+  // "contains"). Grid surfaces Watched only — no Current badge (intentional
+  // per-surface difference from the carousel).
+  const finishedClasses = (groupProgress?.finishedClasses ?? []).filter(
+    (id): id is string => Boolean(id),
+  );
   return (
     <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {lessons.map((lesson, index) => {
         const image = lesson.cover?.url;
         const day = lesson.order ?? index + 1;
+        const watched = lesson._id
+          ? finishedClasses.includes(lesson._id)
+          : false;
         return (
           <div
             key={lesson._id ?? index}
@@ -74,6 +90,36 @@ export function LessonGrid({ lessons, groupId, curriculumId }: LessonGridProps) 
               <div className="absolute left-2 top-2 rounded-[14px] bg-black/40 px-2 py-1 text-xs font-sans text-white/80 backdrop-blur-sm">
                 Day {day}
               </div>
+
+              {/* Watched badge (top-right). Ported from the prototype
+                  `ThemedPracticesGrid`. Watched-only — no Current here. */}
+              {watched ? (
+                <div
+                  className="absolute right-2 top-2 z-10 flex items-center gap-1 rounded-full px-2 py-1"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgba(134,239,172,0.4) 0%, rgba(74,222,128,0.3) 100%)",
+                    backdropFilter: "blur(8px)",
+                    WebkitBackdropFilter: "blur(8px)",
+                    border: "1px solid rgba(134,239,172,0.5)",
+                    boxShadow: "0 2px 8px rgba(74,222,128,0.2)",
+                  }}
+                >
+                  <div
+                    className="flex h-3.5 w-3.5 items-center justify-center rounded-full"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, rgba(134,239,172,0.9) 0%, rgba(74,222,128,1) 100%)",
+                      boxShadow: "0 0 6px rgba(134,239,172,0.6)",
+                    }}
+                  >
+                    <Check className="h-2 w-2 text-white" strokeWidth={3} />
+                  </div>
+                  <span className="text-[9px] font-semibold uppercase tracking-wider text-white/95">
+                    Watched
+                  </span>
+                </div>
+              ) : null}
             </div>
 
             <h4 className="mb-1 font-serif text-base text-white transition-colors group-hover:text-primary">

@@ -6,7 +6,10 @@ import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
-import { GroupFindOneDocument } from "~/queries/groups";
+import {
+  GroupFindOneDocument,
+  GroupProgressFindOneDocument,
+} from "~/queries/groups";
 import { CurriculumsFindOneDocument } from "~/queries/curriculums";
 import { ClassesByCurriculumFindOneDocument } from "~/queries/classes";
 import { UsersFindOneDocument } from "~/queries/users";
@@ -37,15 +40,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       curriculum: null,
       classes: [],
       user: null,
+      groupProgress: null,
       groupError: null,
       curriculumError:
         "Platform is not configured. Please contact your administrator.",
       classesError: null,
+      groupProgressError: null,
     };
   }
 
-  const [groupResult, curriculumResult, classesResult, userResult] =
-    await Promise.all([
+  const [
+    groupResult,
+    curriculumResult,
+    classesResult,
+    userResult,
+    progressResult,
+  ] = await Promise.all([
       safe(
         gqlClient.request(
           GroupFindOneDocument,
@@ -71,6 +81,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ),
       ),
       safe(gqlClient.request(UsersFindOneDocument, {}, headers)),
+      safe(
+        // Single shared fetch driving both the header progress bar and the
+        // per-card Watched/Current badges. Both params are validated above
+        // (the route 400s without either), so the mandatory-both-params rule
+        // for the groupprogress filter holds.
+        gqlClient.request(
+          GroupProgressFindOneDocument,
+          { filter: { group: groupId, curriculum: curriculumId } },
+          headers,
+        ),
+      ),
     ]);
 
   const group = groupResult.ok ? groupResult.data.GroupFindOne : null;
@@ -85,6 +106,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // The header user is non-critical chrome — a failed fetch degrades the menu
   // to a generic "Account" label rather than surfacing an error card.
   const user = userResult.ok ? userResult.data.UsersFindOne : null;
+  // Progress is non-critical chrome too — a failed/null fetch degrades the
+  // bar + badges to absent (per resilient-loader convention), never a crash.
+  const groupProgress = progressResult.ok
+    ? progressResult.data.GroupProgressFindOne
+    : null;
 
   return {
     token,
@@ -92,15 +118,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     curriculum,
     classes,
     user,
+    groupProgress,
     groupError: groupResult.error,
     curriculumError: curriculumResult.error,
     classesError: classesResult.error,
+    groupProgressError: progressResult.error,
   };
 }
 
 export default function ClassroomCurriculumRoute() {
-  const { token, group, curriculum, classes, user, groupError, curriculumError } =
-    useLoaderData<typeof loader>();
+  const {
+    token,
+    group,
+    curriculum,
+    classes,
+    user,
+    groupProgress,
+    groupError,
+    curriculumError,
+  } = useLoaderData<typeof loader>();
   const params = useParams();
   const groupId = params.groupId ?? "";
   const curriculumId = params.curriculumId ?? "";
@@ -141,6 +177,9 @@ export default function ClassroomCurriculumRoute() {
           groupId={groupId}
           curriculumId={curriculumId}
           user={user}
+          groupProgress={groupProgress}
+          curriculumTitle={curriculum?.title}
+          totalClasses={classes.length}
         />
 
         <main className="relative z-10 flex flex-1 flex-col items-center pt-[clamp(0.5rem,2vh,1.5rem)]">
@@ -150,6 +189,7 @@ export default function ClassroomCurriculumRoute() {
               lessons={classes}
               groupId={groupId}
               curriculumId={curriculumId}
+              groupProgress={groupProgress}
             />
           ) : (
             <div className="flex flex-1 items-center justify-center px-6 text-center">
@@ -194,6 +234,7 @@ export default function ClassroomCurriculumRoute() {
                 lessons={classes}
                 groupId={groupId}
                 curriculumId={curriculumId}
+                groupProgress={groupProgress}
               />
             ) : (
               <p className="font-serif text-base text-zinc-400">

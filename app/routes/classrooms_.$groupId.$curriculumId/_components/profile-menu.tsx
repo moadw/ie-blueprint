@@ -16,8 +16,23 @@ export interface ProfileMenuUser {
   profilePicture?: { url?: string | null } | null;
 }
 
+/**
+ * Shape consumed by the header progress bar + lesson-card badges (one shared
+ * `GroupProgressFindOne` fetch in the series loader). `nextClass` /
+ * `finishedClasses` drive the per-card Current / Watched badges; `progress`
+ * drives the dropdown bar fill.
+ */
+export interface GroupProgress {
+  progress?: number | null;
+  finishedClasses?: (string | null)[] | null;
+  nextClass?: string | null;
+}
+
 interface ProfileMenuProps {
   user: ProfileMenuUser | null | undefined;
+  groupProgress: GroupProgress | null | undefined;
+  curriculumTitle: string | null | undefined;
+  totalClasses: number;
 }
 
 // Glass dropdown literals ported verbatim from the prototype's `ProfileMenu`
@@ -43,7 +58,12 @@ function initial(name: string): string {
   return name.trim().charAt(0).toUpperCase() || "?";
 }
 
-export function ProfileMenu({ user }: ProfileMenuProps) {
+export function ProfileMenu({
+  user,
+  groupProgress,
+  curriculumTitle,
+  totalClasses,
+}: ProfileMenuProps) {
   const fetcher = useFetcher();
   const navigate = useNavigate();
   const submittedRef = useRef(false);
@@ -65,6 +85,19 @@ export function ProfileMenu({ user }: ProfileMenuProps) {
   const name = displayName(user);
   const photo = user?.profilePicture?.url;
   const email = user?.email;
+
+  // Defensive width math — the backend `progress` range is unverified, so
+  // treat values <= 1 as a fraction (×100) and clamp to [0, 100].
+  const rawProgress = groupProgress?.progress ?? 0;
+  const pct = Math.max(
+    0,
+    Math.min(100, rawProgress <= 1 ? rawProgress * 100 : rawProgress),
+  );
+  const finished =
+    groupProgress?.finishedClasses?.filter(Boolean).length ?? 0;
+  const progressLabel = curriculumTitle
+    ? `${curriculumTitle} Progress`
+    : "Your Progress";
 
   return (
     <Popover>
@@ -132,6 +165,46 @@ export function ProfileMenu({ user }: ProfileMenuProps) {
             ) : null}
           </div>
         </div>
+
+        {/* Curriculum progress — glass bar ported from the prototype
+            `ProfileMenu` Progress Section. Inline (not the `Progress`
+            primitive) because the glass track/fill needs literal
+            white-translucent backgrounds the primitive's `bg-primary/15` +
+            `bg-foreground` recipe can't cleanly override. Rendered only when
+            there is at least one class. */}
+        {totalClasses > 0 ? (
+          <div
+            className="mx-1 mb-4 mt-2 rounded-xl p-3"
+            style={{ background: "rgba(255, 255, 255, 0.1)" }}
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <span className="truncate text-xs font-medium text-white/70">
+                {progressLabel}
+              </span>
+              <span className="ml-2 flex-shrink-0 text-xs font-semibold text-white">
+                {finished}/{totalClasses}
+              </span>
+            </div>
+            <div
+              className="h-2 overflow-hidden rounded-full"
+              style={{ background: "rgba(255, 255, 255, 0.15)" }}
+              role="progressbar"
+              aria-valuenow={Math.round(pct)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={progressLabel}
+            >
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${pct}%`,
+                  background:
+                    "linear-gradient(90deg, rgba(255,255,255,0.6), rgba(255,255,255,0.9))",
+                }}
+              />
+            </div>
+          </div>
+        ) : null}
 
         <div className="my-1 h-px bg-white/15" />
 
