@@ -105,13 +105,50 @@ export function orgSegmentFilter(org: string | null | undefined): SegmentClause[
 }
 
 // ---------------------------------------------------------------------------
-// Low-level fetch
+// Low-level fetch — concurrency gate + 429 retry
+//
+// The Amplitude Dashboard REST API allows only a few CONCURRENT requests per
+// project (≈4-5); beyond that it returns HTTP 429. The district-home fires ~4
+// metric queries, but the analytics tab fans out ~12 (primary + comparison +
+// funnel + retention), so a naive `Promise.all` makes most of them 429 and
+// silently fall back to mock. A small module-scope semaphore (shared across
+// home + tab in this server process) caps in-flight requests at 2 — well below
+// Amplitude's limit, with headroom for the heavier sums/retention queries; an
+// exponential-backoff retry handles any 429 that still slips through. Soft
+// failures are NOT cached (see `cached`), so a straggler recovers on the next
+// load. The 10-min per-metric cache means this gate only bites on a cold load.
 // ---------------------------------------------------------------------------
+
+const MAX_CONCURRENT_AMPLITUDE = 2;
+let amplitudeActive = 0;
+const amplitudeQueue: Array<() => void> = [];
+
+function acquireAmplitudeSlot(): Promise<void> {
+  if (amplitudeActive < MAX_CONCURRENT_AMPLITUDE) {
+    amplitudeActive++;
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => amplitudeQueue.push(resolve));
+}
+
+function releaseAmplitudeSlot(): void {
+  const next = amplitudeQueue.shift();
+  // Hand the just-freed slot straight to the next waiter (active count stays);
+  // only decrement when nobody is waiting.
+  if (next) next();
+  else amplitudeActive--;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 /**
  * GET a Dashboard REST endpoint (path relative to `/api/2`, e.g.
  * `sessions/average`). Returns parsed JSON or a soft error. Never throws.
- * `segment` is JSON-encoded into the `s` query param when non-empty.
+ * `segment` is JSON-encoded into the `s` query param when non-empty. Runs under
+ * the concurrency gate and retries HTTP 429 / network errors with linear
+ * backoff (up to 4 attempts).
  */
 async function amplitudeGet<T = unknown>(
   endpoint: string,
@@ -129,23 +166,47 @@ async function amplitudeGet<T = unknown>(
     url.searchParams.set("s", JSON.stringify(segment));
   }
 
-  const result = await safe(
-    fetch(url.toString(), {
-      method: "GET",
-      headers: { Authorization: auth, Accept: "application/json" },
-    }).then(async (res) => {
-      if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        throw new Error(
-          `Amplitude ${endpoint} ${res.status}: ${body.slice(0, 200)}`,
-        );
+  await acquireAmplitudeSlot();
+  try {
+    const MAX_ATTEMPTS = 6;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      try {
+        const res = await fetch(url.toString(), {
+          method: "GET",
+          headers: { Authorization: auth, Accept: "application/json" },
+        });
+        if (res.status === 429) {
+          if (attempt < MAX_ATTEMPTS - 1) {
+            // Exponential backoff (capped) so a query under cost-based throttling
+            // gets several escalating chances rather than giving up to mock.
+            await sleep(Math.min(3200, 400 * 2 ** attempt));
+            continue;
+          }
+          return { ok: false, error: `Amplitude ${endpoint} 429: rate limited` };
+        }
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          return {
+            ok: false,
+            error: `Amplitude ${endpoint} ${res.status}: ${body.slice(0, 200)}`,
+          };
+        }
+        return { ok: true, data: (await res.json()) as T };
+      } catch (err) {
+        // Network/transport error — retry with the same backoff, then give up soft.
+        if (attempt === MAX_ATTEMPTS - 1) {
+          return {
+            ok: false,
+            error: err instanceof Error ? err.message : "Amplitude fetch failed",
+          };
+        }
+        await sleep(Math.min(3200, 400 * 2 ** attempt));
       }
-      return (await res.json()) as T;
-    }),
-  );
-
-  if (!result.ok) return { ok: false, error: result.error };
-  return { ok: true, data: result.data };
+    }
+    return { ok: false, error: `Amplitude ${endpoint}: exhausted retries` };
+  } finally {
+    releaseAmplitudeSlot();
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -259,7 +320,13 @@ async function cached<T>(key: string, compute: () => Promise<T>): Promise<T> {
     return hit.value as T;
   }
   const value = await compute();
-  cache.set(key, { at: Date.now(), value });
+  // Never cache a soft failure (`null`/`undefined`): a transient 429/network
+  // error must be retried on the next load, not pinned for the whole TTL (which
+  // would freeze one card on its mock fallback for 10 minutes). Successful
+  // results — including legitimate empty ones like EMPTY_METRIC or `0` — cache.
+  if (value != null) {
+    cache.set(key, { at: Date.now(), value });
+  }
   return value;
 }
 
