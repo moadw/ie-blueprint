@@ -46,7 +46,9 @@ export const env = {
   REST_URL: parsed.data.VITE_REST_URL,
   PLATFORM: parsed.data.VITE_PLATFORM,
   AMPLITUDE_API_KEY: parsed.data.VITE_AMPLITUDE_API_KEY,
-  APP_URL: parsed.data.VITE_APP_URL,
+  // Strip any trailing slash so redirect_uri construction (`${APP_URL}/signup-clever`)
+  // never produces a double slash that would mismatch the registered OAuth redirect URI.
+  APP_URL: parsed.data.VITE_APP_URL?.replace(/\/+$/, ""),
   CLEVER_CLIENT_ID: parsed.data.VITE_CLEVER_CLIENT_ID,
   CLASSLINK_CLIENT_ID: parsed.data.VITE_CLASSLINK_CLIENT_ID,
   FIREBASE_API_KEY: parsed.data.VITE_FIREBASE_API_KEY,

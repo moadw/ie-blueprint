@@ -163,24 +163,27 @@ function dailyActiveSessionsCard(metric: MetricResult | null): ResolvedCard {
 }
 
 function schoolParticipationCard(metric: MetricResult | null): ResolvedCard {
+  // No real series (errored, Amplitude unconfigured, or zero schools) → honest
+  // empty state: em-dash + flat baseline chart. Do NOT fabricate demo bars or a
+  // healthy-looking "0.96" — that misrepresents missing data as good data.
   if (!metric || metric.series.length === 0) {
     return {
       title: "School Participation Index",
-      value: metric ? EM_DASH : "0.96",
-      status: metric ? "Low" : "Normal",
-      chart: (
-        <BarChartMini
-          data={[70, 85, 60, 95, 88, 75, 96]}
-          color="var(--color-primary)"
-        />
-      ),
+      value: EM_DASH,
+      status: "Low",
+      chart: <BarChartMini data={[]} color="var(--color-primary)" />,
     };
   }
   return {
     title: "School Participation Index",
     value: oneDecimal(metric.value),
     status: statusFromBenchmark(metric.value, metric.benchmark),
-    chart: <BarChartMini data={metric.series} color="var(--color-primary)" />,
+    // Series are 0–1 participation ratios → scale against an absolute ceiling of
+    // 1 (not the relative series max) so a low week reads as low bars and a
+    // zero day reads as flat.
+    chart: (
+      <BarChartMini data={metric.series} color="var(--color-primary)" max={1} />
+    ),
   };
 }
 
