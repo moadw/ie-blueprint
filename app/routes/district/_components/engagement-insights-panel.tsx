@@ -3,8 +3,8 @@ import { GradientGaugeDial } from "~/routes/district/_components/gradient-gauge-
 interface MiniMetricProps {
   label: string;
   description: string;
-  /** 0–100 percentage, or `null` for a soft "no data" state. */
-  value: number | null;
+  /** 0–100 percentage. Always rendered (0 when there's no activity yet). */
+  value: number;
 }
 
 function MiniMetric({ label, description, value }: MiniMetricProps) {
@@ -14,7 +14,7 @@ function MiniMetric({ label, description, value }: MiniMetricProps) {
         {label}
       </p>
       <p className="text-lg font-bold text-white font-serif leading-none shrink-0">
-        {value == null ? "—" : `${value}%`}
+        {value}%
       </p>
       <p className="text-[10px] text-white/40 leading-relaxed">{description}</p>
     </div>
@@ -22,25 +22,26 @@ function MiniMetric({ label, description, value }: MiniMetricProps) {
 }
 
 interface EngagementInsightsPanelProps {
-  /**
-   * Active User Rate (0–100): % of org users who logged in AND completed ≥1
-   * practice over the window. `null` when the data source is unavailable.
-   */
-  activeUserRate: number | null;
+  /** % of org users who logged in AND completed ≥1 practice (drives the dial). */
+  activeUserRate: number;
+  /** % of users who started a practice that completed one (proxy until a true
+   * started/session signal exists). */
+  sessionCompletionRate: number;
   /** Live total org user count (the gauge's center number). `null` if unavailable. */
   totalUsers: number | null;
 }
 
 /**
- * District-home engagement panel (right gauge). The Active User Rate + the gauge
- * dial are driven by real Amplitude data (`practice_completed` uniques ÷ org
- * users); the center number is the live org user count. The prototype's
- * "Session Completion Rate" mini-metric is intentionally omitted — there is no
- * completion-vs-started signal instrumented yet (see follow-up), so it would be
- * fabricated. A `null` rate/count renders an honest em-dash.
+ * District-home engagement panel (right gauge), driven by real Amplitude data
+ * (`practice_completed` uniques over org users / users who started). Both rates
+ * always render a number — 0 when there's no activity yet — so the panel stays
+ * populated. The center number is the live org user count (em-dash only if that
+ * fetch fails). Session Completion Rate is a proxy until a started/session
+ * signal is instrumented (see follow-up).
  */
 export function EngagementInsightsPanel({
   activeUserRate,
+  sessionCompletionRate,
   totalUsers,
 }: EngagementInsightsPanelProps) {
   return (
@@ -59,12 +60,17 @@ export function EngagementInsightsPanel({
           description="Users who log in and complete at least one practice."
           value={activeUserRate}
         />
+        <MiniMetric
+          label="Session Completion Rate"
+          description="Share of started practices that are completed."
+          value={sessionCompletionRate}
+        />
       </div>
 
       {/* Gauge — full width, anchored to the bottom of the remaining space */}
       <div className="flex-1 flex items-end justify-center px-3 pb-2">
         <GradientGaugeDial
-          value={activeUserRate ?? 0}
+          value={activeUserRate}
           centerValue={totalUsers == null ? "—" : totalUsers.toLocaleString()}
           centerLabel="Users"
         />

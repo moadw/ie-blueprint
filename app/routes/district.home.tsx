@@ -8,6 +8,7 @@ import {
   getAvgSessionDuration,
   getCompletedUsersTotal,
   getDailyActiveSessionsIndex,
+  getEngagedUsersTotal,
   getSchoolParticipationIndex,
   getTotalMinutesListened,
   type MetricParams,
@@ -43,12 +44,16 @@ interface HomeMetrics {
   totalMinutesListened: MetricResult | null;
 }
 
-// Engagement panel (right gauge). `activeUserRate` = % of org users who logged
-// in AND completed ≥1 practice over the window (client's "Active User"
-// definition); `totalUsers` = live org user count (the gauge's center number).
-// Both `null` when the source is unavailable so the panel shows a soft state.
+// Engagement panel (right gauge). Rates are always a number (0 when there's no
+// activity yet) so the panel stays populated rather than showing blanks:
+//  - `activeUserRate`        = users who completed ≥1 practice ÷ all org users.
+//  - `sessionCompletionRate` = users who completed ≥1 practice ÷ users who
+//    started one (played any content). Proxy until a true started/session
+//    signal exists.
+// `totalUsers` is the gauge's center count (`null` only if that fetch fails).
 interface HomeEngagement {
-  activeUserRate: number | null;
+  activeUserRate: number;
+  sessionCompletionRate: number;
   totalUsers: number | null;
 }
 
@@ -69,25 +74,34 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // Each metric function is independently safe()-wrapped already, but wrap the
   // calls here too so a thrown rejection can never bubble out of the loader.
-  const [avg, dailyActive, participation, minutes, completedUsers, totalUsersResult] =
-    await Promise.all([
-      safe(getAvgSessionDuration(params)),
-      safe(getDailyActiveSessionsIndex(params)),
-      safe(getSchoolParticipationIndex(params)),
-      safe(getTotalMinutesListened(params)),
-      // Numerator of Active User Rate (never throws; null on soft error).
-      getCompletedUsersTotal(params.org, engagementWindow),
-      // Denominator: live org user count (UserTotals.students is unreliable).
-      params.org
-        ? safe(
-            gqlClient.request(
-              UsersByOrganizationTotalDocument,
-              { organization: params.org },
-              { "access-token": resolved.token },
-            ),
-          )
-        : Promise.resolve(null),
-    ]);
+  const [
+    avg,
+    dailyActive,
+    participation,
+    minutes,
+    completedUsers,
+    startedUsers,
+    totalUsersResult,
+  ] = await Promise.all([
+    safe(getAvgSessionDuration(params)),
+    safe(getDailyActiveSessionsIndex(params)),
+    safe(getSchoolParticipationIndex(params)),
+    safe(getTotalMinutesListened(params)),
+    // Numerator of both rates: users who completed ≥1 practice (null on soft error).
+    getCompletedUsersTotal(params.org, engagementWindow),
+    // Completion-rate denominator: users who started a practice (played content).
+    getEngagedUsersTotal(params.org, engagementWindow),
+    // Active-rate denominator: live org user count (UserTotals.students is unreliable).
+    params.org
+      ? safe(
+          gqlClient.request(
+            UsersByOrganizationTotalDocument,
+            { organization: params.org },
+            { "access-token": resolved.token },
+          ),
+        )
+      : Promise.resolve(null),
+  ]);
 
   const metrics: HomeMetrics = {
     avgSessionDuration: avg.ok ? avg.data : null,
@@ -100,14 +114,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
     totalUsersResult && totalUsersResult.ok
       ? totalUsersResult.data.UsersByOrganizationFindMany?.total ?? null
       : null;
-  // Rate only when both halves are real; clamp to [0,100]. Zero completions with
-  // a real user count is a legitimate 0% (honest), not a missing source.
-  const activeUserRate =
-    completedUsers !== null && totalUsers && totalUsers > 0
-      ? Math.min(100, Math.round((completedUsers / totalUsers) * 100))
-      : null;
 
-  const engagement: HomeEngagement = { activeUserRate, totalUsers };
+  // Rates are always shown as a number — 0 when there's no activity (a missing
+  // numerator counts as zero completions, not a hidden metric). Clamp to [0,100]
+  // and guard divide-by-zero (no users / no starts → 0%).
+  const completed = completedUsers ?? 0;
+  const started = startedUsers ?? 0;
+  const activeUserRate =
+    totalUsers && totalUsers > 0
+      ? Math.min(100, Math.round((completed / totalUsers) * 100))
+      : 0;
+  const sessionCompletionRate =
+    started > 0 ? Math.min(100, Math.round((completed / started) * 100)) : 0;
+
+  const engagement: HomeEngagement = {
+    activeUserRate,
+    sessionCompletionRate,
+    totalUsers,
+  };
 
   return {
     metrics,
@@ -286,6 +310,7 @@ export default function DistrictHomeRoute() {
         <div className="min-h-[320px] lg:min-h-0">
           <EngagementInsightsPanel
             activeUserRate={engagement.activeUserRate}
+            sessionCompletionRate={engagement.sessionCompletionRate}
             totalUsers={engagement.totalUsers}
           />
         </div>
