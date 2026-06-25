@@ -11,6 +11,8 @@ interface MilestoneScreenProps {
   subtitle: string;
   /** `undefined` → no-video warm-gradient path. */
   videoUrl?: string | undefined;
+  /** Pin's badge artwork; `undefined` → fall back to the icon tile. */
+  imageUrl?: string | undefined;
   /** Continue → curriculum page. */
   onContinue: () => void;
 }
@@ -31,6 +33,7 @@ export function MilestoneScreen({
   glowColor,
   subtitle,
   videoUrl,
+  imageUrl,
   onContinue,
 }: MilestoneScreenProps) {
   return (
@@ -55,6 +58,7 @@ export function MilestoneScreen({
             subtitle={subtitle}
             color={color}
             glowColor={glowColor}
+            imageUrl={imageUrl}
           />
 
           <p

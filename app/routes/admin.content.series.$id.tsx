@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useRevalidator } from "react-router";
 import { ArrowLeft, Edit, Folder, Plus } from "lucide-react";
@@ -9,6 +9,10 @@ import { Switch } from "~/components/ui/switch";
 import { SeriesDialog } from "~/components/admin/series-dialog";
 import { PracticeDialog } from "~/components/admin/practice-dialog";
 import { PracticeRow } from "~/components/admin/practice-row";
+import {
+  AdminListPagination,
+  ADMIN_LIST_PAGE_SIZE,
+} from "~/components/admin/admin-list-pagination";
 import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
 import { requireSessionToken } from "~/lib/session.server";
@@ -19,6 +23,14 @@ import { CurriculumsUpdateOneDocument } from "~/mutations/curriculums";
 import { ClassesAdminFindManyDocument } from "~/queries/classes";
 import { SortFindManyclassesInput } from "~/gql/graphql";
 import { cn } from "~/lib/utils";
+
+// Fetch every practice in one request and paginate client-side: the header
+// total and the "Add Practice" default order both need the full set, and
+// Blueprint exposes no count/skip wiring for this query to drive a clean
+// server-side pager. 500 is the codebase's standard fetch-many ceiling and
+// comfortably above any real series (curricula top out around 300 classes);
+// we warn if a series ever exceeds it so we don't silently truncate again.
+const SERIES_CLASSES_LIMIT = 500;
 
 const GRADE_LABELS: Record<string, string> = {
   early_learning: "Early Learning",
@@ -61,7 +73,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ClassesAdminFindManyDocument,
         {
           filter: { curriculum: id, platform: env.PLATFORM },
-          limit: 100,
+          limit: SERIES_CLASSES_LIMIT,
           sort: [SortFindManyclassesInput.ORDER_ASC],
         },
         headers,
@@ -75,6 +87,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const classes = classesResult.ok
     ? (classesResult.data.ClassesAdminFindMany ?? []).filter((c) => !c.deleted)
     : [];
+  if (
+    classesResult.ok &&
+    (classesResult.data.ClassesAdminFindMany?.length ?? 0) >= SERIES_CLASSES_LIMIT
+  ) {
+    console.warn(
+      `[admin/series] curriculum ${id} returned >= ${SERIES_CLASSES_LIMIT} classes; ` +
+        "client pagination may be truncated — switch to server-side paging.",
+    );
+  }
   return {
     curriculum,
     classes,
@@ -91,6 +112,22 @@ export default function AdminContentSeriesDetail() {
   const [editOpen, setEditOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [statusUpdating, setStatusUpdating] = useState(false);
+  const [page, setPage] = useState(1);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(classes.length / ADMIN_LIST_PAGE_SIZE),
+  );
+  // Clamp reads so a deletion that shrinks the list can't strand us past the
+  // last page; sync state too so Prev/Next math stays correct.
+  const safePage = Math.min(page, totalPages);
+  const pageClasses = classes.slice(
+    (safePage - 1) * ADMIN_LIST_PAGE_SIZE,
+    safePage * ADMIN_LIST_PAGE_SIZE,
+  );
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   if (!curriculum) {
     return (
@@ -246,15 +283,25 @@ export default function AdminContentSeriesDetail() {
           </Button>
         </div>
       ) : (
-        <div className="space-y-2">
-          {classes.map((practice) => (
-            <PracticeRow
-              key={practice._id}
-              practice={practice}
-              onChange={() => revalidator.revalidate()}
+        <>
+          <div className="space-y-2">
+            {pageClasses.map((practice) => (
+              <PracticeRow
+                key={practice._id}
+                practice={practice}
+                onChange={() => revalidator.revalidate()}
+              />
+            ))}
+          </div>
+          {classes.length > ADMIN_LIST_PAGE_SIZE ? (
+            <AdminListPagination
+              page={safePage}
+              hasMore={safePage < totalPages}
+              onPrev={() => setPage((p) => Math.max(1, p - 1))}
+              onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
             />
-          ))}
-        </div>
+          ) : null}
+        </>
       )}
 
       <SeriesDialog
