@@ -24,6 +24,9 @@ interface CurriculumSliderProps {
   groupId: string;
   curriculumId: string;
   groupProgress: GroupProgress | null | undefined;
+  /** Fires with the centered card's index on mount and every change, so the
+   *  parent can drive the blurred hero background off the current cover. */
+  onIndexChange?: (index: number) => void;
 }
 
 // Glass-theme arrow token literals (prototype `PlayerThemeContext.glass`).
@@ -106,6 +109,7 @@ export function CurriculumSlider({
   groupId,
   curriculumId,
   groupProgress,
+  onIndexChange,
 }: CurriculumSliderProps) {
   const navigate = useNavigate();
   // Membership is derived client-side via `.includes()` — Blueprint array
@@ -115,7 +119,18 @@ export function CurriculumSlider({
     (id): id is string => Boolean(id),
   );
   const nextClass = groupProgress?.nextClass ?? null;
-  const [currentIndex, setCurrentIndex] = useState(0);
+  // Open centered on the CURRENT practice (`nextClass`) rather than Day 1. Lazy
+  // initial state so the very first paint snaps straight to it — transitions
+  // are disabled until the first RAF (`isReady`), matching the prototype, which
+  // seeds the carousel at the current index instead of animating in from 0. SSR
+  // and the first client render derive the same index from the same props, so
+  // hydration stays stable. Falls back to 0 when there's no progress yet or
+  // `nextClass` isn't part of this curriculum's class list.
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    if (!nextClass) return 0;
+    const idx = lessons.findIndex((l) => l._id === nextClass);
+    return idx >= 0 ? idx : 0;
+  });
   const [isAnimating, setIsAnimating] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [params, setParams] = useState({
@@ -130,6 +145,12 @@ export function CurriculumSlider({
     const frameId = requestAnimationFrame(() => setIsReady(true));
     return () => cancelAnimationFrame(frameId);
   }, []);
+
+  // Report the centered card to the parent (on mount + every change) so the
+  // hero background can crossfade to the current practice's cover.
+  useEffect(() => {
+    onIndexChange?.(currentIndex);
+  }, [currentIndex, onIndexChange]);
 
   // Recompute arc radius from the viewport width + the active breakpoint's
   // CSS vars, debounced on resize (prototype mechanics).
