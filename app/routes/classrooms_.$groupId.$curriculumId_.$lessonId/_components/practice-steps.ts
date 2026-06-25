@@ -3,23 +3,29 @@
 // screen mapping here (not inline in the route) makes the rules reviewable in
 // one place and lets the route be a thin index-driven renderer.
 //
-// Tap-type mapping (plan "Implementation Approach", verify in QA): branch on
-// the resolved `tap.type` slug — `video` → video player, `audio`/`5min-audio`
-// → audio player, `journal` → JournalScreen. Any unknown non-journal type
-// defaults to the player. Media URL = first `tap.videos[]` entry
-// (`videos[0].url`); audio-vs-video derived from the resolved type (fallback
-// `videos[0].type`). Journal prompt = `tap.intro` (fallback first
-// `extraQuestions[].question`).
+// Tap-type mapping: branch on the resolved `tap.type` identifier — `video` →
+// video player, `full-audio`/`5min-audio` → audio player, `ie-journal` →
+// JournalScreen. Any unknown non-journal type defaults to the player. Media URL
+// = first `tap.videos[]` entry (`videos[0].url`); audio-vs-video derived from
+// the resolved type (fallback `videos[0].type`). Journal prompt = `tap.intro`
+// (fallback first `extraQuestions[].question`).
+//
+// IMPORTANT — use the REAL backend identifiers. The source of truth is
+// `main.taptype` / `admin/tap-dialog.tsx`: `ie-journal`, `video`, `full-audio`,
+// `5min-audio` (NOT the teacher-flow slugs `journal`/`audio`). The branching
+// sets below key on these; the legacy slugs are kept only as harmless aliases
+// for older data. (See project memory "Admin TapType identifiers".)
 //
 // Robust tap-type resolution: `tap.type` may hold EITHER the tap-type
-// identifier slug ("audio"/"5min-audio"/"video"/"journal") OR a tap-type
-// `_id`. The admin `tap-blocks.tsx` resolves labels against BOTH `tt.identifier`
-// and `tt._id`, so we mirror that here: `buildTapTypeResolver` produces a
-// Map from BOTH `tt._id → tt.identifier` AND `tt.identifier → tt.identifier`,
-// and `resolveTapType` maps a raw `tap.type` to its canonical slug before
-// branching. When the resolver is empty or a type is unknown, the raw value is
-// returned unchanged (a no-op when `tap.type` is already a slug), and the
-// existing fallback (infer audio/video from `videos[0].type`) still applies.
+// identifier (e.g. "ie-journal"/"full-audio"/"5min-audio"/"video") OR a
+// tap-type `_id`. The admin `tap-blocks.tsx` resolves labels against BOTH
+// `tt.identifier` and `tt._id`, so we mirror that here: `buildTapTypeResolver`
+// produces a Map from BOTH `tt._id → tt.identifier` AND `tt.identifier →
+// tt.identifier`, and `resolveTapType` maps a raw `tap.type` to its canonical
+// identifier before branching. When the resolver is empty or a type is unknown,
+// the raw value is returned unchanged (a no-op when `tap.type` is already an
+// identifier), and the existing fallback (infer audio/video from
+// `videos[0].type`) still applies.
 
 import type {
   TapFindManyQuery,
@@ -46,12 +52,17 @@ export type PracticeStep =
   | { kind: "journal"; tap: PracticeTap }
   | { kind: "achievement"; pin: PracticePin };
 
-/** Tap-type slugs that route to the journal screen. */
-const JOURNAL_TYPES: ReadonlySet<string> = new Set(["journal"]);
-/** Tap-type slugs that route to the video player. */
+// Backend `TapType.identifier`s, with legacy teacher-flow slugs kept as aliases.
+/** Tap-type identifiers that route to the journal screen. */
+const JOURNAL_TYPES: ReadonlySet<string> = new Set(["ie-journal", "journal"]);
+/** Tap-type identifiers that route to the video player. */
 const VIDEO_TYPES: ReadonlySet<string> = new Set(["video"]);
-/** Tap-type slugs that route to the audio player. */
-const AUDIO_TYPES: ReadonlySet<string> = new Set(["audio", "5min-audio"]);
+/** Tap-type identifiers that route to the audio player. */
+const AUDIO_TYPES: ReadonlySet<string> = new Set([
+  "full-audio",
+  "5min-audio",
+  "audio",
+]);
 
 /**
  * Build a resolver Map from a `TapTypeFindMany` result that maps a raw

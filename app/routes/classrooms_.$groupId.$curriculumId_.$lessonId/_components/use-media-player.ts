@@ -67,6 +67,7 @@ export interface UseMediaPlayerReturn {
     onTimeUpdate: () => void;
     onLoadedMetadata: () => void;
     onEnded: () => void;
+    onError: () => void;
     onWaiting: () => void;
     onPlay: () => void;
     onPlaying: () => void;
@@ -200,6 +201,17 @@ export function useMediaPlayer({
 
   const handleWaiting = useCallback(() => setIsBuffering(true), []);
 
+  // A media load/playback error is terminal — advance the runner rather than
+  // hang on an unplayable source (defensive: the tap-type fix removes the known
+  // empty-src journal case, leaving only genuinely broken URLs). `error` and
+  // `ended` are mutually exclusive, so this never double-advances.
+  const handleError = useCallback(() => {
+    intendedPlayingRef.current = false;
+    setIsPlaying(false);
+    setIsBuffering(false);
+    onEnded?.();
+  }, [onEnded]);
+
   // Playback began. If it started without an explicit play() recording intent
   // (e.g. the browser auto-resuming after the machine wakes), re-pause so a
   // user-paused track never resumes on its own.
@@ -315,6 +327,7 @@ export function useMediaPlayer({
       onTimeUpdate: handleTimeUpdate,
       onLoadedMetadata: handleLoadedMetadata,
       onEnded: handleEnded,
+      onError: handleError,
       onWaiting: handleWaiting,
       onPlay: handlePlay,
       onPlaying: handlePlaying,
