@@ -74,6 +74,19 @@ export const UserSearchDocument = graphql(`
   }
 `);
 
+// District-home engagement gauge: the real total-users count for an org. Used
+// as the gauge's center number ("Users") and the Active User Rate denominator.
+// `UserTotalsFindMany.students` is unreliable (returns 0), so this is the live
+// org user count. `total` is the headline; `type` (optional, unused here) could
+// later scope to a single user type.
+export const UsersByOrganizationTotalDocument = graphql(`
+  query UsersByOrganizationTotal($organization: String!) {
+    UsersByOrganizationFindMany(organization: $organization) {
+      total
+    }
+  }
+`);
+
 export const UserTypesFindManyDocument = graphql(`
   query UserTypesFindMany(
     $filter: FilterFindManyusertypesInput

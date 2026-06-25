@@ -105,13 +105,50 @@ export function orgSegmentFilter(org: string | null | undefined): SegmentClause[
 }
 
 // ---------------------------------------------------------------------------
-// Low-level fetch
+// Low-level fetch — concurrency gate + 429 retry
+//
+// The Amplitude Dashboard REST API allows only a few CONCURRENT requests per
+// project (≈4-5); beyond that it returns HTTP 429. The district-home fires ~4
+// metric queries, but the analytics tab fans out ~12 (primary + comparison +
+// funnel + retention), so a naive `Promise.all` makes most of them 429 and
+// silently fall back to mock. A small module-scope semaphore (shared across
+// home + tab in this server process) caps in-flight requests at 2 — well below
+// Amplitude's limit, with headroom for the heavier sums/retention queries; an
+// exponential-backoff retry handles any 429 that still slips through. Soft
+// failures are NOT cached (see `cached`), so a straggler recovers on the next
+// load. The 10-min per-metric cache means this gate only bites on a cold load.
 // ---------------------------------------------------------------------------
+
+const MAX_CONCURRENT_AMPLITUDE = 2;
+let amplitudeActive = 0;
+const amplitudeQueue: Array<() => void> = [];
+
+function acquireAmplitudeSlot(): Promise<void> {
+  if (amplitudeActive < MAX_CONCURRENT_AMPLITUDE) {
+    amplitudeActive++;
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => amplitudeQueue.push(resolve));
+}
+
+function releaseAmplitudeSlot(): void {
+  const next = amplitudeQueue.shift();
+  // Hand the just-freed slot straight to the next waiter (active count stays);
+  // only decrement when nobody is waiting.
+  if (next) next();
+  else amplitudeActive--;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 /**
  * GET a Dashboard REST endpoint (path relative to `/api/2`, e.g.
  * `sessions/average`). Returns parsed JSON or a soft error. Never throws.
- * `segment` is JSON-encoded into the `s` query param when non-empty.
+ * `segment` is JSON-encoded into the `s` query param when non-empty. Runs under
+ * the concurrency gate and retries HTTP 429 / network errors with linear
+ * backoff (up to 4 attempts).
  */
 async function amplitudeGet<T = unknown>(
   endpoint: string,
@@ -129,23 +166,47 @@ async function amplitudeGet<T = unknown>(
     url.searchParams.set("s", JSON.stringify(segment));
   }
 
-  const result = await safe(
-    fetch(url.toString(), {
-      method: "GET",
-      headers: { Authorization: auth, Accept: "application/json" },
-    }).then(async (res) => {
-      if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        throw new Error(
-          `Amplitude ${endpoint} ${res.status}: ${body.slice(0, 200)}`,
-        );
+  await acquireAmplitudeSlot();
+  try {
+    const MAX_ATTEMPTS = 6;
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      try {
+        const res = await fetch(url.toString(), {
+          method: "GET",
+          headers: { Authorization: auth, Accept: "application/json" },
+        });
+        if (res.status === 429) {
+          if (attempt < MAX_ATTEMPTS - 1) {
+            // Exponential backoff (capped) so a query under cost-based throttling
+            // gets several escalating chances rather than giving up to mock.
+            await sleep(Math.min(3200, 400 * 2 ** attempt));
+            continue;
+          }
+          return { ok: false, error: `Amplitude ${endpoint} 429: rate limited` };
+        }
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          return {
+            ok: false,
+            error: `Amplitude ${endpoint} ${res.status}: ${body.slice(0, 200)}`,
+          };
+        }
+        return { ok: true, data: (await res.json()) as T };
+      } catch (err) {
+        // Network/transport error — retry with the same backoff, then give up soft.
+        if (attempt === MAX_ATTEMPTS - 1) {
+          return {
+            ok: false,
+            error: err instanceof Error ? err.message : "Amplitude fetch failed",
+          };
+        }
+        await sleep(Math.min(3200, 400 * 2 ** attempt));
       }
-      return (await res.json()) as T;
-    }),
-  );
-
-  if (!result.ok) return { ok: false, error: result.error };
-  return { ok: true, data: result.data };
+    }
+    return { ok: false, error: `Amplitude ${endpoint}: exhausted retries` };
+  } finally {
+    releaseAmplitudeSlot();
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -166,6 +227,10 @@ interface DashboardChartResponse {
     series?: number[][];
     seriesLabels?: unknown[];
     xValues?: string[];
+    // The period-collapsed value(s): `seriesCollapsed[0][0].value` is the single
+    // figure for the whole window (e.g. distinct users over the period, NOT the
+    // sum of daily uniques, which over-counts repeat users).
+    seriesCollapsed?: Array<Array<{ value?: number }>>;
   };
 }
 
@@ -175,6 +240,17 @@ function firstSeries(resp: DashboardChartResponse): number[] {
   const first = series[0];
   if (!Array.isArray(first)) return [];
   return first.map((n) => (typeof n === "number" && isFinite(n) ? n : 0));
+}
+
+/**
+ * The period-collapsed value of a chart response — the single figure for the
+ * whole window. For `m=uniques` this is the distinct-user count over the period
+ * (the right denominator for a funnel stage), unlike summing the daily series.
+ * Defensive: 0 on any shape mismatch.
+ */
+function collapsedValue(resp: DashboardChartResponse): number {
+  const v = resp.data?.seriesCollapsed?.[0]?.[0]?.value;
+  return typeof v === "number" && isFinite(v) ? v : 0;
 }
 
 /**
@@ -244,7 +320,13 @@ async function cached<T>(key: string, compute: () => Promise<T>): Promise<T> {
     return hit.value as T;
   }
   const value = await compute();
-  cache.set(key, { at: Date.now(), value });
+  // Never cache a soft failure (`null`/`undefined`): a transient 429/network
+  // error must be retried on the next load, not pinned for the whole TTL (which
+  // would freeze one card on its mock fallback for 10 minutes). Successful
+  // results — including legitimate empty ones like EMPTY_METRIC or `0` — cache.
+  if (value != null) {
+    cache.set(key, { at: Date.now(), value });
+  }
   return value;
 }
 
@@ -679,5 +761,399 @@ export async function getTotalMinutesListened(
       benchmark,
       series: orgSeries,
     };
+  });
+}
+
+// ===========================================================================
+// District Analytics TAB — arbitrary-window daily series
+//
+// The home KPIs use a fixed trailing 7-day window (`dailyWindow`). The Analytics
+// tab (`/district/analytics`) drives an arbitrary primary range + comparison
+// window from the URL, so these fetchers take an explicit `{start,end}` window
+// (YYYYMMDD) and return the raw daily series for that range. All SHAPING
+// (totals, period deltas, heatmap grid, weekday peak, breakdowns) lives in
+// `district-analytics.server.ts`; this module only talks to Amplitude.
+//
+// Each returns the daily `number[]` on success or **`null`** on soft error /
+// unconfigured, so the caller can tell "no data source" (→ fall back) apart
+// from "real source, zero activity" (→ honest zeros). Each is cached per
+// (metric + org + window) like the home metrics.
+// ===========================================================================
+
+/** ISO `YYYY-MM-DD` → Dashboard REST `YYYYMMDD`. */
+export function ymdFromISO(iso: string): string {
+  return iso.replaceAll("-", "").slice(0, 8);
+}
+
+/** A primary/compare date window for the tab, as Dashboard REST `YYYYMMDD`. */
+export interface AnalyticsWindow {
+  start: string;
+  end: string;
+}
+
+/** Build an {@link AnalyticsWindow} from ISO `YYYY-MM-DD` start/end. */
+export function windowFromISO(startISO: string, endISO: string): AnalyticsWindow {
+  return { start: ymdFromISO(startISO), end: ymdFromISO(endISO) };
+}
+
+/**
+ * One event-property filter clause for an `events/segmentation` `e.filters`
+ * entry — filters the event stream by an event property (e.g. `userType` =
+ * `teacher`). Distinct from {@link SegmentClause} (the `s` param), which filters
+ * by user/group properties. `userType` is stamped on every event by
+ * `analytics.ts`, so it is available as an event-property filter here.
+ */
+interface EventPropFilter {
+  subprop_type: "event";
+  subprop_key: string;
+  subprop_op: "is" | "is not";
+  subprop_value: string[];
+}
+
+/**
+ * Daily series for an `events/segmentation` query over an arbitrary window.
+ *
+ *   - `metric`    = the Amplitude measure: `totals` (event count), `uniques`
+ *                   (distinct users), or `sums` (sum of a numeric property).
+ *   - `sumProp`   = the event property to sum (required for `sums`; Amplitude
+ *                   sums the value named by `group_by` when `m=sums`).
+ *   - `filters`   = event-property filters AND-ed into the event definition.
+ *   - `segment`   = the `s` clauses (org scope via `gp:organization`).
+ *
+ * Returns the daily `number[]` (non-finite entries sanitized to 0) on success,
+ * or `null` on soft error / unconfigured.
+ */
+interface SegmentationOpts {
+  eventType: string;
+  window: AnalyticsWindow;
+  metric: "totals" | "uniques" | "sums";
+  segment: SegmentClause[];
+  sumProp?: string;
+  filters?: EventPropFilter[];
+}
+
+/** Run an `events/segmentation` query, returning the parsed chart response or
+ * `null` on soft error / unconfigured. Shared by the series + collapsed wrappers. */
+async function segmentationRequest(
+  opts: SegmentationOpts,
+): Promise<DashboardChartResponse | null> {
+  if (!isAmplitudeConfigured()) return null;
+  const event: Record<string, unknown> = { event_type: opts.eventType };
+  if (opts.sumProp) {
+    event.group_by = [{ type: "event", value: opts.sumProp }];
+  }
+  if (opts.filters && opts.filters.length > 0) {
+    event.filters = opts.filters;
+  }
+  const resp = await amplitudeGet<DashboardChartResponse>(
+    "events/segmentation",
+    {
+      e: JSON.stringify(event),
+      start: opts.window.start,
+      end: opts.window.end,
+      m: opts.metric,
+    },
+    opts.segment,
+  );
+  return resp.ok ? resp.data : null;
+}
+
+/** Daily series for a segmentation query (`null` on soft error / unconfigured). */
+async function fetchSegmentationSeries(
+  opts: SegmentationOpts,
+): Promise<number[] | null> {
+  const data = await segmentationRequest(opts);
+  return data ? firstSeries(data) : null;
+}
+
+/** Period-collapsed value for a segmentation query (`null` on soft error). */
+async function fetchSegmentationCollapsed(
+  opts: SegmentationOpts,
+): Promise<number | null> {
+  const data = await segmentationRequest(opts);
+  return data ? collapsedValue(data) : null;
+}
+
+/**
+ * Daily **practice-session counts** (`session_start` totals) for the org over
+ * the window. Drives the Analytics tab's "Practice Sessions" card. `null` on
+ * soft error / unconfigured.
+ */
+export function getSessionCountSeries(
+  org: string | null | undefined,
+  window: AnalyticsWindow,
+): Promise<number[] | null> {
+  const key = `tab-sessions:${org ?? "all"}:${window.start}-${window.end}`;
+  return cached(key, () =>
+    fetchSegmentationSeries({
+      eventType: "session_start",
+      window,
+      metric: "totals",
+      segment: orgSegmentFilter(org),
+    }),
+  );
+}
+
+/**
+ * Daily **distinct active teachers** (`_active` uniques filtered to
+ * `userType = teacher`) for the org. Drives the "Active Educators" card.
+ * `null` on soft error / unconfigured.
+ */
+export function getActiveTeacherSeries(
+  org: string | null | undefined,
+  window: AnalyticsWindow,
+): Promise<number[] | null> {
+  const key = `tab-teachers:${org ?? "all"}:${window.start}-${window.end}`;
+  return cached(key, () =>
+    fetchSegmentationSeries({
+      eventType: "_active",
+      window,
+      metric: "uniques",
+      segment: orgSegmentFilter(org),
+      filters: [
+        {
+          subprop_type: "event",
+          subprop_key: "userType",
+          subprop_op: "is",
+          subprop_value: ["teacher"],
+        },
+      ],
+    }),
+  );
+}
+
+/**
+ * **Distinct active teachers** over the whole period (`_active` uniques filtered
+ * to `userType = teacher`, collapsed). This is the right total for the "Active
+ * Educators" headline — unlike summing the daily-uniques series, which counts a
+ * teacher once per active day. `null` on soft error / unconfigured.
+ */
+export function getActiveTeacherTotal(
+  org: string | null | undefined,
+  window: AnalyticsWindow,
+): Promise<number | null> {
+  const key = `tab-teachers-total:${org ?? "all"}:${window.start}-${window.end}`;
+  return cached(key, () =>
+    fetchSegmentationCollapsed({
+      eventType: "_active",
+      window,
+      metric: "uniques",
+      segment: orgSegmentFilter(org),
+      filters: [
+        {
+          subprop_type: "event",
+          subprop_key: "userType",
+          subprop_op: "is",
+          subprop_value: ["teacher"],
+        },
+      ],
+    }),
+  );
+}
+
+/**
+ * Daily **distinct active users** (any `userType`, `_active` uniques) for the
+ * org — the funnel's "Active" stage input. `null` on soft error / unconfigured.
+ */
+export function getActiveUserSeries(
+  org: string | null | undefined,
+  window: AnalyticsWindow,
+): Promise<number[] | null> {
+  const key = `tab-active:${org ?? "all"}:${window.start}-${window.end}`;
+  return cached(key, () =>
+    fetchSegmentationSeries({
+      eventType: "_active",
+      window,
+      metric: "uniques",
+      segment: orgSegmentFilter(org),
+    }),
+  );
+}
+
+/**
+ * Daily **total mindful seconds** (`content_played` summed `seconds`) for the
+ * org. Drives the "Mindful Minutes" headline. Optionally scoped to a single
+ * `userType` (for the real per-role breakdown). `null` on soft error /
+ * unconfigured.
+ */
+export function getMindfulSecondsSeries(
+  org: string | null | undefined,
+  window: AnalyticsWindow,
+  userType?: string,
+): Promise<number[] | null> {
+  const scope = userType ?? "all";
+  const key = `tab-mindful:${org ?? "all"}:${scope}:${window.start}-${window.end}`;
+  return cached(key, () =>
+    fetchSegmentationSeries({
+      eventType: "content_played",
+      window,
+      metric: "sums",
+      sumProp: DURATION_PROPERTY,
+      segment: orgSegmentFilter(org),
+      ...(userType
+        ? {
+            filters: [
+              {
+                subprop_type: "event" as const,
+                subprop_key: "userType",
+                subprop_op: "is" as const,
+                subprop_value: [userType],
+              },
+            ],
+          }
+        : {}),
+    }),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Adoption funnel period totals (distinct users over the whole window)
+//
+// Funnel stages need the *distinct users over the period*, not the sum of daily
+// uniques (which double-counts repeat users), so these read the collapsed value.
+// ---------------------------------------------------------------------------
+
+/**
+ * Distinct **active users** (any `userType`) over the period for the org — the
+ * funnel's "Active Users" stage. `null` on soft error / unconfigured.
+ */
+export function getActiveUsersTotal(
+  org: string | null | undefined,
+  window: AnalyticsWindow,
+): Promise<number | null> {
+  const key = `tab-active-total:${org ?? "all"}:${window.start}-${window.end}`;
+  return cached(key, () =>
+    fetchSegmentationCollapsed({
+      eventType: "_active",
+      window,
+      metric: "uniques",
+      segment: orgSegmentFilter(org),
+    }),
+  );
+}
+
+/**
+ * Distinct **engaged users** over the period for the org — users who actually
+ * played mindfulness content (`content_played` uniques). The funnel's "Engaged"
+ * stage. `null` on soft error / unconfigured.
+ */
+export function getEngagedUsersTotal(
+  org: string | null | undefined,
+  window: AnalyticsWindow,
+): Promise<number | null> {
+  const key = `tab-engaged-total:${org ?? "all"}:${window.start}-${window.end}`;
+  return cached(key, () =>
+    fetchSegmentationCollapsed({
+      eventType: "content_played",
+      window,
+      metric: "uniques",
+      segment: orgSegmentFilter(org),
+    }),
+  );
+}
+
+/**
+ * Distinct users who **completed at least one practice** over the period
+ * (uniques of `practice_completed`) for the org. This is the numerator of the
+ * district-home "Active User Rate" — the client defines an Active User as one
+ * who logs in AND completes ≥1 practice. The `practice_completed` event is
+ * emitted client-side when a class's final media step ends (see
+ * `recordCompletion` in the lesson route). `null` on soft error / unconfigured.
+ */
+export function getCompletedUsersTotal(
+  org: string | null | undefined,
+  window: AnalyticsWindow,
+): Promise<number | null> {
+  const key = `home-completed-total:${org ?? "all"}:${window.start}-${window.end}`;
+  return cached(key, () =>
+    fetchSegmentationCollapsed({
+      eventType: "practice_completed",
+      window,
+      metric: "uniques",
+      segment: orgSegmentFilter(org),
+    }),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Retention (N-day) — drives the Analytics tab's "Retention" card
+//
+// The Dashboard REST `/retention` endpoint has its own response shape (NOT the
+// `events/segmentation` chart shape). `rm=nday` returns an N-day retention
+// curve; `series[0].combined[n]` is the aggregated `{count, outof}` for day-N
+// across all cohorts in the window, so `count/outof` is the day-N retention
+// rate. `se`/`re` are the start/return events — we use Amplitude's "Any Active
+// Event" (`_active`) for both: of the users active on their first day, what %
+// were active again N days later.
+// ---------------------------------------------------------------------------
+
+/** Dashboard REST `/retention` (rm=nday) response shape. */
+interface RetentionResponse {
+  data?: {
+    series?: Array<{
+      combined?: Array<{ count: number; outof: number; incomplete?: boolean }>;
+    }>;
+  };
+}
+
+/** One point on the retention curve: a day-N bucket and its retention %. */
+export interface RetentionPoint {
+  label: string;
+  rate: number;
+}
+
+/** An N-day retention curve plus the peak rate, or `null` on soft error. */
+export interface RetentionResult {
+  peakPct: number;
+  series: RetentionPoint[];
+}
+
+/**
+ * N-day retention curve for the org over the window. The bucket interval scales
+ * with the tab's granularity — daily (1d, `D`-labels), weekly (7d, `W`), monthly
+ * (30d, `M`). Trailing buckets with no cohort base (`outof === 0`) are trimmed:
+ * those are future days with no data, not genuine 0% retention. Returns `null`
+ * on soft error / unconfigured.
+ */
+export function getRetentionCurve(
+  org: string | null | undefined,
+  window: AnalyticsWindow,
+  granularity: "daily" | "weekly" | "monthly",
+): Promise<RetentionResult | null> {
+  const interval = granularity === "monthly" ? 30 : granularity === "weekly" ? 7 : 1;
+  const prefix = interval === 30 ? "M" : interval === 7 ? "W" : "D";
+  const key = `tab-retention:${org ?? "all"}:${granularity}:${window.start}-${window.end}`;
+  return cached(key, async () => {
+    if (!isAmplitudeConfigured()) return null;
+    const resp = await amplitudeGet<RetentionResponse>(
+      "retention",
+      {
+        se: JSON.stringify({ event_type: "_active" }),
+        re: JSON.stringify({ event_type: "_active" }),
+        start: window.start,
+        end: window.end,
+        rm: "nday",
+        i: String(interval),
+      },
+      orgSegmentFilter(org),
+    );
+    if (!resp.ok) return null;
+
+    const combined = resp.data.data?.series?.[0]?.combined ?? [];
+    let lastWithData = -1;
+    combined.forEach((c, n) => {
+      if ((c?.outof ?? 0) > 0) lastWithData = n;
+    });
+
+    const series: RetentionPoint[] = [];
+    let peak = 0;
+    for (let n = 0; n <= lastWithData; n++) {
+      const cell = combined[n];
+      const outof = cell?.outof ?? 0;
+      const rate = outof > 0 ? Math.round((100 * (cell?.count ?? 0)) / outof) : 0;
+      peak = Math.max(peak, rate);
+      series.push({ label: `${prefix}${n}`, rate });
+    }
+    return { peakPct: peak, series };
   });
 }
