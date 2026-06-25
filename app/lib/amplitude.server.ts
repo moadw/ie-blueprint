@@ -1052,6 +1052,29 @@ export function getEngagedUsersTotal(
   );
 }
 
+/**
+ * Distinct users who **completed at least one practice** over the period
+ * (uniques of `practice_completed`) for the org. This is the numerator of the
+ * district-home "Active User Rate" — the client defines an Active User as one
+ * who logs in AND completes ≥1 practice. The `practice_completed` event is
+ * emitted client-side when a class's final media step ends (see
+ * `recordCompletion` in the lesson route). `null` on soft error / unconfigured.
+ */
+export function getCompletedUsersTotal(
+  org: string | null | undefined,
+  window: AnalyticsWindow,
+): Promise<number | null> {
+  const key = `home-completed-total:${org ?? "all"}:${window.start}-${window.end}`;
+  return cached(key, () =>
+    fetchSegmentationCollapsed({
+      eventType: "practice_completed",
+      window,
+      metric: "uniques",
+      segment: orgSegmentFilter(org),
+    }),
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Retention (N-day) — drives the Analytics tab's "Retention" card
 //

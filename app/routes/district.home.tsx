@@ -4,14 +4,19 @@ import { useLoaderData, useRouteLoaderData } from "react-router";
 import type { loader as districtLoader } from "./district";
 import { resolveDistrictAdmin } from "~/lib/district-admin.server";
 import {
+  dailyWindow,
   getAvgSessionDuration,
+  getCompletedUsersTotal,
   getDailyActiveSessionsIndex,
+  getEngagedUsersTotal,
   getSchoolParticipationIndex,
   getTotalMinutesListened,
   type MetricParams,
   type MetricResult,
 } from "~/lib/amplitude.server";
+import { gqlClient } from "~/lib/graphql";
 import { safe } from "~/lib/safe-loader";
+import { UsersByOrganizationTotalDocument } from "~/queries/users";
 import { DistrictHero } from "~/routes/district/_components/district-hero";
 import {
   DistrictStatCard,
@@ -39,6 +44,22 @@ interface HomeMetrics {
   totalMinutesListened: MetricResult | null;
 }
 
+// Engagement panel (right gauge). Rates are always a number (0 when there's no
+// activity yet) so the panel stays populated rather than showing blanks:
+//  - `activeUserRate`        = users who completed ≥1 practice ÷ all org users.
+//  - `sessionCompletionRate` = users who completed ≥1 practice ÷ users who
+//    started one (played any content). Proxy until a true started/session
+//    signal exists.
+// `totalUsers` is the gauge's center count (`null` only if that fetch fails).
+interface HomeEngagement {
+  activeUserRate: number;
+  sessionCompletionRate: number;
+  totalUsers: number | null;
+}
+
+// Trailing window for "active users" (30-day, MAU-style). Tunable.
+const ENGAGEMENT_WINDOW_DAYS = 30;
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const resolved = await resolveDistrictAdmin(request);
   const district = resolved.district; // null on loadError (discriminated union)
@@ -49,13 +70,37 @@ export async function loader({ request }: LoaderFunctionArgs) {
     districtId: district?._id ?? null,
   };
 
+  const engagementWindow = dailyWindow(ENGAGEMENT_WINDOW_DAYS);
+
   // Each metric function is independently safe()-wrapped already, but wrap the
   // calls here too so a thrown rejection can never bubble out of the loader.
-  const [avg, dailyActive, participation, minutes] = await Promise.all([
+  const [
+    avg,
+    dailyActive,
+    participation,
+    minutes,
+    completedUsers,
+    startedUsers,
+    totalUsersResult,
+  ] = await Promise.all([
     safe(getAvgSessionDuration(params)),
     safe(getDailyActiveSessionsIndex(params)),
     safe(getSchoolParticipationIndex(params)),
     safe(getTotalMinutesListened(params)),
+    // Numerator of both rates: users who completed ≥1 practice (null on soft error).
+    getCompletedUsersTotal(params.org, engagementWindow),
+    // Completion-rate denominator: users who started a practice (played content).
+    getEngagedUsersTotal(params.org, engagementWindow),
+    // Active-rate denominator: live org user count (UserTotals.students is unreliable).
+    params.org
+      ? safe(
+          gqlClient.request(
+            UsersByOrganizationTotalDocument,
+            { organization: params.org },
+            { "access-token": resolved.token },
+          ),
+        )
+      : Promise.resolve(null),
   ]);
 
   const metrics: HomeMetrics = {
@@ -65,8 +110,32 @@ export async function loader({ request }: LoaderFunctionArgs) {
     totalMinutesListened: minutes.ok ? minutes.data : null,
   };
 
+  const totalUsers =
+    totalUsersResult && totalUsersResult.ok
+      ? totalUsersResult.data.UsersByOrganizationFindMany?.total ?? null
+      : null;
+
+  // Rates are always shown as a number — 0 when there's no activity (a missing
+  // numerator counts as zero completions, not a hidden metric). Clamp to [0,100]
+  // and guard divide-by-zero (no users / no starts → 0%).
+  const completed = completedUsers ?? 0;
+  const started = startedUsers ?? 0;
+  const activeUserRate =
+    totalUsers && totalUsers > 0
+      ? Math.min(100, Math.round((completed / totalUsers) * 100))
+      : 0;
+  const sessionCompletionRate =
+    started > 0 ? Math.min(100, Math.round((completed / started) * 100)) : 0;
+
+  const engagement: HomeEngagement = {
+    activeUserRate,
+    sessionCompletionRate,
+    totalUsers,
+  };
+
   return {
     metrics,
+    engagement,
     error: resolved.loadError ?? avg.error,
   };
 }
@@ -220,7 +289,7 @@ export default function DistrictHomeRoute() {
     "routes/district",
   );
   const district = districtData?.district ?? null;
-  const { metrics } = useLoaderData<typeof loader>();
+  const { metrics, engagement } = useLoaderData<typeof loader>();
 
   const cards: ResolvedCard[] = [
     dailyActiveSessionsCard(metrics.dailyActiveSessionsIndex),
@@ -239,7 +308,11 @@ export default function DistrictHomeRoute() {
 
         {/* Engagement insights panel */}
         <div className="min-h-[320px] lg:min-h-0">
-          <EngagementInsightsPanel />
+          <EngagementInsightsPanel
+            activeUserRate={engagement.activeUserRate}
+            sessionCompletionRate={engagement.sessionCompletionRate}
+            totalUsers={engagement.totalUsers}
+          />
         </div>
 
         {/* Stat-card grid */}

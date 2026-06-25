@@ -3,6 +3,7 @@ import { GradientGaugeDial } from "~/routes/district/_components/gradient-gauge-
 interface MiniMetricProps {
   label: string;
   description: string;
+  /** 0–100 percentage. Always rendered (0 when there's no activity yet). */
   value: number;
 }
 
@@ -20,7 +21,29 @@ function MiniMetric({ label, description, value }: MiniMetricProps) {
   );
 }
 
-export function EngagementInsightsPanel() {
+interface EngagementInsightsPanelProps {
+  /** % of org users who logged in AND completed ≥1 practice (drives the dial). */
+  activeUserRate: number;
+  /** % of users who started a practice that completed one (proxy until a true
+   * started/session signal exists). */
+  sessionCompletionRate: number;
+  /** Live total org user count (the gauge's center number). `null` if unavailable. */
+  totalUsers: number | null;
+}
+
+/**
+ * District-home engagement panel (right gauge), driven by real Amplitude data
+ * (`practice_completed` uniques over org users / users who started). Both rates
+ * always render a number — 0 when there's no activity yet — so the panel stays
+ * populated. The center number is the live org user count (em-dash only if that
+ * fetch fails). Session Completion Rate is a proxy until a started/session
+ * signal is instrumented (see follow-up).
+ */
+export function EngagementInsightsPanel({
+  activeUserRate,
+  sessionCompletionRate,
+  totalUsers,
+}: EngagementInsightsPanelProps) {
   return (
     <div className="bg-[#1a1a1a] rounded-[24px] flex flex-col h-full overflow-hidden">
       {/* Header */}
@@ -34,19 +57,23 @@ export function EngagementInsightsPanel() {
       <div className="flex gap-3 px-5 pb-3">
         <MiniMetric
           label="Active User Rate"
-          description="Stable participation across all schools."
-          value={12}
+          description="Users who log in and complete at least one practice."
+          value={activeUserRate}
         />
         <MiniMetric
           label="Session Completion Rate"
-          description="Most sessions are partially completed."
-          value={30}
+          description="Share of started practices that are completed."
+          value={sessionCompletionRate}
         />
       </div>
 
       {/* Gauge — full width, anchored to the bottom of the remaining space */}
       <div className="flex-1 flex items-end justify-center px-3 pb-2">
-        <GradientGaugeDial value={21} studentCount="22,000+" />
+        <GradientGaugeDial
+          value={activeUserRate}
+          centerValue={totalUsers == null ? "—" : totalUsers.toLocaleString()}
+          centerLabel="Users"
+        />
       </div>
     </div>
   );
