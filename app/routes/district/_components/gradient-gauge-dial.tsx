@@ -1,6 +1,7 @@
 export interface GradientGaugeDialProps {
-  value?: number; // 0–100
-  studentCount?: string;
+  value?: number; // 0–100 — how far the dial lights up
+  centerValue?: string; // big number in the center (e.g. total users)
+  centerLabel?: string; // caption under the center number
 }
 
 interface ColorStop {
@@ -29,8 +30,9 @@ function interpolateColor(t: number): string {
 }
 
 export function GradientGaugeDial({
-  value = 21,
-  studentCount = "22,000+",
+  value = 0,
+  centerValue = "—",
+  centerLabel = "Users",
 }: GradientGaugeDialProps) {
   const numBars = 40;
   const cx = 200;
@@ -93,7 +95,7 @@ export function GradientGaugeDial({
           fontWeight="400"
           fontFamily="'Instrument Serif', Georgia, serif"
         >
-          {studentCount}
+          {centerValue}
         </text>
         <text
           x={cx}
@@ -103,7 +105,7 @@ export function GradientGaugeDial({
           fontSize="14"
           fontFamily="'Instrument Serif', Georgia, serif"
         >
-          Students
+          {centerLabel}
         </text>
       </svg>
     </div>

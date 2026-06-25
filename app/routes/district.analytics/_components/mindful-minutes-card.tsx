@@ -39,17 +39,23 @@ export function MindfulMinutesCard({ mindfulMinutes }: MindfulMinutesCardProps) 
 
       {/* Breakdowns */}
       <div className="flex flex-col gap-5 mt-auto">
-        {breakdowns.map((item) => (
-          <div key={item.label} className="flex flex-col gap-1.5">
-            <div className="flex justify-between items-baseline">
-              <span className="text-sm text-muted-foreground">{item.label}</span>
-              <span className="text-sm font-semibold text-foreground tabular-nums">
-                {item.value.toLocaleString()} min
-              </span>
+        {breakdowns.length === 0 ? (
+          <p className="text-sm text-muted-foreground/70">
+            No role breakdown for this period yet.
+          </p>
+        ) : (
+          breakdowns.map((item) => (
+            <div key={item.label} className="flex flex-col gap-1.5">
+              <div className="flex justify-between items-baseline">
+                <span className="text-sm text-muted-foreground">{item.label}</span>
+                <span className="text-sm font-semibold text-foreground tabular-nums">
+                  {item.value.toLocaleString()} min
+                </span>
+              </div>
+              <SegmentedBar value={item.value} max={max} color={item.color} />
             </div>
-            <SegmentedBar value={item.value} max={max} color={item.color} />
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
