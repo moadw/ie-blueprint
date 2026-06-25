@@ -12,6 +12,7 @@ import { PinFindManyDocument } from "~/queries/pins";
 import { CurriculumsFindOneDocument } from "~/queries/curriculums";
 import { GroupProgressFindOneDocument } from "~/queries/groups";
 import { GroupFinishedClassDocument } from "~/mutations/groups";
+import { JournalsCreateOneDocument } from "~/mutations/journals";
 import { SortFindManytapInput } from "~/gql/graphql";
 import { JournalScreen } from "~/components/lesson/journal-screen";
 import { MilestoneScreen } from "~/components/lesson/milestone-screen";
@@ -195,6 +196,8 @@ export default function LessonPlayerRoute() {
   const revalidator = useRevalidator();
 
   const [stepIndex, setStepIndex] = useState(0);
+  // Disables the journal buttons + shows a spinner while the entry is saving.
+  const [savingJournal, setSavingJournal] = useState(false);
 
   // Fire `GroupFinishedClass` at most once per practice completion — a ref (not
   // state) so re-renders / replays of the final media step don't re-fire it.
@@ -217,13 +220,12 @@ export default function LessonPlayerRoute() {
   const steps = buildPracticeSteps(taps, pin, resolver);
   const current = steps[stepIndex];
 
-  // Index of the LAST media (player) step. Journal/achievement steps are not
-  // media — completion fires only when the final *media* step ends, even if a
-  // journal or milestone step follows it. `-1` when there are no media steps.
-  const lastMediaStepIndex = steps.reduce(
-    (last, step, i) => (step.kind === "player" ? i : last),
-    -1,
-  );
+  // Index of the FIRST media (player) step. Completion fires when this first
+  // media tap ends — the practice counts as done after the main video/audio,
+  // even if more taps (journal/achievement) follow. `-1` when there are no
+  // media steps, in which case the media-less fallback in `advance` records
+  // completion as the runner exits instead.
+  const firstMediaStepIndex = steps.findIndex((step) => step.kind === "player");
 
   // No taps (and therefore nothing to play before any achievement) → empty state.
   if (taps.length === 0 || steps.length === 0) {
@@ -243,6 +245,10 @@ export default function LessonPlayerRoute() {
     setStepIndex((i) => {
       const next = i + 1;
       if (next >= steps.length) {
+        // Media-less practices (journal/achievement only) never reach
+        // `handleMediaEnded`, so record completion once as the runner exits.
+        // `recordCompletion`'s `finishedRef` keeps this idempotent.
+        if (firstMediaStepIndex === -1) void recordCompletion();
         exitToCurriculum();
         return i;
       }
@@ -280,13 +286,50 @@ export default function LessonPlayerRoute() {
     }
   };
 
-  // Wrap the media player's end event: when the step that ends is the final
+  // Wrap the media player's end event: when the step that ends is the FIRST
   // media step, record completion (fire-and-forget) in addition to advancing.
   const handleMediaEnded = () => {
-    if (stepIndex === lastMediaStepIndex) {
+    if (stepIndex === firstMediaStepIndex) {
       void recordCompletion();
     }
     advance();
+  };
+
+  // Persist the journal entry via `JournalsCreateOne`, then advance. Mirrors
+  // `recordCompletion`: client-side `gqlClient` injects `access-token` (no
+  // header). On failure we toast and stay so the user can retry; "Skip" never
+  // calls this. `question` is a free String — pass the prompt text, falling
+  // back to a title so the required arg is never empty.
+  const handleJournalSubmit = async (content: string) => {
+    const tap = current?.kind === "journal" ? current.tap : null;
+    const tapId = tap?._id;
+    if (!tap || !tapId) {
+      advance();
+      return;
+    }
+    setSavingJournal(true);
+    try {
+      await gqlClient.request(JournalsCreateOneDocument, {
+        body: content,
+        question:
+          journalPromptForTap(tap) ||
+          tap.title ||
+          classItem?.title ||
+          "Reflection",
+        tap: tapId,
+        class: lessonId,
+        group: groupId,
+      });
+      advance();
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Couldn't save your journal entry. Please try again.";
+      toast.error(message);
+    } finally {
+      setSavingJournal(false);
+    }
   };
 
   // Class-level chrome stays constant across a class's taps; only the media
@@ -321,7 +364,8 @@ export default function LessonPlayerRoute() {
       {current?.kind === "journal" ? (
         <JournalScreen
           prompt={journalPromptForTap(current.tap)}
-          onSubmit={advance}
+          submitting={savingJournal}
+          onSubmit={handleJournalSubmit}
           onSkip={advance}
         />
       ) : null}
