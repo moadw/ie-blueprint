@@ -12,6 +12,7 @@ import {
   isJournalTap,
   journalPromptForTap,
 } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/practice-steps";
+import { resolveJournalQuestionLabels } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/resolve-journal-questions";
 
 /**
  * Standalone journal sub-route loader.
@@ -57,9 +58,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ),
     ),
     safe(
-      // Tap types are a small global enum; keep this unfiltered (matching the
-      // main route) so the slug/id resolver map is always populated.
-      gqlClient.request(TapTypeFindManyDocument, { limit: 100 }, headers),
+      // Scope tap-types to this platform (matching the main route): the catalog
+      // is shared across products; IE owns a small subset. Classification still
+      // degrades gracefully via the raw-slug fallback if a type is excluded.
+      gqlClient.request(
+        TapTypeFindManyDocument,
+        { filter: { platform: env.PLATFORM }, limit: 100 },
+        headers,
+      ),
     ),
   ]);
 
@@ -76,7 +82,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const resolver = buildTapTypeResolver(tapTypes);
   const journalTap = taps.find((t) => isJournalTap(t, resolver));
-  const prompt = journalTap ? journalPromptForTap(journalTap) : "";
+  // Resolve the journal prompt's `questions` id → label text (the prompt is
+  // stored as an id in `extraQuestions[0].question`, not as text).
+  const questionLabels = journalTap
+    ? await resolveJournalQuestionLabels([journalTap], resolver, headers)
+    : {};
+  const prompt = journalTap
+    ? journalPromptForTap(journalTap, questionLabels)
+    : "";
 
   return {
     groupId,

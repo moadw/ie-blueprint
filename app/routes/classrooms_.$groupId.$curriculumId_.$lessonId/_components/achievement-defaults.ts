@@ -1,14 +1,15 @@
 // Static defaults for the achievement (milestone) step.
 //
-// A class's `pin` supplies the achievement title (`pin.label`) and optional
-// celebration media (`pin.video` / `pin.cover`), but the schema has no fields
-// for the badge's body copy, icon, or gradient colors. These named constants
-// fill that gap — they are the former milestone-fixture literals promoted to
-// the canonical defaults so the achievement step renders complete chrome
-// without a fixture import.
+// A class's `pin` supplies the achievement title (`pin.label`), its badge
+// artwork (`pin.cover`), and an optional celebration video (`pin.video`), but
+// the schema has no fields for the badge's body copy, fallback icon, or
+// gradient colors. These named constants fill that gap — they are the former
+// milestone-fixture literals promoted to the canonical defaults so the
+// achievement step renders complete chrome without a fixture import.
 //
 // `iconKey` indexes the small icon map in `milestone-badge.tsx` (falls back to
-// Trophy on miss); `color` / `glowColor` drive the gradient badge tile + glow.
+// Trophy on miss) and is only shown when a pin has no `cover` artwork; `color`
+// / `glowColor` drive the fallback gradient badge tile + glow.
 
 export interface AchievementDefaults {
   /** Body copy under the badge. */

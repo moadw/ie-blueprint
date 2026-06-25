@@ -148,15 +148,35 @@ export function mediaUrlForTap(tap: PracticeTap): string {
 }
 
 /**
- * Prompt text for a journal tap: `tap.intro` first, then the first
- * `extraQuestions[].question`. Returns `""` when neither is present.
+ * The `questions` entity id a journal tap references for its prompt. It lives in
+ * `extraQuestions[0].question` (mirrors the admin `tap-blocks.tsx`) and holds an
+ * id — NOT the prompt text. Resolve it to a label via `QuestionsFindMany` (see
+ * `resolveJournalQuestionLabels`). Returns `null` when the tap has no question.
  */
-export function journalPromptForTap(tap: PracticeTap): string {
+export function journalQuestionId(tap: PracticeTap): string | null {
+  return (
+    tap.extraQuestions?.find(
+      (q): q is NonNullable<typeof q> => Boolean(q?.question),
+    )?.question ?? null
+  );
+}
+
+/**
+ * Display prompt for a journal tap. Prefers the resolved `questions.label` (the
+ * real prompt) keyed by the tap's `journalQuestionId`, then any `tap.intro`
+ * lead-in. NEVER returns the raw question id: `extraQuestions[].question` holds
+ * an id, so surfacing it directly rendered a UUID where the prompt should be.
+ * Pass the `questionLabels` map (id → label) resolved in the loader; without it
+ * the function falls back to `tap.intro` then `""`.
+ */
+export function journalPromptForTap(
+  tap: PracticeTap,
+  questionLabels?: Readonly<Record<string, string>>,
+): string {
+  const qid = journalQuestionId(tap);
+  if (qid && questionLabels?.[qid]) return questionLabels[qid];
   if (tap.intro) return tap.intro;
-  const firstQuestion = tap.extraQuestions?.find(
-    (q): q is NonNullable<typeof q> => Boolean(q?.question),
-  )?.question;
-  return firstQuestion ?? "";
+  return "";
 }
 
 /** `MilestoneScreen` props derived from a pin + class title. */
@@ -164,26 +184,40 @@ export interface MilestoneProps extends AchievementDefaults {
   title: string;
   subtitle: string;
   videoUrl?: string;
+  imageUrl?: string;
 }
 
 /**
  * Map an `achievement` step's pin → `MilestoneScreen` props. The pin supplies
- * the title (`pin.label`) and optional celebration media (`pin.video`, then
- * `pin.cover`); the badge body/icon/colors come from `ACHIEVEMENT_DEFAULTS`.
- * `subtitle` is the class title, falling back to "Practice Complete".
+ * the title (`pin.label`), its badge **image** (`pin.cover`), and an OPTIONAL
+ * celebration **video** (`pin.video`); the icon/colors fall back to
+ * `ACHIEVEMENT_DEFAULTS` only when the pin has no cover image. `subtitle` is the
+ * class title, falling back to "Practice Complete".
  *
- * `videoUrl` is omitted entirely (not set to `undefined`) when the pin has no
- * media, per `exactOptionalPropertyTypes`.
+ * IMPORTANT — the two media fields are distinct and must not be crossed:
+ *   - `pin.cover` → `imageUrl`: the uploaded badge artwork, rendered as an
+ *     `<img>` on the milestone tile (the generic trophy icon is only the
+ *     no-image fallback).
+ *   - `pin.video` → `videoUrl`: the optional celebration video that plays as
+ *     the immersive background. ONLY this feeds the `<video>` element.
+ * Feeding the cover image into `<video>` (an earlier fallback) hung the
+ * transition — an image never fires `loadeddata`/`ended` — blanking the screen.
+ *
+ * `videoUrl` / `imageUrl` are omitted entirely (not set to `undefined`) when
+ * absent, per `exactOptionalPropertyTypes`. A missing `videoUrl` takes the
+ * `ImmersiveVideoTransition` no-video path (straight to content).
  */
 export function milestonePropsForPin(
   pin: PracticePin,
   classTitle: string | null | undefined,
 ): MilestoneProps {
-  const videoUrl = pin.video?.url ?? pin.cover?.url ?? undefined;
+  const videoUrl = pin.video?.url ?? undefined;
+  const imageUrl = pin.cover?.url ?? undefined;
   const base: MilestoneProps = {
     ...ACHIEVEMENT_DEFAULTS,
     title: pin.label ?? "",
     subtitle: classTitle ?? "Practice Complete",
+    ...(imageUrl ? { imageUrl } : {}),
   };
   return videoUrl ? { ...base, videoUrl } : base;
 }
