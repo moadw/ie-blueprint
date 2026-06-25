@@ -4,14 +4,18 @@ import { useLoaderData, useRouteLoaderData } from "react-router";
 import type { loader as districtLoader } from "./district";
 import { resolveDistrictAdmin } from "~/lib/district-admin.server";
 import {
+  dailyWindow,
   getAvgSessionDuration,
+  getCompletedUsersTotal,
   getDailyActiveSessionsIndex,
   getSchoolParticipationIndex,
   getTotalMinutesListened,
   type MetricParams,
   type MetricResult,
 } from "~/lib/amplitude.server";
+import { gqlClient } from "~/lib/graphql";
 import { safe } from "~/lib/safe-loader";
+import { UsersByOrganizationTotalDocument } from "~/queries/users";
 import { DistrictHero } from "~/routes/district/_components/district-hero";
 import {
   DistrictStatCard,
@@ -39,6 +43,18 @@ interface HomeMetrics {
   totalMinutesListened: MetricResult | null;
 }
 
+// Engagement panel (right gauge). `activeUserRate` = % of org users who logged
+// in AND completed ≥1 practice over the window (client's "Active User"
+// definition); `totalUsers` = live org user count (the gauge's center number).
+// Both `null` when the source is unavailable so the panel shows a soft state.
+interface HomeEngagement {
+  activeUserRate: number | null;
+  totalUsers: number | null;
+}
+
+// Trailing window for "active users" (30-day, MAU-style). Tunable.
+const ENGAGEMENT_WINDOW_DAYS = 30;
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const resolved = await resolveDistrictAdmin(request);
   const district = resolved.district; // null on loadError (discriminated union)
@@ -49,14 +65,29 @@ export async function loader({ request }: LoaderFunctionArgs) {
     districtId: district?._id ?? null,
   };
 
+  const engagementWindow = dailyWindow(ENGAGEMENT_WINDOW_DAYS);
+
   // Each metric function is independently safe()-wrapped already, but wrap the
   // calls here too so a thrown rejection can never bubble out of the loader.
-  const [avg, dailyActive, participation, minutes] = await Promise.all([
-    safe(getAvgSessionDuration(params)),
-    safe(getDailyActiveSessionsIndex(params)),
-    safe(getSchoolParticipationIndex(params)),
-    safe(getTotalMinutesListened(params)),
-  ]);
+  const [avg, dailyActive, participation, minutes, completedUsers, totalUsersResult] =
+    await Promise.all([
+      safe(getAvgSessionDuration(params)),
+      safe(getDailyActiveSessionsIndex(params)),
+      safe(getSchoolParticipationIndex(params)),
+      safe(getTotalMinutesListened(params)),
+      // Numerator of Active User Rate (never throws; null on soft error).
+      getCompletedUsersTotal(params.org, engagementWindow),
+      // Denominator: live org user count (UserTotals.students is unreliable).
+      params.org
+        ? safe(
+            gqlClient.request(
+              UsersByOrganizationTotalDocument,
+              { organization: params.org },
+              { "access-token": resolved.token },
+            ),
+          )
+        : Promise.resolve(null),
+    ]);
 
   const metrics: HomeMetrics = {
     avgSessionDuration: avg.ok ? avg.data : null,
@@ -65,8 +96,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
     totalMinutesListened: minutes.ok ? minutes.data : null,
   };
 
+  const totalUsers =
+    totalUsersResult && totalUsersResult.ok
+      ? totalUsersResult.data.UsersByOrganizationFindMany?.total ?? null
+      : null;
+  // Rate only when both halves are real; clamp to [0,100]. Zero completions with
+  // a real user count is a legitimate 0% (honest), not a missing source.
+  const activeUserRate =
+    completedUsers !== null && totalUsers && totalUsers > 0
+      ? Math.min(100, Math.round((completedUsers / totalUsers) * 100))
+      : null;
+
+  const engagement: HomeEngagement = { activeUserRate, totalUsers };
+
   return {
     metrics,
+    engagement,
     error: resolved.loadError ?? avg.error,
   };
 }
@@ -220,7 +265,7 @@ export default function DistrictHomeRoute() {
     "routes/district",
   );
   const district = districtData?.district ?? null;
-  const { metrics } = useLoaderData<typeof loader>();
+  const { metrics, engagement } = useLoaderData<typeof loader>();
 
   const cards: ResolvedCard[] = [
     dailyActiveSessionsCard(metrics.dailyActiveSessionsIndex),
@@ -239,7 +284,10 @@ export default function DistrictHomeRoute() {
 
         {/* Engagement insights panel */}
         <div className="min-h-[320px] lg:min-h-0">
-          <EngagementInsightsPanel />
+          <EngagementInsightsPanel
+            activeUserRate={engagement.activeUserRate}
+            totalUsers={engagement.totalUsers}
+          />
         </div>
 
         {/* Stat-card grid */}

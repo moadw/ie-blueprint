@@ -95,3 +95,31 @@ export function trackContentPlayed(props: {
 
   amplitude.track("content_played", eventProps);
 }
+
+/**
+ * Emit a `practice_completed` event when a learner finishes a practice — i.e.
+ * the final media step of the class ends (fired from `recordCompletion` in the
+ * lesson route, the same point that records completion in the backend). A
+ * "practice" is a class, so `contentId` is the class `_id`.
+ *
+ * This is the signal behind the district "Active User" metric, defined as a user
+ * who logs in AND completes at least one practice. No-ops on the server, when no
+ * API key is configured, and until `initAnalytics` has run — which (per Decision
+ * #3) never happens for admins, so admins never emit it. `organization`,
+ * `userType`, and `schools` are stamped by the enrichment plugin, so they are
+ * intentionally NOT duplicated in `props`.
+ */
+export function trackPracticeCompleted(props: {
+  contentId?: string;
+  tapType?: string;
+}): void {
+  if (typeof window === "undefined") return; // SSR guard
+  if (!env.AMPLITUDE_API_KEY) return; // analytics disabled (no key)
+  if (!initialized) return; // not initialized (covers admins — never init'd)
+
+  const eventProps: { contentId?: string; tapType?: string } = {};
+  if (props.contentId) eventProps.contentId = props.contentId;
+  if (props.tapType) eventProps.tapType = props.tapType;
+
+  amplitude.track("practice_completed", eventProps);
+}

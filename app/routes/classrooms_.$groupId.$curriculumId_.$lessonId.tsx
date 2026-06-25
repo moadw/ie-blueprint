@@ -3,6 +3,7 @@ import { useLoaderData, useNavigate, useRevalidator } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { toast } from "sonner";
 import { env } from "~/lib/env";
+import { trackPracticeCompleted } from "~/lib/analytics";
 import { gqlClient } from "~/lib/graphql";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
@@ -284,6 +285,10 @@ export default function LessonPlayerRoute() {
   const recordCompletion = async () => {
     if (finishedRef.current || !groupProgressId) return;
     finishedRef.current = true;
+    // Analytics: "completed a practice" signal (a practice is a class, so the
+    // class `_id` = `lessonId` is the contentId). Powers the district "Active
+    // User" metric (logs in AND completes ≥1 practice). Client-only, best-effort.
+    trackPracticeCompleted({ contentId: lessonId });
     try {
       // `gqlClient` middleware injects `access-token` client-side — no header.
       const result = await gqlClient.request(GroupFinishedClassDocument, {
