@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { setToken } from "~/lib/auth";
@@ -145,7 +145,22 @@ export default function ClassroomCurriculumRoute() {
     if (token) setToken(token);
   }, [token]);
 
-  const backgroundImage = curriculum?.bgImage?.url ?? curriculum?.cover?.url;
+  // Track the carousel's centered card so the hero background follows it. The
+  // slider reports its index via `onIndexChange`; we seed the same initial
+  // index it uses (the current practice / `nextClass`) so the first paint's
+  // background already matches the centered card — no Day-1 flash before the
+  // slider's mount callback lands. Background = that card's cover, falling back
+  // to the curriculum's static image when a cover is missing or index is stale.
+  const [currentLessonIndex, setCurrentLessonIndex] = useState(() => {
+    const nc = groupProgress?.nextClass;
+    if (!nc) return 0;
+    const idx = classes.findIndex((c) => c._id === nc);
+    return idx >= 0 ? idx : 0;
+  });
+  const curriculumFallbackImage =
+    curriculum?.bgImage?.url ?? curriculum?.cover?.url;
+  const backgroundImage =
+    classes[currentLessonIndex]?.cover?.url ?? curriculumFallbackImage;
   // A failed classes fetch is NOT surfaced as a top error card — it falls
   // through to the "No practices…" empty state below (per product: the empty
   // copy is enough, no red banner above the header). Only the page-level
@@ -190,6 +205,7 @@ export default function ClassroomCurriculumRoute() {
               groupId={groupId}
               curriculumId={curriculumId}
               groupProgress={groupProgress}
+              onIndexChange={setCurrentLessonIndex}
             />
           ) : (
             <div className="flex flex-1 items-center justify-center px-6 text-center">

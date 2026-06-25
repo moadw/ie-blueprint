@@ -54,7 +54,10 @@ export function ImmersiveVideoTransition({
       if (hasVideo && hydrated && videoRef.current) {
         setPhase("playing");
         videoRef.current.play().catch(() => {
-          // Autoplay can be blocked; the ending timer below still advances.
+          // Autoplay blocked or playback rejected: there's no `ended` event
+          // coming, so reveal the content instead of stranding the viewer on
+          // the ambient background forever.
+          setPhase("content");
         });
       } else {
         setPhase("content");
@@ -109,6 +112,12 @@ export function ImmersiveVideoTransition({
           preload="auto"
           onLoadedData={() => setVideoLoaded(true)}
           onEnded={handleVideoEnded}
+          onError={() => {
+            // Unsupported / broken source (e.g. an image URL mistakenly passed
+            // as a video) never fires `ended`. Skip to content so the milestone
+            // still appears rather than leaving a blank ambient screen.
+            setPhase("content");
+          }}
           className="absolute inset-0 z-[2] h-full w-full object-cover"
           style={{
             transitionProperty: "opacity, filter, transform",

@@ -91,12 +91,18 @@ export function LessonGlassCard({
         <div
           className="absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-full px-3 py-1.5"
           style={{
-            background: "rgba(255,255,255,0.25)",
+            // Explicit grey tint (not the prototype's literal `rgba(255,255,255,
+            // 0.25)`). The prototype's white-translucent pill only READS grey
+            // because `backdrop-filter` frosts the dark card-top behind it; over
+            // a lighter cover image it renders near-white. A neutral grey base
+            // matches the prototype's RENDERED look on any image (fidelity rule:
+            // match the RGB it renders). Blur stays for the glass frost.
+            background: "rgba(82,88,98,0.55)",
             backdropFilter: "blur(12px)",
             WebkitBackdropFilter: "blur(12px)",
-            border: "1px solid rgba(255,255,255,0.3)",
+            border: "1px solid rgba(255,255,255,0.25)",
             boxShadow:
-              "inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 12px rgba(0,0,0,0.1)",
+              "inset 0 1px 0 rgba(255,255,255,0.25), 0 4px 12px rgba(0,0,0,0.18)",
           }}
         >
           <span className="text-xs font-medium uppercase tracking-wide text-white/90">

@@ -25,6 +25,7 @@ import {
   milestonePropsForPin,
   resolveTapType,
 } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/practice-steps";
+import { resolveJournalQuestionLabels } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/resolve-journal-questions";
 
 /**
  * Detail / practice-player loader.
@@ -61,6 +62,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       pin: null,
       tapTypes: [],
       curriculumTitle: null,
+      questionLabels: {} as Record<string, string>,
       classError:
         "Platform is not configured. Please contact your administrator.",
       tapsError: null,
@@ -103,10 +105,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ),
       ),
       safe(
-        // Tap types are a small global enum; admin (tap-blocks.tsx) fetches them
-        // unfiltered. Keep it unfiltered here so the id/slug resolver map is always
-        // populated even if tap-types turn out not to be platform-scoped.
-        gqlClient.request(TapTypeFindManyDocument, { limit: 100 }, headers),
+        // Scope tap-types to this platform: the catalog is shared across products
+        // (it returns duplicate identifiers like two `video`s otherwise), and IE
+        // only owns a small subset. Classification degrades gracefully even if a
+        // type is excluded — `resolveTapType` falls back to the raw `tap.type`
+        // slug when the resolver misses.
+        gqlClient.request(
+          TapTypeFindManyDocument,
+          { filter: { platform: env.PLATFORM }, limit: 100 },
+          headers,
+        ),
       ),
       safe(
         gqlClient.request(
@@ -163,6 +171,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ? (progressResult.data.GroupProgressFindOne?._id ?? null)
     : null;
 
+  // Journal taps store their prompt as a `questions` entity id in
+  // `extraQuestions[0].question` (NOT text); resolve those ids to label text so
+  // the journal screen shows the real prompt instead of a UUID.
+  const tapTypeResolver = buildTapTypeResolver(tapTypes);
+  const questionLabels = await resolveJournalQuestionLabels(
+    taps,
+    tapTypeResolver,
+    headers,
+  );
+
   return {
     groupId,
     curriculumId,
@@ -173,6 +191,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tapTypes,
     curriculumTitle,
     groupProgressId,
+    questionLabels,
     classError: classResult.error,
     tapsError: tapsResult.error,
   };
@@ -189,6 +208,7 @@ export default function LessonPlayerRoute() {
     tapTypes,
     curriculumTitle,
     groupProgressId,
+    questionLabels,
     classError,
     tapsError,
   } = useLoaderData<typeof loader>();
@@ -312,7 +332,7 @@ export default function LessonPlayerRoute() {
       await gqlClient.request(JournalsCreateOneDocument, {
         body: content,
         question:
-          journalPromptForTap(tap) ||
+          journalPromptForTap(tap, questionLabels) ||
           tap.title ||
           classItem?.title ||
           "Reflection",
@@ -363,7 +383,7 @@ export default function LessonPlayerRoute() {
 
       {current?.kind === "journal" ? (
         <JournalScreen
-          prompt={journalPromptForTap(current.tap)}
+          prompt={journalPromptForTap(current.tap, questionLabels)}
           submitting={savingJournal}
           onSubmit={handleJournalSubmit}
           onSkip={advance}

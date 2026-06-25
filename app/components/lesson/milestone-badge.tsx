@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Award,
   Crown,
@@ -32,6 +33,11 @@ interface MilestoneBadgeProps {
   color: string;
   /** Glow color behind / around the tile. */
   glowColor: string;
+  /**
+   * Pin's uploaded badge artwork. When present it IS the badge (rendered as an
+   * `<img>`); the gradient tile + `iconKey` icon is only the no-image fallback.
+   */
+  imageUrl?: string | undefined;
 }
 
 /**
@@ -46,8 +52,10 @@ export function MilestoneBadge({
   subtitle,
   color,
   glowColor,
+  imageUrl,
 }: MilestoneBadgeProps) {
   const Icon = MILESTONE_ICONS[iconKey] ?? Trophy;
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   return (
     <div className="flex flex-col items-center">
@@ -62,26 +70,68 @@ export function MilestoneBadge({
         }
       `}</style>
 
-      {/* Badge tile + glow */}
+      {/* Badge tile + glow — the pin's artwork when present, else icon tile. */}
       <div className="relative mb-8">
-        <div
-          className="pointer-events-none absolute -inset-8 rounded-3xl"
-          style={{
-            background: `linear-gradient(145deg, ${color}, ${color}dd)`,
-            filter: "blur(50px)",
-            opacity: 0.5,
-          }}
-        />
-        <div
-          className="relative flex h-44 w-44 items-center justify-center rounded-3xl"
-          style={{
-            background: `linear-gradient(145deg, ${color}, ${color}dd)`,
-            boxShadow: `0 0 40px ${glowColor}, inset 0 1px 0 rgba(255,255,255,0.2), 0 8px 32px rgba(0,0,0,0.3)`,
-            animation: "milestone-badge-pop 600ms cubic-bezier(0.16, 1, 0.3, 1) both",
-          }}
-        >
-          <Icon className="h-20 w-20 text-white drop-shadow-lg" strokeWidth={1.5} />
-        </div>
+        {imageUrl ? (
+          <>
+            {/* Image-derived blur halo — tints the glow with the artwork. */}
+            <div
+              className="pointer-events-none absolute -inset-8"
+              style={{
+                backgroundImage: `url(${imageUrl})`,
+                backgroundSize: "contain",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+                filter: "blur(50px)",
+                opacity: 0.6,
+                transform: "scale(1.1)",
+              }}
+            />
+            <div
+              className="relative"
+              style={{
+                animation:
+                  "milestone-badge-pop 600ms cubic-bezier(0.16, 1, 0.3, 1) both",
+              }}
+            >
+              <img
+                src={imageUrl}
+                alt={title}
+                onLoad={() => setImageLoaded(true)}
+                className="h-auto max-w-[220px]"
+                style={{
+                  opacity: imageLoaded ? 1 : 0,
+                  transition: "opacity 300ms ease",
+                }}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <div
+              className="pointer-events-none absolute -inset-8 rounded-3xl"
+              style={{
+                background: `linear-gradient(145deg, ${color}, ${color}dd)`,
+                filter: "blur(50px)",
+                opacity: 0.5,
+              }}
+            />
+            <div
+              className="relative flex h-44 w-44 items-center justify-center rounded-3xl"
+              style={{
+                background: `linear-gradient(145deg, ${color}, ${color}dd)`,
+                boxShadow: `0 0 40px ${glowColor}, inset 0 1px 0 rgba(255,255,255,0.2), 0 8px 32px rgba(0,0,0,0.3)`,
+                animation:
+                  "milestone-badge-pop 600ms cubic-bezier(0.16, 1, 0.3, 1) both",
+              }}
+            >
+              <Icon
+                className="h-20 w-20 text-white drop-shadow-lg"
+                strokeWidth={1.5}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Title */}
