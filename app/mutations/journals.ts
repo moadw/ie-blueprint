@@ -1,28 +1,26 @@
 import { graphql } from "~/gql";
 
-// Persist a student's journal entry. Backend stamps user/platform from the
-// session token, so no `platform`/`user` args. `question` is a free String
-// (we pass the prompt text); there is no media argument, so journal media
-// uploads are not persisted. Returns `JournalProgressCheck` — selecting only
-// `journal { _id }` (no `error`/ErrorInterface field on the payload).
-export const JournalsCreateOneDocument = graphql(/* GraphQL */ `
-  mutation JournalsCreateOne(
+// Persist a teacher's group-scoped journal entry via the teacher variation of
+// the journal create. Backend stamps user/platform from the session token, so
+// no `platform`/`user` args. `group` is required (group-scoped); `question` is
+// an optional free String (we pass the prompt text). There is no `tap` arg and
+// no media argument, so journal media uploads are not persisted. Returns the
+// `journals` record directly (NOT the progress-coupled `JournalProgressCheck`),
+// so the selection is a flat `{ _id }` — no `journal {}`/`badge` wrapper.
+export const TeacherGroupJournalCreateOneDocument = graphql(/* GraphQL */ `
+  mutation TeacherGroupJournalCreateOne(
     $body: String!
-    $question: String!
-    $tap: String!
+    $question: String
+    $group: String!
     $class: String
-    $group: String
   ) {
-    JournalsCreateOne(
+    TeacherGroupJournalCreateOne(
       body: $body
       question: $question
-      tap: $tap
-      class: $class
       group: $group
+      class: $class
     ) {
-      journal {
-        _id
-      }
+      _id
     }
   }
 `);

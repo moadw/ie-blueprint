@@ -13,7 +13,7 @@ import { PinFindManyDocument } from "~/queries/pins";
 import { CurriculumsFindOneDocument } from "~/queries/curriculums";
 import { GroupProgressFindOneDocument } from "~/queries/groups";
 import { GroupFinishedClassDocument } from "~/mutations/groups";
-import { JournalsCreateOneDocument } from "~/mutations/journals";
+import { TeacherGroupJournalCreateOneDocument } from "~/mutations/journals";
 import { SortFindManytapInput } from "~/gql/graphql";
 import { JournalScreen } from "~/components/lesson/journal-screen";
 import { MilestoneScreen } from "~/components/lesson/milestone-screen";
@@ -320,30 +320,30 @@ export default function LessonPlayerRoute() {
     advance();
   };
 
-  // Persist the journal entry via `JournalsCreateOne`, then advance. Mirrors
-  // `recordCompletion`: client-side `gqlClient` injects `access-token` (no
-  // header). On failure we toast and stay so the user can retry; "Skip" never
-  // calls this. `question` is a free String — pass the prompt text, falling
-  // back to a title so the required arg is never empty.
+  // Persist the journal entry via `TeacherGroupJournalCreateOne`, then advance.
+  // Mirrors `recordCompletion`: client-side `gqlClient` injects `access-token`
+  // (no header). On failure we toast and stay so the user can retry; "Skip"
+  // never calls this. The teacher mutation is group-scoped (`group` required)
+  // and has no `tap` arg. `question` is an optional free String — pass the
+  // prompt text, falling back to a title. `tap` is still read locally for the
+  // prompt + the kind guard.
   const handleJournalSubmit = async (content: string) => {
     const tap = current?.kind === "journal" ? current.tap : null;
-    const tapId = tap?._id;
-    if (!tap || !tapId) {
+    if (!tap) {
       advance();
       return;
     }
     setSavingJournal(true);
     try {
-      await gqlClient.request(JournalsCreateOneDocument, {
+      await gqlClient.request(TeacherGroupJournalCreateOneDocument, {
         body: content,
         question:
           journalPromptForTap(tap, questionLabels) ||
           tap.title ||
           classItem?.title ||
           "Reflection",
-        tap: tapId,
-        class: lessonId,
         group: groupId,
+        class: lessonId,
       });
       advance();
     } catch (err) {

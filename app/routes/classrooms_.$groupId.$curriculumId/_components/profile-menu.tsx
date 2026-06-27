@@ -19,8 +19,10 @@ export interface ProfileMenuUser {
 /**
  * Shape consumed by the header progress bar + lesson-card badges (one shared
  * `GroupProgressFindOne` fetch in the series loader). `nextClass` /
- * `finishedClasses` drive the per-card Current / Watched badges; `progress`
- * drives the dropdown bar fill.
+ * `finishedClasses` drive the per-card Current / Watched badges; the dropdown
+ * bar fill is derived from `finishedClasses.length / totalClasses` (the
+ * backend `progress` scalar is unreliable — 0/null for manually-created
+ * curriculums — so it's no longer bound to the bar).
  */
 export interface GroupProgress {
   progress?: number | null;
@@ -86,15 +88,15 @@ export function ProfileMenu({
   const photo = user?.profilePicture?.url;
   const email = user?.email;
 
-  // Defensive width math — the backend `progress` range is unverified, so
-  // treat values <= 1 as a fraction (×100) and clamp to [0, 100].
-  const rawProgress = groupProgress?.progress ?? 0;
-  const pct = Math.max(
-    0,
-    Math.min(100, rawProgress <= 1 ? rawProgress * 100 : rawProgress),
-  );
   const finished =
     groupProgress?.finishedClasses?.filter(Boolean).length ?? 0;
+  // Bar fill mirrors the {finished}/{totalClasses} count instead of the
+  // backend `progress` scalar. `progress` is backend-generated and stays
+  // 0/null for manually-created curriculums (the frontend only reads it), so
+  // binding to it left the bar empty while the count showed e.g. 4/180.
+  // Deriving from finishedClasses keeps the bar and the count consistent.
+  const pct =
+    totalClasses > 0 ? Math.min(100, (finished / totalClasses) * 100) : 0;
   const progressLabel = curriculumTitle
     ? `${curriculumTitle} Progress`
     : "Your Progress";
