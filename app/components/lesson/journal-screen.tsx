@@ -38,7 +38,7 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
  * `ImmersiveVideoTransition` background. A glass card holds the date header,
  * the optional lesson journal prompt, a contentEditable rich-text editor, and
  * a local-preview media dropzone. Submit hands the editor content to the
- * caller (which persists via `JournalsCreateOne` and advances); Skip advances
+ * caller (which persists via `TeacherGroupJournalCreateOne` and advances); Skip advances
  * without saving. The media dropzone is still local-preview only — the create
  * mutation has no media argument, so uploads are not persisted.
  */
