@@ -22,6 +22,7 @@ import { ConfirmDialog } from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
 import { toast } from "~/components/ui/toast";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { TapFindManyDocument } from "~/queries/taps";
 import { QuestionsFindManyDocument } from "~/queries/questions";
@@ -178,7 +179,7 @@ export function TapBlocks({ classId }: TapBlocksProps) {
       .catch((err: unknown) => {
         if (cancelled) return;
         setLoadError(
-          err instanceof Error ? err.message : "Failed to load content.",
+          toErrorMessage(err, "Failed to load content."),
         );
       })
       .finally(() => {
@@ -283,7 +284,7 @@ export function TapBlocks({ classId }: TapBlocksProps) {
       refetch();
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to delete content",
+        toErrorMessage(err, "Failed to delete content"),
       );
     } finally {
       setDeleting(false);
@@ -341,7 +342,7 @@ export function TapBlocks({ classId }: TapBlocksProps) {
       // immediately, then refetch to settle on server truth.
       setTaps(previous);
       toast.error(
-        err instanceof Error ? err.message : "Failed to update order",
+        toErrorMessage(err, "Failed to update order"),
       );
     } finally {
       setSavingOrder(false);

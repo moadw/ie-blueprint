@@ -4,6 +4,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { toast } from "sonner";
 import { env } from "~/lib/env";
 import { trackPracticeCompleted } from "~/lib/analytics";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
@@ -12,6 +13,8 @@ import { TapFindManyDocument, TapTypeFindManyDocument } from "~/queries/taps";
 import { PinFindManyDocument } from "~/queries/pins";
 import { CurriculumsFindOneDocument } from "~/queries/curriculums";
 import { GroupProgressFindOneDocument } from "~/queries/groups";
+import { JournalsFindOneDocument } from "~/queries/journals";
+import { UsersFindOneDocument } from "~/queries/users";
 import { GroupFinishedClassDocument } from "~/mutations/groups";
 import { TeacherGroupJournalCreateOneDocument } from "~/mutations/journals";
 import { SortFindManytapInput } from "~/gql/graphql";
@@ -25,8 +28,10 @@ import {
   mediaUrlForTap,
   milestonePropsForPin,
   resolveTapType,
+  selectAudioTaps,
 } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/practice-steps";
 import { resolveJournalQuestionLabels } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/resolve-journal-questions";
+import { useAudioPreference } from "~/hooks/use-audio-preference";
 
 /**
  * Detail / practice-player loader.
@@ -64,6 +69,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       tapTypes: [],
       curriculumTitle: null,
       questionLabels: {} as Record<string, string>,
+      existingJournal: null,
       classError:
         "Platform is not configured. Please contact your administrator.",
       tapsError: null,
@@ -77,6 +83,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tapTypesResult,
     curriculumResult,
     progressResult,
+    userResult,
   ] = await Promise.all([
       safe(
         // Teacher-safe single-class fetch (the admin `ClassesAdminFindOne` is
@@ -135,6 +142,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           headers,
         ),
       ),
+      safe(
+        // The logged-in teacher (token resolves "me" when `_id` is omitted).
+        // Used to scope the existing-journal lookup to this teacher.
+        gqlClient.request(UsersFindOneDocument, {}, headers),
+      ),
     ]);
 
   const classItem = classResult.ok ? classResult.data.ClassesFindOne : null;
@@ -175,12 +187,33 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Journal taps store their prompt as a `questions` entity id in
   // `extraQuestions[0].question` (NOT text); resolve those ids to label text so
   // the journal screen shows the real prompt instead of a UUID.
+  // The logged-in teacher's id scopes the existing-journal lookup. A journal is
+  // class-scoped (one per teacher per class), so its presence flips the journal
+  // form into read-only "already submitted" mode for THIS teacher only.
+  const teacherId = userResult.ok
+    ? (userResult.data.UsersFindOne?._id ?? null)
+    : null;
+
   const tapTypeResolver = buildTapTypeResolver(tapTypes);
-  const questionLabels = await resolveJournalQuestionLabels(
-    taps,
-    tapTypeResolver,
-    headers,
-  );
+  const [questionLabels, journalResult] = await Promise.all([
+    resolveJournalQuestionLabels(taps, tapTypeResolver, headers),
+    // Non-critical: a failed lookup degrades to "not saved" (normal create
+    // flow), never blocks playback.
+    teacherId
+      ? safe(
+          gqlClient.request(
+            JournalsFindOneDocument,
+            { filter: { teacher: teacherId, class: lessonId } },
+            headers,
+          ),
+        )
+      : Promise.resolve(null),
+  ]);
+
+  const existingJournal =
+    journalResult && journalResult.ok
+      ? (journalResult.data.JournalsFindOne ?? null)
+      : null;
 
   return {
     groupId,
@@ -193,6 +226,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     curriculumTitle,
     groupProgressId,
     questionLabels,
+    existingJournal,
     classError: classResult.error,
     tapsError: tapsResult.error,
   };
@@ -210,11 +244,19 @@ export default function LessonPlayerRoute() {
     curriculumTitle,
     groupProgressId,
     questionLabels,
+    existingJournal,
     classError,
     tapsError,
   } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const revalidator = useRevalidator();
+
+  // Per-curriculum audio-length preference (step-3). SSR-gated: server + first
+  // client render resolve to the default `"full-audio"`, then the persisted
+  // choice applies post-mount. Called unconditionally before any early return
+  // so hook order stays stable. Drives `selectAudioTaps` below — no router
+  // state is consumed; a fresh first visit defaults to `full-audio`.
+  const [audioPref] = useAudioPreference(curriculumId);
 
   const [stepIndex, setStepIndex] = useState(0);
   // Disables the journal buttons + shows a spinner while the entry is saving.
@@ -238,7 +280,14 @@ export default function LessonPlayerRoute() {
   }
 
   const resolver = buildTapTypeResolver(tapTypes);
-  const steps = buildPracticeSteps(taps, pin, resolver);
+  // Force exactly one audio when a practice carries BOTH a `full-audio` and a
+  // `5min-audio` tap: keep the preferred length, drop the other (fallback to
+  // whichever exists when the preferred is absent). Video-only, full-audio-only,
+  // and journal shapes pass through untouched, so the surviving audio stays the
+  // first/only media step — `firstMediaStepIndex` + `handleMediaEnded` (and thus
+  // completion + journal handoff) are unchanged.
+  const filteredTaps = selectAudioTaps(taps, audioPref, resolver);
+  const steps = buildPracticeSteps(filteredTaps, pin, resolver);
   const current = steps[stepIndex];
 
   // Index of the FIRST media (player) step. Completion fires when this first
@@ -303,10 +352,10 @@ export default function LessonPlayerRoute() {
       revalidator.revalidate();
     } catch (err) {
       finishedRef.current = false;
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Couldn't record practice completion. Please try again.";
+      const message = toErrorMessage(
+        err,
+        "Couldn't record practice completion. Please try again.",
+      );
       toast.error(message);
     }
   };
@@ -347,10 +396,10 @@ export default function LessonPlayerRoute() {
       });
       advance();
     } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Couldn't save your journal entry. Please try again.";
+      const message = toErrorMessage(
+        err,
+        "Couldn't save your journal entry. Please try again.",
+      );
       toast.error(message);
     } finally {
       setSavingJournal(false);
@@ -368,10 +417,10 @@ export default function LessonPlayerRoute() {
     <div className="fixed inset-0 overflow-hidden bg-slate-950 text-white">
       {current?.kind === "player" ? (
         <PlayerStage
-          key={stepIndex}
+          key={`${stepIndex}:${current.tap._id ?? ""}`}
           media={current.media}
-          title={current.tap.title ?? classItem?.title ?? ""}
-          description={current.tap.description ?? classItem?.description ?? ""}
+          title={classItem?.title ?? current.tap.title ?? ""}
+          description={classItem?.description ?? current.tap.description ?? ""}
           dayLabel={dayLabel}
           gradeLabel=""
           seriesName={seriesName}
@@ -392,6 +441,8 @@ export default function LessonPlayerRoute() {
           submitting={savingJournal}
           onSubmit={handleJournalSubmit}
           onSkip={advance}
+          alreadySaved={!!existingJournal}
+          savedContent={existingJournal?.body ?? ""}
         />
       ) : null}
 

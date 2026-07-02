@@ -12,7 +12,12 @@ import {
 } from "~/queries/groups";
 import { CurriculumsFindOneDocument } from "~/queries/curriculums";
 import { ClassesByCurriculumFindOneDocument } from "~/queries/classes";
+import { TapFindManyDocument, TapTypeFindManyDocument } from "~/queries/taps";
 import { UsersFindOneDocument } from "~/queries/users";
+import {
+  deriveCardMediaByClass,
+  type CardMediaDescriptor,
+} from "./classrooms_.$groupId.$curriculumId/_components/card-media";
 import { CurriculumBackground } from "./classrooms_.$groupId.$curriculumId/_components/curriculum-background";
 import { CurriculumSlider } from "./classrooms_.$groupId.$curriculumId/_components/curriculum-slider";
 import { ClassroomHeader } from "./classrooms_.$groupId.$curriculumId/_components/classroom-header";
@@ -39,6 +44,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       group: null,
       curriculum: null,
       classes: [],
+      mediaByClass: {} as Record<string, CardMediaDescriptor>,
       user: null,
       groupProgress: null,
       groupError: null,
@@ -55,6 +61,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     classesResult,
     userResult,
     progressResult,
+    tapTypesResult,
   ] = await Promise.all([
       safe(
         gqlClient.request(
@@ -92,6 +99,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           headers,
         ),
       ),
+      safe(
+        // Platform-scoped tap-type catalog — resolves each tap's `type`
+        // slug-vs-id for the per-card media descriptor. Mirrors the player
+        // loader; degrades to raw `tap.type` on failure (no error card).
+        gqlClient.request(
+          TapTypeFindManyDocument,
+          { filter: { platform: env.PLATFORM }, limit: 100 },
+          headers,
+        ),
+      ),
     ]);
 
   const group = groupResult.ok ? groupResult.data.GroupFindOne : null;
@@ -112,11 +129,45 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ? progressResult.data.GroupProgressFindOne
     : null;
 
+  // Per-card media durations (Q1: `tap.time` read raw as minutes). Fetch the
+  // curriculum's taps in ONE batched query (`class in [ids]` via the scalar
+  // `_operators.class.in`) and group client-side. Wrapped in `safe()` so a
+  // failed/empty fetch degrades to no pill — never a crash or error card.
+  const classIds = classes
+    .map((c) => c._id)
+    .filter((id): id is string => Boolean(id));
+  const tapTypes = tapTypesResult.ok
+    ? (tapTypesResult.data.TapTypeFindMany ?? [])
+    : [];
+  let mediaByClass: Record<string, CardMediaDescriptor> = {};
+  if (classIds.length > 0) {
+    const tapsResult = await safe(
+      gqlClient.request(
+        TapFindManyDocument,
+        {
+          filter: {
+            platform: env.PLATFORM,
+            _operators: { class: { in: classIds } },
+          },
+          limit: 500,
+        },
+        headers,
+      ),
+    );
+    if (tapsResult.ok) {
+      const taps = (tapsResult.data.TapFindMany ?? []).filter(
+        (t) => !t.deleted,
+      );
+      mediaByClass = deriveCardMediaByClass(taps, tapTypes);
+    }
+  }
+
   return {
     token,
     group,
     curriculum,
     classes,
+    mediaByClass,
     user,
     groupProgress,
     groupError: groupResult.error,
@@ -132,6 +183,7 @@ export default function ClassroomCurriculumRoute() {
     group,
     curriculum,
     classes,
+    mediaByClass,
     user,
     groupProgress,
     groupError,
@@ -140,6 +192,14 @@ export default function ClassroomCurriculumRoute() {
   const params = useParams();
   const groupId = params.groupId ?? "";
   const curriculumId = params.curriculumId ?? "";
+
+  // Attach each class's media descriptor (shape + durations) so the slider and
+  // grid cards can render their bottom-center duration pill. Order + `_id` are
+  // preserved, so the hero-background index math over `classes` stays aligned.
+  const lessonsWithMedia = classes.map((c) => ({
+    ...c,
+    media: c._id ? (mediaByClass[c._id] ?? null) : null,
+  }));
 
   useEffect(() => {
     if (token) setToken(token);
@@ -201,7 +261,7 @@ export default function ClassroomCurriculumRoute() {
           {classes.length > 0 ? (
             <CurriculumSlider
               key={curriculum?._id}
-              lessons={classes}
+              lessons={lessonsWithMedia}
               groupId={groupId}
               curriculumId={curriculumId}
               groupProgress={groupProgress}
@@ -247,7 +307,7 @@ export default function ClassroomCurriculumRoute() {
 
             {classes.length > 0 ? (
               <LessonGrid
-                lessons={classes}
+                lessons={lessonsWithMedia}
                 groupId={groupId}
                 curriculumId={curriculumId}
                 groupProgress={groupProgress}

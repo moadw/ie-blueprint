@@ -8,6 +8,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import {
   SchoolCodeCreateOneDocument,
@@ -79,8 +80,7 @@ export function DistrictInviteCard({
       }
       revalidator.revalidate();
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Couldn't generate invite code";
+      const message = toErrorMessage(err, "Couldn't generate invite code");
       toast.error(message);
       setMutationsDisabled(true);
     } finally {
@@ -110,8 +110,7 @@ export function DistrictInviteCard({
       }
       revalidator.revalidate();
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Couldn't regenerate invite code";
+      const message = toErrorMessage(err, "Couldn't regenerate invite code");
       toast.error(message);
       setMutationsDisabled(true);
     } finally {

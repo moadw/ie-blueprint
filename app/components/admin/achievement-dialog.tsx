@@ -13,6 +13,7 @@ import { Label } from "~/components/ui/label";
 import { toast } from "~/components/ui/toast";
 import { api } from "~/lib/api";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { PinCreateOneDocument } from "~/mutations/pins";
 import type { PinFindManyQuery } from "~/gql/graphql";
@@ -118,8 +119,7 @@ export function AchievementDialog({
       onSaved();
       onOpenChange(false);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to create achievement";
+      const message = toErrorMessage(err, "Failed to create achievement");
       toast.error(message);
     } finally {
       setSubmitting(false);

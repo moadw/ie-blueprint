@@ -12,6 +12,7 @@ import { Label } from "~/components/ui/label";
 import { Select } from "~/components/ui/select";
 import { toast } from "~/components/ui/toast";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { TapFindManyDocument, TapTypeFindManyDocument } from "~/queries/taps";
 import { TapCreateOneDocument, TapUpdateOneDocument } from "~/mutations/taps";
@@ -26,6 +27,7 @@ import {
   videoEntriesFromTap,
 } from "~/components/admin/tap-videos-subform";
 import type { VideoEntry } from "~/components/admin/tap-videos-subform";
+import { extractDurationMinutes } from "~/components/admin/media-duration";
 import {
   TapQuestionsSubform,
   type ExtraQuestionEntry,
@@ -128,6 +130,16 @@ function payloadErrorMessage(payload: unknown): string | null {
     payload as { error?: { message?: string } | null } | null | undefined
   )?.error;
   return err?.message ?? null;
+}
+
+/**
+ * Coerce the form's `time` string (whole minutes, kept in sync with the media
+ * file's real duration by the extraction effect) to the numeric minutes the
+ * mutation expects. Falls back to `5` for a missing/invalid value.
+ */
+function parseTimeMinutes(value: string): number {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 5;
 }
 
 export function TapDialog({
@@ -280,6 +292,26 @@ export function TapDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, journalQuestionId]);
 
+  // The tap's single media file (max 1 entry). `time` is DERIVED from this
+  // file's real duration, never typed — so there is no visible minutes input.
+  const currentMediaUrl = videos[0]?.url?.trim() ?? "";
+
+  // Derive `time` (whole minutes) from the media file. Runs on open and
+  // whenever the media url changes (paste or upload). Failure (`null`) leaves
+  // the current value untouched — never overwrites a good `time` with garbage.
+  // No media url → nothing to derive; `time` keeps its default (`5` on create).
+  useEffect(() => {
+    if (!open || !currentMediaUrl) return;
+    let cancelled = false;
+    extractDurationMinutes(currentMediaUrl).then((minutes) => {
+      if (cancelled || minutes == null) return;
+      setForm((f) => ({ ...f, time: String(minutes) }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, currentMediaUrl]);
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting) return;
@@ -293,6 +325,12 @@ export function TapDialog({
       // full videos list including server-assigned `_id`s. REST-owned
       // `thumbnail` / `captions[].file` are never written from the form.
       const videosRecord = serializeVideoEntries(videos);
+
+      // Persist the DERIVED duration (floored minutes) when the tap has a media
+      // file; taps with no media default to `5`. Opening + saving a legacy tap
+      // with a media url thus corrects a stale/mis-unit `time` — the intended
+      // manual remediation path (no read-side normalization / backfill).
+      const timeMinutes = currentMediaUrl ? parseTimeMinutes(form.time) : 5;
 
       if (isEdit && effectiveTap?._id) {
         // Default: round-trip whatever the tap already had so non-journal
@@ -342,14 +380,17 @@ export function TapDialog({
           }
         }
 
-        // Send ONLY the fields this streamlined flow owns; omit order/slug/
-        // points/time/intro/description so hidden scalars round-trip
-        // (omitted, never nulled — `slug:null` would also hit the E11000
-        // sparse-unique collision).
+        // Send the fields this streamlined flow owns PLUS the recalculated
+        // `time` (so re-saving corrects a legacy tap's duration); omit
+        // order/slug/points/intro/description so those hidden scalars
+        // round-trip (omitted, never nulled — `slug:null` would also hit the
+        // E11000 sparse-unique collision). `time` is a plain Float, so sending
+        // it carries no slug-style self-collision risk.
         const data = await gqlClient.request(TapUpdateOneDocument, {
           _id: effectiveTap._id,
           record: {
             title: config.title,
+            time: timeMinutes,
             videos: videosRecord,
             extraQuestions: extraQuestionsRecord,
           },
@@ -376,7 +417,7 @@ export function TapDialog({
             title: config.title,
             order: Math.max(1, Math.round(defaultOrder)),
             points: 100,
-            time: 5,
+            time: timeMinutes,
             videos: [],
             extraQuestions: [],
           },
@@ -409,12 +450,10 @@ export function TapDialog({
         }
       }
     } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : isEdit
-            ? "Failed to update content"
-            : "Failed to create content";
+      const message = toErrorMessage(
+        err,
+        isEdit ? "Failed to update content" : "Failed to create content",
+      );
       setError(message);
       toast.error(message);
     } finally {

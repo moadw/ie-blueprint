@@ -18,6 +18,7 @@ import { Switch } from "~/components/ui/switch";
 import { TapBlocks } from "~/components/admin/tap-blocks";
 import { AchievementBlock } from "~/components/admin/achievement-block";
 import { api } from "~/lib/api";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { ClassesUpdateOneDocument } from "~/mutations/classes";
 import type { ClassesAdminFindManyQuery } from "~/gql/graphql";
@@ -123,7 +124,7 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
       toast.success("Practice updated");
       onChange();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to update title";
+      const msg = toErrorMessage(err, "Failed to update title");
       toast.error(msg);
       setTitle(practice.title ?? "");
     } finally {
@@ -153,8 +154,7 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
       onChange();
       setExpanded(false);
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "Failed to update practice";
+      const msg = toErrorMessage(err, "Failed to update practice");
       toast.error(msg);
     } finally {
       setSubmitting(false);
@@ -178,8 +178,7 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
       toast.success("Practice deleted");
       onChange();
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "Failed to delete practice";
+      const msg = toErrorMessage(err, "Failed to delete practice");
       toast.error(msg);
     } finally {
       setDeleting(false);
@@ -195,7 +194,7 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
       toast.success("Cover updated");
       onChange();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Cover upload failed";
+      const msg = toErrorMessage(err, "Cover upload failed");
       console.error("[class-cover] upload failed", err);
       toast.error(msg);
     }
@@ -214,7 +213,7 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
       toast.success("Background updated");
       onChange();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Background upload failed";
+      const msg = toErrorMessage(err, "Background upload failed");
       console.error("[class-background] upload failed", err);
       toast.error(msg);
       setBgPreview(null); // revert — no server value to fall back to

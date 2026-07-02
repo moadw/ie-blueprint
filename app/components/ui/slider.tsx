@@ -28,10 +28,10 @@ export function Slider({
       value={value}
       onChange={(e) => onValueChange(Number(e.target.value))}
       className={cn(
-        "w-full h-2 rounded-full appearance-none cursor-pointer accent-primary bg-primary/15",
+        "w-full h-2 rounded-full appearance-none cursor-pointer border border-border/50 bg-white/60 backdrop-blur-sm",
         "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:transition-colors",
         "[&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:shadow-md",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "focus:outline-none focus-visible:outline-none",
         className,
       )}
       {...(ariaLabel ? { "aria-label": ariaLabel } : {})}
