@@ -14,6 +14,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { readPageFromRequest } from "~/lib/pagination";
 import { requireSessionToken } from "~/lib/session.server";
@@ -386,8 +387,7 @@ export default function AdminDistrictsRoute() {
             setLicenseTarget(null);
             revalidator.revalidate();
           } catch (err) {
-            const message =
-              err instanceof Error ? err.message : "Failed to update license";
+            const message = toErrorMessage(err, "Failed to update license");
             toast.error(message);
           }
         }}
@@ -419,8 +419,7 @@ export default function AdminDistrictsRoute() {
             setLicenseTarget(null);
             revalidator.revalidate();
           } catch (err) {
-            const message =
-              err instanceof Error ? err.message : "Failed to unassign license";
+            const message = toErrorMessage(err, "Failed to unassign license");
             toast.error(message);
           }
         }}

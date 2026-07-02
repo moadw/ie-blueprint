@@ -13,6 +13,7 @@ import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { toast } from "~/components/ui/toast";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { LicensePresetCreateOneDocument } from "~/queries/license-presets";
 import type { LicensePresetListItem } from "~/routes/admin.license-presets";
@@ -132,8 +133,7 @@ export function LicensePresetDialog({
       identifierTouchedRef.current = false;
       revalidator.revalidate();
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to create license preset";
+      const message = toErrorMessage(err, "Failed to create license preset");
       toast.error(message);
     } finally {
       setSubmitting(false);

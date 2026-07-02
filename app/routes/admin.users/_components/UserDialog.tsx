@@ -13,6 +13,7 @@ import { Label } from "~/components/ui/label";
 import { Select } from "~/components/ui/select";
 import { toast } from "~/components/ui/toast";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { SchoolFindManyDocument } from "~/queries/schools";
 import {
@@ -221,8 +222,7 @@ export function UserDialog({
       onSaved();
       onOpenChange(false);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to save user";
+      const message = toErrorMessage(err, "Failed to save user");
       toast.error(message);
     } finally {
       setSaving(false);

@@ -9,6 +9,7 @@ import {
 } from "~/components/ui/dialog";
 import { toast } from "~/components/ui/toast";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import {
   CurriculumsFindManyDocument,
@@ -99,9 +100,7 @@ export function ManageSeriesDialog({
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setLoadError(
-          err instanceof Error ? err.message : "Failed to load curriculums.",
-        );
+        setLoadError(toErrorMessage(err, "Failed to load curriculums."));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -159,9 +158,7 @@ export function ManageSeriesDialog({
       toast.success("Series updated");
       onOpenChange(false);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to update series",
-      );
+      toast.error(toErrorMessage(err, "Failed to update series"));
     } finally {
       setSaving(false);
     }

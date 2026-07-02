@@ -14,6 +14,7 @@ import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
 import { toast } from "~/components/ui/toast";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import {
   CurriculumCollectionCreateOneDocument,
@@ -175,7 +176,7 @@ export function ExperienceDialog(props: ExperienceDialogProps) {
       // spread the submitted record onto the original row's identity fields.
       const record: {
         name: string;
-        slug: string;
+        slug?: string;
         description?: string;
         gradeLevel: string;
         color: string;
@@ -183,12 +184,18 @@ export function ExperienceDialog(props: ExperienceDialogProps) {
         platform: string;
       } = {
         name: trimmedName,
-        slug: trimmedSlug,
         gradeLevel: form.gradeLevel,
         color: form.color,
         active: form.active,
         platform: env.PLATFORM,
       };
+      // Only send slug when it actually changed. The backend's uniqueness
+      // check doesn't exclude the record being updated, so resending an
+      // unchanged slug makes it collide with itself ("Slug … is already in
+      // use") and every edit fails.
+      if (trimmedSlug && trimmedSlug !== props.experience.slug) {
+        record.slug = trimmedSlug;
+      }
       if (trimmedDescription) record.description = trimmedDescription;
       await gqlClient.request(CurriculumCollectionUpdateOneDocument, {
         id: props.experience._id,
@@ -209,9 +216,7 @@ export function ExperienceDialog(props: ExperienceDialogProps) {
       props.onUpdated(experience);
       onOpenChange(false);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to save experience",
-      );
+      toast.error(toErrorMessage(err, "Failed to save experience"));
     } finally {
       setSubmitting(false);
     }

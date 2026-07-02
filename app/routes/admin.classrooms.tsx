@@ -13,6 +13,7 @@ import {
   AdminListPagination,
 } from "~/components/admin/admin-list-pagination";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { readPageFromRequest } from "~/lib/pagination";
 import { safe } from "~/lib/safe-loader";
@@ -88,8 +89,7 @@ export default function AdminClassroomsRoute() {
       toast.success("Classroom deleted");
       revalidator.revalidate();
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to delete classroom";
+      const message = toErrorMessage(err, "Failed to delete classroom");
       toast.error(message);
       setError(message);
     } finally {

@@ -8,6 +8,7 @@ import { Progress } from "~/components/ui/progress";
 import { toast } from "~/components/ui/toast";
 import { api } from "~/lib/api";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { uploadWithProgress } from "~/lib/upload";
 import { gqlClient } from "~/lib/graphql";
 import { cn } from "~/lib/utils";
@@ -385,7 +386,7 @@ export function TapVideosSubform({
       toast.success("Thumbnail uploaded");
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Thumbnail upload failed",
+        toErrorMessage(err, "Thumbnail upload failed"),
       );
     } finally {
       setUploadingKey(null);
@@ -481,7 +482,7 @@ export function TapVideosSubform({
       );
       toast.success("Media uploaded");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Media upload failed");
+      toast.error(toErrorMessage(err, "Media upload failed"));
     } finally {
       setUploadProgress(null);
       setUploadingKey(null);

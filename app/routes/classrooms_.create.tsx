@@ -21,6 +21,7 @@ import { deriveCourses } from "~/components/admin/experiences-selector";
 import type { CurriculumLite } from "~/components/admin/experiences-selector";
 import { setToken } from "~/lib/auth";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { getInitials } from "~/lib/initials";
 import { safe } from "~/lib/safe-loader";
@@ -190,7 +191,7 @@ export async function action({ request }: ActionFunctionArgs) {
       { "access-token": token },
     );
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Failed to create classroom";
+    const message = toErrorMessage(e, "Failed to create classroom");
     return { error: message };
   }
 

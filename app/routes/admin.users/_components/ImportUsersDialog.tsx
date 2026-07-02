@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { toErrorMessage } from "~/lib/errors";
 import { uploadUsersCsv } from "~/lib/users-csv";
 
 type Status = "idle" | "uploading" | "success" | "error";
@@ -52,7 +53,7 @@ export function ImportUsersDialog({
       toast.success("Import started");
     } catch (err) {
       setStatus("error");
-      setMessage(err instanceof Error ? err.message : "Unknown error");
+      setMessage(toErrorMessage(err, "Unknown error"));
       toast.error("Import failed");
     }
   }
