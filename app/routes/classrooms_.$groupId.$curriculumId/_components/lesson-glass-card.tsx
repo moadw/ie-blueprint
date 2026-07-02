@@ -1,4 +1,11 @@
 import { Check } from "lucide-react";
+import type { AudioPref } from "~/lib/audio-preference";
+import {
+  audioTabOptions,
+  primaryDurationMinutes,
+  type CardMediaDescriptor,
+} from "./card-media";
+import { DurationPill, DurationTabs, PILL_GLASS_STYLE } from "./duration-pill";
 
 export type LessonCardStatus = "watched" | "current" | "none";
 
@@ -7,6 +14,15 @@ interface LessonGlassCardProps {
   title: string;
   isActive: boolean;
   status: LessonCardStatus;
+  /** Per-class media descriptor (shape + durations). Drives the bottom-center
+   *  duration pill; absent/`none` renders no pill. */
+  media?: CardMediaDescriptor | null;
+  /** Current per-curriculum audio-length preference — highlights the active
+   *  tab on `both-audios` cards. Lifted from the parent so one subscription
+   *  drives every sibling card. */
+  audioPref?: AudioPref;
+  /** Persist a new audio-length preference (live-synced across cards). */
+  onAudioPrefChange?: (pref: AudioPref) => void;
 }
 
 // Glass-theme token literals ported verbatim from the prototype's
@@ -33,7 +49,26 @@ export function LessonGlassCard({
   title,
   isActive,
   status,
+  media,
+  audioPref,
+  onAudioPrefChange,
 }: LessonGlassCardProps) {
+  // Single "N min" pill for video-only / full-audio-only practices. Both-audios
+  // (tabs variant) and none render nothing here; `minutes` is non-null for the
+  // qualifying shapes since the corresponding tap exists.
+  const durationMinutes =
+    media &&
+    (media.shape === "video" ||
+      media.shape === "full-audio" ||
+      media.shape === "5min-audio")
+      ? primaryDurationMinutes(media)
+      : null;
+  // Two-segment "5 min | 9 min" tabs for both-audios practices (needs the
+  // preference wired from the parent). `null` for every other shape.
+  const tabOptions =
+    media && audioPref && onAudioPrefChange
+      ? audioTabOptions(media)
+      : null;
   return (
     <div
       className="relative h-full w-full overflow-hidden rounded-3xl"
@@ -90,20 +125,13 @@ export function LessonGlassCard({
       ) : status === "current" ? (
         <div
           className="absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-full px-3 py-1.5"
-          style={{
-            // Explicit grey tint (not the prototype's literal `rgba(255,255,255,
-            // 0.25)`). The prototype's white-translucent pill only READS grey
-            // because `backdrop-filter` frosts the dark card-top behind it; over
-            // a lighter cover image it renders near-white. A neutral grey base
-            // matches the prototype's RENDERED look on any image (fidelity rule:
-            // match the RGB it renders). Blur stays for the glass frost.
-            background: "rgba(82,88,98,0.55)",
-            backdropFilter: "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
-            border: "1px solid rgba(255,255,255,0.25)",
-            boxShadow:
-              "inset 0 1px 0 rgba(255,255,255,0.25), 0 4px 12px rgba(0,0,0,0.18)",
-          }}
+          // Same glass recipe as the duration pill — single source of truth
+          // (`PILL_GLASS_STYLE`) so the two frosted pills can't drift apart. The
+          // neutral grey base (not the prototype's literal white-translucent)
+          // matches the prototype's RENDERED look on any cover image: its pill
+          // only READS grey because `backdrop-filter` frosts the dark card-top
+          // behind it (fidelity rule: match the RGB it renders).
+          style={PILL_GLASS_STYLE}
         >
           <span className="text-xs font-medium uppercase tracking-wide text-white/90">
             Current
@@ -139,6 +167,19 @@ export function LessonGlassCard({
           {title}
         </div>
       )}
+
+      {/* Duration pill (bottom-center). Single "N min" for video/full-audio;
+          two-segment "5 min | 9 min" tabs for both-audios. */}
+      {tabOptions && audioPref && onAudioPrefChange ? (
+        <DurationTabs
+          options={tabOptions}
+          value={audioPref}
+          onChange={onAudioPrefChange}
+          interactive={isActive}
+        />
+      ) : durationMinutes != null ? (
+        <DurationPill minutes={durationMinutes} />
+      ) : null}
 
       <style>{`
         @keyframes lessonCardShimmer {

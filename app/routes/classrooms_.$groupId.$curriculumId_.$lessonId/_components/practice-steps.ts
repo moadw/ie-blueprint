@@ -36,6 +36,7 @@ import {
   ACHIEVEMENT_DEFAULTS,
   type AchievementDefaults,
 } from "./achievement-defaults";
+import type { AudioPref } from "~/lib/audio-preference";
 
 /** A single tap as returned by `TapFindMany` (generated result element type). */
 export type PracticeTap = TapFindManyQuery["TapFindMany"][number];
@@ -220,6 +221,69 @@ export function milestonePropsForPin(
     ...(imageUrl ? { imageUrl } : {}),
   };
   return videoUrl ? { ...base, videoUrl } : base;
+}
+
+/**
+ * The distinguishable audio-length identifier for a tap, or `null` when the tap
+ * is not an audio tap OR is a legacy generic `"audio"` (which can't be told
+ * apart as 5-min vs full). Branches on {@link resolveTapType} — NOT
+ * {@link mediaForTap}, which collapses both audio lengths into `"audio"` and so
+ * cannot distinguish `5min-audio` from `full-audio`. Because
+ * `AudioPref = "full-audio" | "5min-audio"`, the matched slug IS the narrowed
+ * union.
+ */
+function resolvedAudioLength(
+  tap: PracticeTap,
+  resolver?: ReadonlyMap<string, string>,
+): AudioPref | null {
+  const type = resolveTapType(tap, resolver);
+  return type === "full-audio" || type === "5min-audio" ? type : null;
+}
+
+/**
+ * Enforce a SINGLE audio when a practice contains BOTH a `full-audio` and a
+ * `5min-audio` tap: keep the `preferred` length and drop the other. When only
+ * one audio length is present (or none at all), the taps are returned unchanged
+ * — so a missing preferred length naturally falls back to whatever audio does
+ * exist. `video`, `ie-journal`, and legacy generic `"audio"` taps are never
+ * touched, and the original order is preserved.
+ *
+ * Branches on {@link resolveTapType} (via {@link resolvedAudioLength}), never
+ * {@link mediaForTap}, so the two audio lengths stay distinguishable. Threaded
+ * into {@link buildPracticeSteps} by the player route so the resulting
+ * `PracticeStep[]` holds at most one audio `player` step for a both-audios class.
+ */
+export function selectAudioTaps(
+  taps: readonly PracticeTap[],
+  preferred: AudioPref,
+  resolver?: ReadonlyMap<string, string>,
+): PracticeTap[] {
+  let hasFull = false;
+  let hasFive = false;
+  for (const tap of taps) {
+    const length = resolvedAudioLength(tap, resolver);
+    if (length === "full-audio") hasFull = true;
+    else if (length === "5min-audio") hasFive = true;
+  }
+  // Only enforce single-audio when BOTH lengths are present; otherwise the
+  // existing single-audio / video-only / journal shapes pass through untouched
+  // (this is also the fallback path when the preferred length is absent).
+  if (!(hasFull && hasFive)) return [...taps];
+  // Both present → the preferred length is guaranteed present and wins; drop
+  // every distinguishable audio tap of the other length. Also keep only the
+  // FIRST tap of the preferred length so the result holds at most one audio
+  // `player` step even when a class has duplicate same-length taps (matches
+  // `deriveCardMedia`'s first-of-each-kind rule). Non-audio (and legacy generic
+  // `"audio"`) taps pass through, preserving order.
+  let keptPreferred = false;
+  return taps.filter((tap) => {
+    const length = resolvedAudioLength(tap, resolver);
+    if (length === null) return true;
+    if (length !== preferred) return false;
+    if (keptPreferred) return false;
+    keptPreferred = true;
+    return true;
+  });
 }
 
 /**
