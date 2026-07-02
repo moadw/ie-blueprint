@@ -25,8 +25,10 @@ import {
   mediaUrlForTap,
   milestonePropsForPin,
   resolveTapType,
+  selectAudioTaps,
 } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/practice-steps";
 import { resolveJournalQuestionLabels } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/resolve-journal-questions";
+import { useAudioPreference } from "~/hooks/use-audio-preference";
 
 /**
  * Detail / practice-player loader.
@@ -216,6 +218,13 @@ export default function LessonPlayerRoute() {
   const navigate = useNavigate();
   const revalidator = useRevalidator();
 
+  // Per-curriculum audio-length preference (step-3). SSR-gated: server + first
+  // client render resolve to the default `"full-audio"`, then the persisted
+  // choice applies post-mount. Called unconditionally before any early return
+  // so hook order stays stable. Drives `selectAudioTaps` below — no router
+  // state is consumed; a fresh first visit defaults to `full-audio`.
+  const [audioPref] = useAudioPreference(curriculumId);
+
   const [stepIndex, setStepIndex] = useState(0);
   // Disables the journal buttons + shows a spinner while the entry is saving.
   const [savingJournal, setSavingJournal] = useState(false);
@@ -238,7 +247,14 @@ export default function LessonPlayerRoute() {
   }
 
   const resolver = buildTapTypeResolver(tapTypes);
-  const steps = buildPracticeSteps(taps, pin, resolver);
+  // Force exactly one audio when a practice carries BOTH a `full-audio` and a
+  // `5min-audio` tap: keep the preferred length, drop the other (fallback to
+  // whichever exists when the preferred is absent). Video-only, full-audio-only,
+  // and journal shapes pass through untouched, so the surviving audio stays the
+  // first/only media step — `firstMediaStepIndex` + `handleMediaEnded` (and thus
+  // completion + journal handoff) are unchanged.
+  const filteredTaps = selectAudioTaps(taps, audioPref, resolver);
+  const steps = buildPracticeSteps(filteredTaps, pin, resolver);
   const current = steps[stepIndex];
 
   // Index of the FIRST media (player) step. Completion fires when this first
@@ -368,10 +384,10 @@ export default function LessonPlayerRoute() {
     <div className="fixed inset-0 overflow-hidden bg-slate-950 text-white">
       {current?.kind === "player" ? (
         <PlayerStage
-          key={stepIndex}
+          key={`${stepIndex}:${current.tap._id ?? ""}`}
           media={current.media}
-          title={current.tap.title ?? classItem?.title ?? ""}
-          description={current.tap.description ?? classItem?.description ?? ""}
+          title={classItem?.title ?? current.tap.title ?? ""}
+          description={classItem?.description ?? current.tap.description ?? ""}
           dayLabel={dayLabel}
           gradeLabel=""
           seriesName={seriesName}

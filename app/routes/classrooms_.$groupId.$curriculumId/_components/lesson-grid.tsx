@@ -1,5 +1,12 @@
 import { Check, Play } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useAudioPreference } from "~/hooks/use-audio-preference";
+import {
+  audioTabOptions,
+  primaryDurationMinutes,
+  type CardMediaDescriptor,
+} from "./card-media";
+import { DurationPill, DurationTabs } from "./duration-pill";
 import type { GroupProgress } from "./profile-menu";
 
 export interface GridLesson {
@@ -8,6 +15,8 @@ export interface GridLesson {
   description?: string | null;
   order?: number | null;
   cover?: { url?: string | null } | null;
+  /** Per-class media descriptor (shape + durations) for the duration pill. */
+  media?: CardMediaDescriptor | null;
 }
 
 interface LessonGridProps {
@@ -36,6 +45,9 @@ export function LessonGrid({
   groupProgress,
 }: LessonGridProps) {
   const navigate = useNavigate();
+  // Per-curriculum audio-length preference (live-synced). Shared module store,
+  // so the grid stays in sync with the slider's tabs on the same page.
+  const [audioPref, setAudioPref] = useAudioPreference(curriculumId);
   // Client-side membership (Blueprint array filters are exact-match, not
   // "contains"). Grid surfaces Watched only — no Current badge (intentional
   // per-surface difference from the carousel).
@@ -50,6 +62,18 @@ export function LessonGrid({
         const watched = lesson._id
           ? finishedClasses.includes(lesson._id)
           : false;
+        // Single "N min" pill for video-only / full-audio-only practices;
+        // two-segment "5 min | 9 min" tabs for both-audios; none renders nothing.
+        const durationMinutes =
+          lesson.media &&
+          (lesson.media.shape === "video" ||
+            lesson.media.shape === "full-audio" ||
+            lesson.media.shape === "5min-audio")
+            ? primaryDurationMinutes(lesson.media)
+            : null;
+        const tabOptions = lesson.media
+          ? audioTabOptions(lesson.media)
+          : null;
         return (
           <div
             key={lesson._id ?? index}
@@ -119,6 +143,21 @@ export function LessonGrid({
                     Watched
                   </span>
                 </div>
+              ) : null}
+
+              {/* Duration pill (bottom-center). Single "N min" for
+                  video/full-audio; two-segment "5 min | 9 min" tabs for
+                  both-audios. Tab clicks stopPropagation so they never trigger
+                  the card's navigate `onClick`. */}
+              {tabOptions ? (
+                <DurationTabs
+                  options={tabOptions}
+                  value={audioPref}
+                  onChange={setAudioPref}
+                  size="sm"
+                />
+              ) : durationMinutes != null ? (
+                <DurationPill minutes={durationMinutes} size="sm" />
               ) : null}
             </div>
 

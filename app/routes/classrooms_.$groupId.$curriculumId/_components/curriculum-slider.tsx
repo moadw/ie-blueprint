@@ -7,8 +7,10 @@ import {
 import type { CSSProperties, TouchEvent } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useAudioPreference } from "~/hooks/use-audio-preference";
 import { LessonGlassCard } from "./lesson-glass-card";
 import type { LessonCardStatus } from "./lesson-glass-card";
+import type { CardMediaDescriptor } from "./card-media";
 import type { GroupProgress } from "./profile-menu";
 
 export interface SliderLesson {
@@ -17,6 +19,8 @@ export interface SliderLesson {
   description?: string | null;
   order?: number | null;
   cover?: { url?: string | null } | null;
+  /** Per-class media descriptor (shape + durations) for the duration pill. */
+  media?: CardMediaDescriptor | null;
 }
 
 interface CurriculumSliderProps {
@@ -112,6 +116,9 @@ export function CurriculumSlider({
   onIndexChange,
 }: CurriculumSliderProps) {
   const navigate = useNavigate();
+  // Per-curriculum audio-length preference (live-synced). One subscription here
+  // drives every both-audios card's active tab; flipping it re-renders them all.
+  const [audioPref, setAudioPref] = useAudioPreference(curriculumId);
   // Membership is derived client-side via `.includes()` — Blueprint array
   // filters are exact-ordered-match, never "contains", so the watched set
   // must be checked here rather than queried.
@@ -360,6 +367,9 @@ export function CurriculumSlider({
                   title={lesson.title ?? ""}
                   isActive={isActive}
                   status={status}
+                  media={lesson.media ?? null}
+                  audioPref={audioPref}
+                  onAudioPrefChange={setAudioPref}
                 />
               </div>
             );
