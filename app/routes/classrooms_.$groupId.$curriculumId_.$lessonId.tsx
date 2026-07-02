@@ -13,6 +13,8 @@ import { TapFindManyDocument, TapTypeFindManyDocument } from "~/queries/taps";
 import { PinFindManyDocument } from "~/queries/pins";
 import { CurriculumsFindOneDocument } from "~/queries/curriculums";
 import { GroupProgressFindOneDocument } from "~/queries/groups";
+import { JournalsFindOneDocument } from "~/queries/journals";
+import { UsersFindOneDocument } from "~/queries/users";
 import { GroupFinishedClassDocument } from "~/mutations/groups";
 import { TeacherGroupJournalCreateOneDocument } from "~/mutations/journals";
 import { SortFindManytapInput } from "~/gql/graphql";
@@ -65,6 +67,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       tapTypes: [],
       curriculumTitle: null,
       questionLabels: {} as Record<string, string>,
+      existingJournal: null,
       classError:
         "Platform is not configured. Please contact your administrator.",
       tapsError: null,
@@ -78,6 +81,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tapTypesResult,
     curriculumResult,
     progressResult,
+    userResult,
   ] = await Promise.all([
       safe(
         // Teacher-safe single-class fetch (the admin `ClassesAdminFindOne` is
@@ -136,6 +140,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           headers,
         ),
       ),
+      safe(
+        // The logged-in teacher (token resolves "me" when `_id` is omitted).
+        // Used to scope the existing-journal lookup to this teacher.
+        gqlClient.request(UsersFindOneDocument, {}, headers),
+      ),
     ]);
 
   const classItem = classResult.ok ? classResult.data.ClassesFindOne : null;
@@ -176,12 +185,33 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Journal taps store their prompt as a `questions` entity id in
   // `extraQuestions[0].question` (NOT text); resolve those ids to label text so
   // the journal screen shows the real prompt instead of a UUID.
+  // The logged-in teacher's id scopes the existing-journal lookup. A journal is
+  // class-scoped (one per teacher per class), so its presence flips the journal
+  // form into read-only "already submitted" mode for THIS teacher only.
+  const teacherId = userResult.ok
+    ? (userResult.data.UsersFindOne?._id ?? null)
+    : null;
+
   const tapTypeResolver = buildTapTypeResolver(tapTypes);
-  const questionLabels = await resolveJournalQuestionLabels(
-    taps,
-    tapTypeResolver,
-    headers,
-  );
+  const [questionLabels, journalResult] = await Promise.all([
+    resolveJournalQuestionLabels(taps, tapTypeResolver, headers),
+    // Non-critical: a failed lookup degrades to "not saved" (normal create
+    // flow), never blocks playback.
+    teacherId
+      ? safe(
+          gqlClient.request(
+            JournalsFindOneDocument,
+            { filter: { teacher: teacherId, class: lessonId } },
+            headers,
+          ),
+        )
+      : Promise.resolve(null),
+  ]);
+
+  const existingJournal =
+    journalResult && journalResult.ok
+      ? (journalResult.data.JournalsFindOne ?? null)
+      : null;
 
   return {
     groupId,
@@ -194,6 +224,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     curriculumTitle,
     groupProgressId,
     questionLabels,
+    existingJournal,
     classError: classResult.error,
     tapsError: tapsResult.error,
   };
@@ -211,6 +242,7 @@ export default function LessonPlayerRoute() {
     curriculumTitle,
     groupProgressId,
     questionLabels,
+    existingJournal,
     classError,
     tapsError,
   } = useLoaderData<typeof loader>();
@@ -393,6 +425,8 @@ export default function LessonPlayerRoute() {
           submitting={savingJournal}
           onSubmit={handleJournalSubmit}
           onSkip={advance}
+          alreadySaved={!!existingJournal}
+          savedContent={existingJournal?.body ?? ""}
         />
       ) : null}
 

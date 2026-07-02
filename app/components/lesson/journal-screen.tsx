@@ -20,10 +20,19 @@ interface JournalScreenProps {
   videoUrl?: string | undefined;
   /** Called with the editor content on Submit (the caller persists + advances). */
   onSubmit: (content: string) => void;
-  /** Skip → advance without saving. */
+  /** Skip → advance without saving. Also the "Continue" action when `alreadySaved`. */
   onSkip: () => void;
   /** While true, both action buttons are disabled and Submit shows a spinner. */
   submitting?: boolean;
+  /**
+   * The teacher already saved a journal for this class. Editing isn't supported
+   * yet, so we render the saved entry read-only: the editor is disabled, the
+   * primary button becomes "Continue" (advances without saving), and the media
+   * dropzone + "Skip" are hidden.
+   */
+  alreadySaved?: boolean;
+  /** Saved entry body, pre-filled into the read-only editor when `alreadySaved`. */
+  savedContent?: string;
 }
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -48,8 +57,10 @@ export function JournalScreen({
   onSubmit,
   onSkip,
   submitting = false,
+  alreadySaved = false,
+  savedContent = "",
 }: JournalScreenProps) {
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState(alreadySaved ? savedContent : "");
   const [media, setMedia] = useState<SelectedMedia | null>(null);
 
   const today = dateFormatter.format(new Date());
@@ -100,27 +111,32 @@ export function JournalScreen({
               value={content}
               onChange={setContent}
               placeholder="Write your reflection..."
+              readOnly={alreadySaved}
             />
           </div>
 
-          {/* Media upload */}
-          <div className="px-8 pb-6">
-            <JournalMediaUpload value={media} onChange={setMedia} />
-          </div>
+          {/* Media upload — hidden once the entry is saved (read-only). */}
+          {!alreadySaved ? (
+            <div className="px-8 pb-6">
+              <JournalMediaUpload value={media} onChange={setMedia} />
+            </div>
+          ) : null}
 
           {/* Footer */}
           <div className="flex flex-col gap-3 px-8 pb-8">
             <button
               type="button"
-              onClick={() => onSubmit(content)}
-              disabled={!canSubmit}
+              onClick={alreadySaved ? onSkip : () => onSubmit(content)}
+              disabled={alreadySaved ? false : !canSubmit}
               className="w-full rounded-full py-3.5 font-medium text-white shadow-lg transition-all hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
               style={{
                 background:
                   "linear-gradient(135deg, hsl(160, 55%, 45%) 0%, hsl(145, 60%, 40%) 100%)",
               }}
             >
-              {submitting ? (
+              {alreadySaved ? (
+                "Continue"
+              ) : submitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Saving…
@@ -129,14 +145,16 @@ export function JournalScreen({
                 "Submit Journal Entry"
               )}
             </button>
-            <button
-              type="button"
-              onClick={onSkip}
-              disabled={submitting}
-              className="w-full rounded-full py-2.5 text-sm text-white/50 transition-colors hover:text-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Skip for now
-            </button>
+            {!alreadySaved ? (
+              <button
+                type="button"
+                onClick={onSkip}
+                disabled={submitting}
+                className="w-full rounded-full py-2.5 text-sm text-white/50 transition-colors hover:text-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Skip for now
+              </button>
+            ) : null}
           </div>
         </div>
       </div>

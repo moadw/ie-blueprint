@@ -13,6 +13,9 @@ interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  /** Read-only: hides the formatting toolbar and disables editing. The seeded
+   *  `value` still renders so a saved entry can be reviewed. */
+  readOnly?: boolean;
 }
 
 /**
@@ -26,6 +29,7 @@ export function RichTextEditor({
   value,
   onChange,
   placeholder = "Write your reflection...",
+  readOnly = false,
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
@@ -84,7 +88,8 @@ export function RichTextEditor({
 
   return (
     <div className="overflow-hidden rounded-xl">
-      {/* Toolbar */}
+      {/* Toolbar — hidden in read-only mode (nothing to format). */}
+      {!readOnly ? (
       <div className="flex items-center gap-1 border-b border-white/10 bg-white/5 px-3 py-2">
         <ToolbarButton
           icon={Bold}
@@ -123,20 +128,24 @@ export function RichTextEditor({
           onTrigger={() => execCommand("justifyRight")}
         />
       </div>
+      ) : null}
 
       {/* Editable area */}
       <div
         ref={editorRef}
-        contentEditable
+        contentEditable={!readOnly}
         suppressContentEditableWarning
         role="textbox"
         aria-multiline="true"
+        aria-readonly={readOnly}
         aria-label="Reflection"
-        onInput={handleInput}
-        onKeyUp={updateActiveFormats}
-        onClick={updateActiveFormats}
+        onInput={readOnly ? undefined : handleInput}
+        onKeyUp={readOnly ? undefined : updateActiveFormats}
+        onClick={readOnly ? undefined : updateActiveFormats}
         data-placeholder={placeholder}
-        className="max-h-[280px] min-h-[160px] overflow-y-auto bg-white/5 p-4 font-sans text-base text-white/90 outline-none empty:before:text-white/40 empty:before:content-[attr(data-placeholder)] [&_*]:outline-none"
+        className={`max-h-[280px] min-h-[160px] overflow-y-auto bg-white/5 p-4 font-sans text-base text-white/90 outline-none empty:before:text-white/40 empty:before:content-[attr(data-placeholder)] [&_*]:outline-none${
+          readOnly ? " cursor-default" : ""
+        }`}
       />
     </div>
   );
