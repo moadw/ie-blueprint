@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp, Image as ImageIcon, Loader2 } from "lucide-reac
 
 import { Button } from "~/components/ui/button";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { cn } from "~/lib/utils";
 import { CurriculumCollectionFindManyDocument } from "~/queries/curriculum-collections";
@@ -112,7 +113,7 @@ export function ExperiencesSelector({
       .catch((err: unknown) => {
         if (cancelled) return;
         setLoadError(
-          err instanceof Error ? err.message : "Failed to load Experiences.",
+          toErrorMessage(err, "Failed to load Experiences."),
         );
       })
       .finally(() => {

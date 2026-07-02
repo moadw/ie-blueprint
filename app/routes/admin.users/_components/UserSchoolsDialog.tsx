@@ -13,6 +13,7 @@ import {
 } from "~/components/ui/dialog";
 import { Select } from "~/components/ui/select";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { DistrictFindManyDocument } from "~/queries/districts";
 import { SchoolFindManyDocument } from "~/queries/schools";
@@ -111,9 +112,7 @@ export function UserSchoolsDialog({
       .catch((err: unknown) => {
         if (cancelled) return;
         setLoadError(
-          err instanceof Error
-            ? err.message
-            : "Failed to load the user's district.",
+          toErrorMessage(err, "Failed to load the user's district."),
         );
         setDistrictResolved(true);
       });
@@ -147,9 +146,7 @@ export function UserSchoolsDialog({
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setLoadError(
-          err instanceof Error ? err.message : "Failed to load schools.",
-        );
+        setLoadError(toErrorMessage(err, "Failed to load schools."));
       })
       .finally(() => {
         if (!cancelled) setLoadingSchools(false);
@@ -197,9 +194,7 @@ export function UserSchoolsDialog({
       setPicked("");
       onChanged();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to add school",
-      );
+      toast.error(toErrorMessage(err, "Failed to add school"));
     } finally {
       setAdding(false);
     }
@@ -217,9 +212,7 @@ export function UserSchoolsDialog({
       setPendingRemove(null);
       onChanged();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to remove school",
-      );
+      toast.error(toErrorMessage(err, "Failed to remove school"));
     } finally {
       setRemoving(false);
     }

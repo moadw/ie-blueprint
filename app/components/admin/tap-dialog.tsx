@@ -12,6 +12,7 @@ import { Label } from "~/components/ui/label";
 import { Select } from "~/components/ui/select";
 import { toast } from "~/components/ui/toast";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { TapFindManyDocument, TapTypeFindManyDocument } from "~/queries/taps";
 import { TapCreateOneDocument, TapUpdateOneDocument } from "~/mutations/taps";
@@ -409,12 +410,10 @@ export function TapDialog({
         }
       }
     } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : isEdit
-            ? "Failed to update content"
-            : "Failed to create content";
+      const message = toErrorMessage(
+        err,
+        isEdit ? "Failed to update content" : "Failed to create content",
+      );
       setError(message);
       toast.error(message);
     } finally {

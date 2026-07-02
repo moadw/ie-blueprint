@@ -10,6 +10,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { setToken } from "~/lib/auth";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { safe } from "~/lib/safe-loader";
 import { requireSessionToken } from "~/lib/session.server";
@@ -92,9 +93,7 @@ export default function ClassroomsRoute() {
       toast.success("Classroom deleted");
       revalidator.revalidate();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to delete classroom",
-      );
+      toast.error(toErrorMessage(err, "Failed to delete classroom"));
     } finally {
       setDeletingId(null);
     }

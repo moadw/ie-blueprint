@@ -4,6 +4,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { toast } from "sonner";
 import { env } from "~/lib/env";
 import { trackPracticeCompleted } from "~/lib/analytics";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
@@ -303,10 +304,10 @@ export default function LessonPlayerRoute() {
       revalidator.revalidate();
     } catch (err) {
       finishedRef.current = false;
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Couldn't record practice completion. Please try again.";
+      const message = toErrorMessage(
+        err,
+        "Couldn't record practice completion. Please try again.",
+      );
       toast.error(message);
     }
   };
@@ -347,10 +348,10 @@ export default function LessonPlayerRoute() {
       });
       advance();
     } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Couldn't save your journal entry. Please try again.";
+      const message = toErrorMessage(
+        err,
+        "Couldn't save your journal entry. Please try again.",
+      );
       toast.error(message);
     } finally {
       setSavingJournal(false);

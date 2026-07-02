@@ -19,6 +19,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { toast } from "~/components/ui/toast";
 import { api } from "~/lib/api";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import {
   NarratorsDeleteOneDocument,
@@ -132,8 +133,7 @@ export function NarratorRow({
       setEditingName(false);
       toast.success("Narrator renamed");
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to rename narrator";
+      const message = toErrorMessage(err, "Failed to rename narrator");
       toast.error(message);
     } finally {
       setSavingName(false);
@@ -196,8 +196,7 @@ export function NarratorRow({
       toast.success("Narrator updated");
       setExpanded(false);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to update narrator";
+      const message = toErrorMessage(err, "Failed to update narrator");
       toast.error(message);
     } finally {
       setSavingExpanded(false);
@@ -225,8 +224,7 @@ export function NarratorRow({
       toast.success("Narrator deleted");
       setConfirmOpen(false);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to delete narrator";
+      const message = toErrorMessage(err, "Failed to delete narrator");
       toast.error(message);
     } finally {
       setDeleting(false);
@@ -247,8 +245,7 @@ export function NarratorRow({
       toast.success("Avatar updated");
       revalidator.revalidate();
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Avatar upload failed";
+      const message = toErrorMessage(err, "Avatar upload failed");
       toast.error(message);
     } finally {
       setUploadingAvatar(false);

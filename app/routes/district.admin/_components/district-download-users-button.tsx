@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
+import { toErrorMessage } from "~/lib/errors";
 import { exportUsersCsv, type UsersCsvQuery } from "~/lib/users-csv";
 
 interface DistrictDownloadUsersButtonProps {
@@ -48,7 +49,7 @@ export function DistrictDownloadUsersButton({
       URL.revokeObjectURL(url);
       toast.success("Download ready");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Export failed");
+      toast.error(toErrorMessage(err, "Export failed"));
     } finally {
       setLoading(false);
       setProgress(null);

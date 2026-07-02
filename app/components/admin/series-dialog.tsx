@@ -9,6 +9,7 @@ import { api } from "~/lib/api";
 import { activeHiddenFromStatus, statusFromActiveHidden } from "~/lib/curriculum";
 import type { CurriculumStatus } from "~/lib/curriculum";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import {
   CurriculumsCreateOneDocument,
@@ -231,12 +232,10 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
       onClose();
       revalidator.revalidate();
     } catch (err) {
-      const msg =
-        err instanceof Error
-          ? err.message
-          : isEdit
-            ? "Failed to update series"
-            : "Failed to create series";
+      const msg = toErrorMessage(
+        err,
+        isEdit ? "Failed to update series" : "Failed to create series",
+      );
       setError(msg);
       toast.error(msg);
     } finally {

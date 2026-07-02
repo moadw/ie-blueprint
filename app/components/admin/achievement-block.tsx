@@ -4,6 +4,7 @@ import { ConfirmDialog } from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
 import { toast } from "~/components/ui/toast";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { PinFindManyDocument } from "~/queries/pins";
 import { PinUpdateOneDocument } from "~/mutations/pins";
@@ -51,7 +52,7 @@ export function AchievementBlock({
       .catch((err: unknown) => {
         if (cancelled) return;
         setLoadError(
-          err instanceof Error ? err.message : "Failed to load achievement.",
+          toErrorMessage(err, "Failed to load achievement."),
         );
       })
       .finally(() => {
@@ -87,7 +88,7 @@ export function AchievementBlock({
       refetch();
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Failed to remove achievement",
+        toErrorMessage(err, "Failed to remove achievement"),
       );
     } finally {
       setRemoving(false);
