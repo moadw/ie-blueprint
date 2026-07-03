@@ -7,6 +7,7 @@ import {
   type CardMediaDescriptor,
 } from "./card-media";
 import { DurationPill, DurationTabs } from "./duration-pill";
+import { MediaIndicatorIcons } from "./media-indicator-icons";
 import type { GroupProgress } from "./profile-menu";
 
 export interface GridLesson {
@@ -158,6 +159,16 @@ export function LessonGrid({
                 />
               ) : durationMinutes != null ? (
                 <DurationPill minutes={durationMinutes} size="sm" />
+              ) : null}
+
+              {/* Media icons (bottom-left): Film for video, BookOpen for a
+                  journal prompt. Always shown on the grid. */}
+              {lesson.media ? (
+                <MediaIndicatorIcons
+                  hasVideo={lesson.media.video != null}
+                  hasJournal={lesson.media.hasJournal}
+                  size="sm"
+                />
               ) : null}
             </div>
 

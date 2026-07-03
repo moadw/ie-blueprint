@@ -122,7 +122,10 @@ export default function ClassroomsRoute() {
           </div>
         ) : (
           <div className="flex flex-col items-center gap-8 md:gap-10">
-            <div className="flex flex-col items-center gap-8 md:flex-row md:gap-10">
+            {/* Cards flow left-to-right and wrap into a centered grid, so a
+                handful stays a single row while a larger roster fills rows of
+                up to six (max-w caps the column count) instead of overflowing. */}
+            <div className="flex max-w-[980px] flex-wrap items-start justify-center gap-8 md:gap-10">
               {groups.map((g, i) => (
                 <ClassroomCard
                   key={g._id}

@@ -1,66 +1,87 @@
 import type { AudioPref } from "~/lib/audio-preference";
 import { formatMinutesLabel, type AudioTabOption } from "./card-media";
 
-// Glass recipe reused verbatim from the card status badges
-// (`lesson-glass-card.tsx` `current` pill): a neutral grey-frost base, 12px
-// backdrop blur, a white hairline border and the same soft inset+drop shadow.
-// Exported so step-3's segmented `DurationTabs` variant can adopt the SAME
-// recipe in this file without inventing a second glass treatment.
-export const PILL_GLASS_STYLE = {
-  background: "rgba(82,88,98,0.55)",
+// Per-surface glass recipes, matched to the (improved) prototype pills:
+//  - Slider (`ThemedGlassCard`): white-translucent frost + soft lift.
+//  - Grid (`ThemedPracticesGrid`): darker frost, no shadow.
+// Exported so the bottom-left media-indicator icons and the card's status badge
+// reuse the SAME recipe on each surface — one glass treatment per surface.
+export const SLIDER_PILL_GLASS = {
+  background: "rgba(255,255,255,0.25)",
   backdropFilter: "blur(12px)",
   WebkitBackdropFilter: "blur(12px)",
-  border: "1px solid rgba(255,255,255,0.25)",
-  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.25), 0 4px 12px rgba(0,0,0,0.18)",
+  border: "1px solid rgba(255,255,255,0.3)",
+  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.3), 0 4px 12px rgba(0,0,0,0.1)",
+} as const;
+export const GRID_PILL_GLASS = {
+  background: "rgba(0,0,0,0.4)",
+  backdropFilter: "blur(8px)",
+  WebkitBackdropFilter: "blur(8px)",
+  border: "1px solid rgba(255,255,255,0.2)",
 } as const;
 
-// Bottom-center placement over the card cover (mirrors the top-center status
-// badge's `absolute left-1/2 … -translate-x-1/2 z-20`). Shared with the tabs
-// variant so both sit in the same spot.
-export const PILL_POSITION_CLASS =
-  "absolute bottom-3 left-1/2 z-20 -translate-x-1/2";
+/** The frosted-glass recipe for a card surface (`"md"` slider / `"sm"` grid). */
+export function pillGlass(size: "sm" | "md") {
+  return size === "sm" ? GRID_PILL_GLASS : SLIDER_PILL_GLASS;
+}
+
+// Bottom-center placement over the cover (slider sits a touch higher than the
+// grid tile), mirroring the prototype's `bottom-4` / `bottom-2`.
+function pillPosition(size: "sm" | "md"): string {
+  return size === "sm"
+    ? "absolute bottom-2 left-1/2 z-10 -translate-x-1/2"
+    : "absolute bottom-4 left-1/2 z-20 -translate-x-1/2";
+}
+
+/** Container padding around the segment(s). */
+function pillPad(size: "sm" | "md"): string {
+  return size === "sm" ? "p-0.5" : "p-1";
+}
+
+/**
+ * One segment's classes. The active segment matches the improved prototype: a
+ * solid white pill with dark text on the slider (high contrast), a subtle
+ * `bg-white/20` highlight on the grid; inactive segments are transparent with
+ * white text.
+ */
+function segmentClasses(size: "sm" | "md", active: boolean): string {
+  const pad = size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-3 py-1.5 text-xs";
+  const fill = active
+    ? size === "sm"
+      ? "bg-white/20 text-white/90"
+      : "bg-white/50 text-black/80"
+    : "text-white/90";
+  return `whitespace-nowrap rounded-full font-medium ${pad} ${fill}`;
+}
 
 interface DurationPillProps {
   /** Floored minutes to label, e.g. `9` → "9 min". */
   minutes: number;
   /**
-   * Surface size. `"md"` (default) matches the slider cover in the prototype's
-   * `ThemedGlassCard` (`text-xs`, `px-3 py-1.5`); `"sm"` matches the smaller
-   * grid tile in `ThemedPracticesGrid` (`text-[10px]`, `px-2 py-0.5`).
+   * Surface size. `"md"` (default) is the slider cover (`ThemedGlassCard`);
+   * `"sm"` is the smaller grid tile (`ThemedPracticesGrid`).
    */
   size?: "sm" | "md";
 }
 
 /**
  * Single-label duration pill ("N min") rendered bottom-center over a series
- * card cover. Presentational only; the caller decides when to render it (for
- * `video` / `full-audio` shapes). The two-segment "5 min | 9 min" tabs variant
- * for `both-audios` cards is a sibling export added in step-3, reusing
- * `PILL_GLASS_STYLE` / `PILL_POSITION_CLASS`.
+ * card cover, for `video` / `full-audio` / `5min-audio` shapes. Presentational
+ * only. Rendered as a single always-active segment so it matches the
+ * prototype's single-variant toggle (a solid pill inside the frosted container).
  */
 export function DurationPill({ minutes, size = "md" }: DurationPillProps) {
-  const pad = size === "sm" ? "px-2 py-0.5" : "px-3 py-1.5";
-  const text = size === "sm" ? "text-[10px]" : "text-xs";
   return (
     <div
-      className={`${PILL_POSITION_CLASS} rounded-full ${pad}`}
-      style={PILL_GLASS_STYLE}
+      className={`${pillPosition(size)} flex items-center rounded-full ${pillPad(size)}`}
+      style={pillGlass(size)}
     >
-      <span className={`whitespace-nowrap font-medium text-white/90 ${text}`}>
+      <span className={segmentClasses(size, true)}>
         {formatMinutesLabel(minutes)}
       </span>
     </div>
   );
 }
-
-// The active segment's fill: a white-translucent glass pill that pops against
-// the dark frost of `PILL_GLASS_STYLE`. Same gradient/inset-highlight recipe as
-// the cards' glass surfaces — no second glass treatment invented.
-const ACTIVE_SEGMENT_STYLE = {
-  background:
-    "linear-gradient(145deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.2) 100%)",
-  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.4), 0 2px 6px rgba(0,0,0,0.2)",
-} as const;
 
 interface DurationTabsProps {
   /** The two segments, left-to-right (e.g. 5-min then full). */
@@ -73,11 +94,7 @@ interface DurationTabsProps {
    * `stopPropagation`'d here so it never bubbles to the card's navigate handler.
    */
   onChange: (type: AudioPref) => void;
-  /**
-   * Surface size — see {@link DurationPillProps.size}. `"sm"` shrinks the
-   * segments to the grid tile's `text-[10px]` / `px-2 py-0.5` (container
-   * `p-0.5`), matching the prototype's `ThemedPracticesGrid`.
-   */
+  /** Surface size — see {@link DurationPillProps.size}. */
   size?: "sm" | "md";
   /**
    * When `false`, the control is display-only: it still highlights the active
@@ -90,10 +107,10 @@ interface DurationTabsProps {
 
 /**
  * Two-segment "5 min | 9 min" duration tabs for `both-audios` series cards.
- * Same bottom-center placement + dark glass frost as {@link DurationPill}
- * (shared `PILL_POSITION_CLASS` / `PILL_GLASS_STYLE`); the active segment is a
- * white-translucent pill. Selecting a segment calls `onChange` and does NOT
- * navigate (the click is stopped from bubbling to the card body).
+ * Same per-surface frosted container + placement as {@link DurationPill}; the
+ * active segment is the solid pill from {@link segmentClasses}. Selecting a
+ * segment calls `onChange` and does NOT navigate (the click is stopped from
+ * bubbling to the card body).
  */
 export function DurationTabs({
   options,
@@ -102,17 +119,14 @@ export function DurationTabs({
   size = "md",
   interactive = true,
 }: DurationTabsProps) {
-  const containerPad = size === "sm" ? "p-0.5" : "p-1";
-  const segment =
-    size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-xs";
   return (
     <div
       role="group"
       aria-label="Audio length"
-      className={`${PILL_POSITION_CLASS} flex items-center gap-0.5 rounded-full ${containerPad}${
+      className={`${pillPosition(size)} flex items-center rounded-full ${pillPad(size)}${
         interactive ? "" : " pointer-events-none"
       }`}
-      style={PILL_GLASS_STYLE}
+      style={pillGlass(size)}
     >
       {options.map((option) => {
         const active = option.type === value;
@@ -128,10 +142,9 @@ export function DurationTabs({
               e.stopPropagation();
               onChange(option.type);
             }}
-            className={`whitespace-nowrap rounded-full ${segment} font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${
-              active ? "text-white" : "text-white/60 hover:text-white/90"
+            className={`${segmentClasses(size, active)} transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60${
+              active ? "" : " hover:text-white"
             }`}
-            style={active ? ACTIVE_SEGMENT_STYLE : undefined}
           >
             {formatMinutesLabel(option.minutes)}
           </button>
