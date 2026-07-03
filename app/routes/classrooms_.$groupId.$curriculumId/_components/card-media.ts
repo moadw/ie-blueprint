@@ -15,6 +15,7 @@
 import type { AudioPref } from "~/lib/audio-preference";
 import {
   buildTapTypeResolver,
+  isSliderTap,
   resolveTapType,
   type PracticeTap,
   type PracticeTapType,
@@ -43,6 +44,12 @@ export interface CardMediaDescriptor {
   shape: CardMediaShape;
   /** An `ie-journal` tap is present (drives the bottom-left journal icon). */
   hasJournal: boolean;
+  /**
+   * A `slider` tap is present (drives the bottom-left slide-show icon). Slider
+   * has no duration, so it never affects `shape` / `primaryDurationMinutes` — a
+   * slider-only class stays `shape: "none"` and shows only the icon.
+   */
+  hasSlider: boolean;
   video?: MediaDuration;
   audios: {
     "full-audio"?: MediaDuration;
@@ -127,6 +134,7 @@ export function deriveCardMedia(
   let fullAudio: MediaDuration | undefined;
   let fiveMinAudio: MediaDuration | undefined;
   let hasJournal = false;
+  let hasSlider = false;
 
   for (const tap of taps) {
     if (tap.deleted) continue;
@@ -140,6 +148,10 @@ export function deriveCardMedia(
     } else if (type === "ie-journal" || type === "journal") {
       // Journal tap identifiers (mirrors JOURNAL_TYPES in practice-steps.ts).
       hasJournal = true;
+    } else if (isSliderTap(tap, resolver)) {
+      // Reuse the player's canonical slider check (step-1) rather than
+      // re-inlining the `"slider"` identifier here.
+      hasSlider = true;
     }
   }
 
@@ -154,7 +166,12 @@ export function deriveCardMedia(
   else if (video) shape = "video";
   else shape = "none";
 
-  const descriptor: CardMediaDescriptor = { shape, audios, hasJournal };
+  const descriptor: CardMediaDescriptor = {
+    shape,
+    audios,
+    hasJournal,
+    hasSlider,
+  };
   if (video) descriptor.video = video;
   return descriptor;
 }

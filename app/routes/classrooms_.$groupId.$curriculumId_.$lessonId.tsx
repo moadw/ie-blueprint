@@ -21,6 +21,7 @@ import { SortFindManytapInput } from "~/gql/graphql";
 import { JournalScreen } from "~/components/lesson/journal-screen";
 import { MilestoneScreen } from "~/components/lesson/milestone-screen";
 import { PlayerStage } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/player-stage";
+import { SliderStage } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/slider-stage";
 import {
   buildPracticeSteps,
   buildTapTypeResolver,
@@ -443,6 +444,18 @@ export default function LessonPlayerRoute() {
           onSkip={advance}
           alreadySaved={!!existingJournal}
           savedContent={existingJournal?.body ?? ""}
+        />
+      ) : null}
+
+      {current?.kind === "slider" ? (
+        <SliderStage
+          slides={current.slides}
+          title={classItem?.title ?? ""}
+          onExit={exitToCurriculum}
+          onReachLastSlide={() => {
+            void recordCompletion();
+          }}
+          onAdvancePastEnd={advance}
         />
       ) : null}
 

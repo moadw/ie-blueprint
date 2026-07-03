@@ -167,6 +167,7 @@ export function LessonGrid({
                 <MediaIndicatorIcons
                   hasVideo={lesson.media.video != null}
                   hasJournal={lesson.media.hasJournal}
+                  hasSlider={lesson.media.hasSlider}
                   size="sm"
                 />
               ) : null}

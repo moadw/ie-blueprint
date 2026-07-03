@@ -185,6 +185,7 @@ export function LessonGlassCard({
             <MediaIndicatorIcons
               hasVideo={media.video != null}
               hasJournal={media.hasJournal}
+              hasSlider={media.hasSlider}
               size="md"
             />
           ) : null}
