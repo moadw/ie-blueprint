@@ -160,9 +160,10 @@ export function ClassroomCard({
           />
         </div>
 
-        {/* Name label */}
+        {/* Name label — capped to the tile width so every card is a fixed
+            130px cell and the selector packs a deterministic 6 per row. */}
         <span
-          className="text-sm font-medium tracking-wide"
+          className="max-w-[130px] break-words text-center text-sm font-medium tracking-wide"
           style={{
             color: "rgba(75, 85, 99, 0.9)",
             fontFamily: "system-ui, -apple-system, sans-serif",
