@@ -6,6 +6,7 @@ import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
+import { SortFindManyannouncementInput } from "~/gql/graphql";
 import {
   GroupFindOneDocument,
   GroupProgressFindOneDocument,
@@ -14,6 +15,9 @@ import { CurriculumsFindOneDocument } from "~/queries/curriculums";
 import { ClassesByCurriculumFindOneDocument } from "~/queries/classes";
 import { TapFindManyDocument, TapTypeFindManyDocument } from "~/queries/taps";
 import { UsersFindOneDocument } from "~/queries/users";
+import { AnnouncementFindManyDocument } from "~/queries/announcements";
+import { AnnouncementBar } from "~/components/ui/announcement-bar";
+import { isAnnouncementDismissed } from "~/lib/announcement-dismissal";
 import {
   deriveCardMediaByClass,
   type CardMediaDescriptor,
@@ -62,6 +66,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     userResult,
     progressResult,
     tapTypesResult,
+    announcementResult,
   ] = await Promise.all([
       safe(
         gqlClient.request(
@@ -109,6 +114,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           headers,
         ),
       ),
+      safe(
+        // Latest active educator announcement — surfaced as the green bar at
+        // the top of the page. GLOBAL: no `platform` filter (announcements
+        // have no platform field). A failed fetch degrades to no bar.
+        gqlClient.request(
+          AnnouncementFindManyDocument,
+          {
+            filter: { type: "educator", active: true },
+            limit: 1,
+            sort: SortFindManyannouncementInput.CREATEDAT_DESC,
+          },
+          headers,
+        ),
+      ),
     ]);
 
   const group = groupResult.ok ? groupResult.data.GroupFindOne : null;
@@ -128,6 +147,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const groupProgress = progressResult.ok
     ? progressResult.data.GroupProgressFindOne
     : null;
+  // Latest active educator announcement (global — no platform scope). A
+  // failed fetch degrades to null so the green bar simply doesn't render.
+  // Dismissal is resolved server-side via cookie so a closed bar never flashes
+  // on reload (the server just omits it).
+  const announcementRow = announcementResult.ok
+    ? (announcementResult.data.AnnouncementFindMany?.[0] ?? null)
+    : null;
+  const announcement =
+    announcementRow &&
+    !isAnnouncementDismissed(request.headers.get("Cookie"), announcementRow._id)
+      ? announcementRow
+      : null;
 
   // Per-card media durations (Q1: `tap.time` read raw as minutes). Fetch the
   // curriculum's taps in ONE batched query (`class in [ids]` via the scalar
@@ -170,10 +201,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     mediaByClass,
     user,
     groupProgress,
+    announcement,
     groupError: groupResult.error,
     curriculumError: curriculumResult.error,
     classesError: classesResult.error,
     groupProgressError: progressResult.error,
+    announcementError: announcementResult.error,
   };
 }
 
@@ -186,6 +219,7 @@ export default function ClassroomCurriculumRoute() {
     mediaByClass,
     user,
     groupProgress,
+    announcement,
     groupError,
     curriculumError,
   } = useLoaderData<typeof loader>();
@@ -232,6 +266,13 @@ export default function ClassroomCurriculumRoute() {
 
   return (
     <div className="min-h-screen bg-zinc-900 text-white">
+      {announcement ? (
+        <AnnouncementBar
+          id={announcement._id}
+          message={announcement.message ?? ""}
+        />
+      ) : null}
+
       {hasErrors ? (
         <div className="space-y-3 px-4 py-6 sm:px-6">
           {groupError ? (
