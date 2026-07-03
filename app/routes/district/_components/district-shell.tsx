@@ -3,19 +3,29 @@ import { useNavigate } from "react-router";
 import { ArrowLeft, Bell } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Logo } from "~/components/ui/logo";
+import { AnnouncementBar } from "~/components/ui/announcement-bar";
 import type { UserDistrictFindOneQuery } from "~/gql/graphql";
 import { DistrictNav } from "~/routes/district/_components/district-nav";
 
 export interface DistrictShellProps {
   district: UserDistrictFindOneQuery["UserDistrictFindOne"] | null;
+  announcement?: { _id: string; message?: string | null } | null;
   children: ReactNode;
 }
 
-export function DistrictShell({ children }: DistrictShellProps) {
+export function DistrictShell({ announcement, children }: DistrictShellProps) {
   const navigate = useNavigate();
 
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-white print:h-auto print:overflow-visible">
+      {announcement ? (
+        <div className="shrink-0 print:hidden">
+          <AnnouncementBar
+            id={announcement._id}
+            message={announcement.message ?? ""}
+          />
+        </div>
+      ) : null}
       <header className="flex items-center justify-between px-4 md:px-6 h-16 bg-white border-b border-border shrink-0 print:hidden">
         <div className="flex items-center gap-4 md:gap-8 min-w-0">
           <Logo className="h-8 shrink-0" />
