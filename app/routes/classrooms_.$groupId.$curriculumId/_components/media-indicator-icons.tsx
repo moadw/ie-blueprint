@@ -1,4 +1,4 @@
-import { BookOpen, Film } from "lucide-react";
+import { BookOpen, Film, GalleryHorizontalEnd } from "lucide-react";
 import { GRID_PILL_GLASS, SLIDER_PILL_GLASS } from "./duration-pill";
 
 interface MediaIndicatorIconsProps {
@@ -6,6 +6,8 @@ interface MediaIndicatorIconsProps {
   hasVideo: boolean;
   /** An `ie-journal` tap is present in the practice. */
   hasJournal: boolean;
+  /** A `slider` tap is present in the practice (slide-show indicator). */
+  hasSlider?: boolean;
   /**
    * Surface size — `"md"` slider (`w-8` badge / `w-3.5` icon), `"sm"` grid
    * (`w-6` / `w-3`). Reuses the card's per-surface glass so the icons match the
@@ -16,18 +18,20 @@ interface MediaIndicatorIconsProps {
 
 /**
  * Bottom-left cluster of media-indicator icons on a series card: a `Film` badge
- * when the practice includes a video, a `BookOpen` badge when it includes a
- * journal prompt — matching the prototype's `ThemedGlassCard` /
- * `ThemedPracticesGrid`. Renders nothing when the practice has neither. Each
- * badge `stopPropagation`s so a tap reveals its `title` tooltip without opening
- * the card, and carries the same tooltip copy as the prototype.
+ * when the practice includes a video, a `GalleryHorizontalEnd` badge when it
+ * includes a slide show, and a `BookOpen` badge when it includes a journal
+ * prompt — matching the prototype's `ThemedGlassCard` / `ThemedPracticesGrid`.
+ * Renders nothing when the practice has none. Each badge `stopPropagation`s so a
+ * tap reveals its `title` tooltip without opening the card, and carries the same
+ * tooltip copy as the prototype.
  */
 export function MediaIndicatorIcons({
   hasVideo,
   hasJournal,
+  hasSlider = false,
   size = "md",
 }: MediaIndicatorIconsProps) {
-  if (!hasVideo && !hasJournal) return null;
+  if (!hasVideo && !hasJournal && !hasSlider) return null;
   const glass = size === "sm" ? GRID_PILL_GLASS : SLIDER_PILL_GLASS;
   const wrapper =
     size === "sm"
@@ -49,6 +53,16 @@ export function MediaIndicatorIcons({
           onClick={(e) => e.stopPropagation()}
         >
           <Film className={icon} />
+        </div>
+      ) : null}
+      {hasSlider ? (
+        <div
+          className={badge}
+          style={glass}
+          title="This practice includes a slide show"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GalleryHorizontalEnd className={icon} />
         </div>
       ) : null}
       {hasJournal ? (

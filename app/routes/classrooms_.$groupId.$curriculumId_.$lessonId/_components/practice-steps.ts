@@ -47,10 +47,21 @@ export type PracticeTapType = TapTypeFindManyQuery["TapTypeFindMany"][number];
 
 export type MediaKind = "audio" | "video";
 
+/**
+ * A single slide within a slider step. An `image` slide renders `url` as an
+ * `<img>`; a `video` slide renders `url` in a `<video>` with an optional
+ * `posterUrl`. `posterUrl` is omitted entirely (never set to `undefined`) when
+ * absent, per `exactOptionalPropertyTypes`.
+ */
+export type SliderSlide =
+  | { media: "image"; url: string; title: string }
+  | { media: "video"; url: string; posterUrl?: string; title: string };
+
 /** Ordered, typed step the practice runner renders one at a time. */
 export type PracticeStep =
   | { kind: "player"; media: MediaKind; tap: PracticeTap }
   | { kind: "journal"; tap: PracticeTap }
+  | { kind: "slider"; slides: SliderSlide[] }
   | { kind: "achievement"; pin: PracticePin };
 
 // Backend `TapType.identifier`s, with legacy teacher-flow slugs kept as aliases.
@@ -64,6 +75,8 @@ const AUDIO_TYPES: ReadonlySet<string> = new Set([
   "5min-audio",
   "audio",
 ]);
+/** Tap-type identifiers that route to the slider (slide-viewer) screen. */
+const SLIDER_TYPES: ReadonlySet<string> = new Set(["slider"]);
 
 /**
  * Build a resolver Map from a `TapTypeFindMany` result that maps a raw
@@ -116,6 +129,20 @@ export function isJournalTap(
   resolver?: ReadonlyMap<string, string>,
 ): boolean {
   return isJournalType(resolveTapType(tap, resolver));
+}
+
+/**
+ * True when this tap should render in the slider (slide-viewer) screen rather
+ * than the player/journal. Pass the resolver so a tap whose `type` is a `_id`
+ * resolves to its `slider` slug before the check. Exported because the
+ * curriculum card indicator (card-media) reuses it to detect slider classes.
+ */
+export function isSliderTap(
+  tap: PracticeTap,
+  resolver?: ReadonlyMap<string, string>,
+): boolean {
+  const type = resolveTapType(tap, resolver);
+  return type != null && SLIDER_TYPES.has(type);
 }
 
 /**
@@ -287,22 +314,82 @@ export function selectAudioTaps(
 }
 
 /**
+ * Map a single slider tap to a slide. Prefers an IMAGE slide from
+ * `tap.cover.url`; otherwise falls back to a VIDEO slide from the first
+ * `videos[]` entry, whose poster prefers the video thumbnail then the cover
+ * image. `title` uses `tap.title` (falling back to `""`). Returns `null` when
+ * the tap has neither a cover-image url nor a playable video url (guarded for
+ * `noUncheckedIndexedAccess`). `posterUrl` is omitted entirely (never set to
+ * `undefined`) when absent, per `exactOptionalPropertyTypes`.
+ */
+export function slideForTap(tap: PracticeTap): SliderSlide | null {
+  const title = tap.title ?? "";
+  const coverUrl = tap.cover?.url ?? undefined;
+  if (coverUrl) {
+    return { media: "image", url: coverUrl, title };
+  }
+  const videoUrl = tap.videos?.[0]?.url ?? undefined;
+  if (videoUrl) {
+    const posterUrl = tap.videos?.[0]?.thumbnail?.url ?? tap.cover?.url ?? undefined;
+    return posterUrl
+      ? { media: "video", url: videoUrl, posterUrl, title }
+      : { media: "video", url: videoUrl, title };
+  }
+  return null;
+}
+
+/**
+ * Collapse a class's slider taps into a SINGLE slider step holding the ordered
+ * slides. Each tap maps through {@link slideForTap}; taps that yield no slide
+ * (no cover image and no video url) are dropped. Returns `null` when no tap
+ * produces a slide, so the caller can skip inserting an empty slider step.
+ */
+export function buildSliderStep(
+  sliderTaps: readonly PracticeTap[],
+): Extract<PracticeStep, { kind: "slider" }> | null {
+  const slides: SliderSlide[] = [];
+  for (const tap of sliderTaps) {
+    const slide = slideForTap(tap);
+    if (slide) slides.push(slide);
+  }
+  return slides.length > 0 ? { kind: "slider", slides } : null;
+}
+
+/**
  * Build the ordered step list for a class. Taps are mapped in their given
  * order (the caller is responsible for sorting by `order` first); an optional
  * non-deleted pin appends a final `achievement` step. Pass the tap-type
  * `resolver` so taps whose `type` is a `_id` resolve to their canonical slug
  * before branching (no-op when `tap.type` is already a slug or the map empty).
+ *
+ * Slider taps are special-cased: ALL of a class's slider taps collapse into a
+ * SINGLE `slider` step (ordered slides), inserted at the position of the FIRST
+ * slider tap. Every other tap maps one-to-one as before (journal vs player), so
+ * non-slider classes are unaffected.
  */
 export function buildPracticeSteps(
   taps: readonly PracticeTap[],
   pin: PracticePin | null,
   resolver?: ReadonlyMap<string, string>,
 ): PracticeStep[] {
-  const steps: PracticeStep[] = taps.map((tap) =>
-    isJournalTap(tap, resolver)
-      ? { kind: "journal", tap }
-      : { kind: "player", media: mediaForTap(tap, resolver), tap },
-  );
+  const sliderTaps = taps.filter((t) => isSliderTap(t, resolver));
+  let sliderInserted = false;
+  const steps: PracticeStep[] = [];
+  for (const tap of taps) {
+    if (isSliderTap(tap, resolver)) {
+      if (!sliderInserted) {
+        const sliderStep = buildSliderStep(sliderTaps);
+        if (sliderStep) steps.push(sliderStep);
+        sliderInserted = true;
+      }
+      continue;
+    }
+    steps.push(
+      isJournalTap(tap, resolver)
+        ? { kind: "journal", tap }
+        : { kind: "player", media: mediaForTap(tap, resolver), tap },
+    );
+  }
   if (pin) {
     steps.push({ kind: "achievement", pin });
   }
