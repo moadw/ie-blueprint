@@ -46,6 +46,20 @@ export function toErrorMessage(
   return fallback;
 }
 
+/**
+ * Blueprint mutation payloads surface domain errors on `payload.error.message`
+ * rather than throwing — the ErrorInterface has no resolveType, so a thrown
+ * payload error masks the real message (see CLAUDE.md). Duck-type that shape and
+ * return the message, or `null` when the payload succeeded. Callers throw
+ * `new Error(msg)` and display it via `toErrorMessage`.
+ */
+export function payloadErrorMessage(payload: unknown): string | null {
+  const err = (
+    payload as { error?: { message?: string } | null } | null | undefined
+  )?.error;
+  return err?.message ?? null;
+}
+
 /** Pull the first GraphQL error message out of a graphql-request ClientError. */
 function graphqlErrorMessage(err: unknown): string | null {
   const errors = (

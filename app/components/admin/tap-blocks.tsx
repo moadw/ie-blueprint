@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
-import { GripVertical, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  Film,
+  GripVertical,
+  ImageIcon,
+  Loader2,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import {
   DndContext,
   type DragEndEvent,
@@ -34,6 +42,8 @@ interface SortableTapRowProps {
   id: string;
   tap: TapItem;
   index: number;
+  /** Slider taps only: 1-based position among slider taps → "Slide N". null otherwise. */
+  slideNumber: number | null;
   /** Journal taps only: the resolved question text, shown under the title. */
   question: string | null;
   disabled: boolean;
@@ -49,6 +59,7 @@ function SortableTapRow({
   id,
   tap,
   index,
+  slideNumber,
   question,
   disabled,
   onEdit,
@@ -70,6 +81,18 @@ function SortableTapRow({
     zIndex: isDragging ? 10 : undefined,
   };
 
+  // Slider taps render a slide-style row (thumbnail + media icon + "Slide N")
+  // instead of the order-number + title used by every other tap type.
+  const isSlide = slideNumber != null;
+  const slideIsVideo = isSlide && Boolean(tap.videos && tap.videos[0]);
+  const slideThumbUrl = isSlide
+    ? slideIsVideo
+      ? (tap.videos?.[0]?.thumbnail?.url ?? null)
+      : (tap.cover?.url ?? null)
+    : null;
+  const slideVideoUrl = slideIsVideo ? (tap.videos?.[0]?.url ?? null) : null;
+  const label = isSlide ? `Slide ${slideNumber}` : tap.title || "content";
+
   return (
     <div
       ref={setNodeRef}
@@ -78,7 +101,7 @@ function SortableTapRow({
     >
       <button
         type="button"
-        aria-label={`Drag to reorder ${tap.title || "content"}`}
+        aria-label={`Drag to reorder ${label}`}
         className="cursor-grab touch-none p-1 text-stone-400 hover:text-stone-600 active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-50"
         disabled={disabled}
         {...attributes}
@@ -86,25 +109,61 @@ function SortableTapRow({
       >
         <GripVertical className="h-4 w-4" />
       </button>
-      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded border border-stone-200 bg-white text-xs font-semibold text-stone-700">
-        {Math.max(1, Math.round(tap.order ?? index + 1))}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-stone-900">
-          {tap.title || "Untitled"}
-        </p>
-        {question ? (
-          <p className="mt-0.5 line-clamp-2 text-xs text-stone-500">
-            {question}
-          </p>
-        ) : null}
-      </div>
+      {isSlide ? (
+        <>
+          <div className="flex h-10 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded bg-stone-200">
+            {slideThumbUrl ? (
+              <img
+                src={slideThumbUrl}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            ) : slideVideoUrl ? (
+              <video
+                src={slideVideoUrl}
+                className="h-full w-full object-cover"
+                muted
+              />
+            ) : slideIsVideo ? (
+              <Film className="h-5 w-5 text-stone-400" />
+            ) : (
+              <ImageIcon className="h-5 w-5 text-stone-400" />
+            )}
+          </div>
+          <div className="flex min-w-0 flex-1 items-center gap-1.5">
+            {slideIsVideo ? (
+              <Film className="h-4 w-4 flex-shrink-0 text-purple-500" />
+            ) : (
+              <ImageIcon className="h-4 w-4 flex-shrink-0 text-sky-500" />
+            )}
+            <span className="truncate text-sm text-stone-700">
+              Slide {slideNumber}
+            </span>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded border border-stone-200 bg-white text-xs font-semibold text-stone-700">
+            {Math.max(1, Math.round(tap.order ?? index + 1))}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-stone-900">
+              {tap.title || "Untitled"}
+            </p>
+            {question ? (
+              <p className="mt-0.5 line-clamp-2 text-xs text-stone-500">
+                {question}
+              </p>
+            ) : null}
+          </div>
+        </>
+      )}
       <div className="flex flex-shrink-0 gap-1">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => onEdit(tap)}
-          aria-label={`Edit ${tap.title || "content"}`}
+          aria-label={`Edit ${label}`}
           className="h-8 w-8 text-stone-500 hover:bg-stone-100 hover:text-stone-700"
         >
           <Pencil className="h-3.5 w-3.5" />
@@ -113,7 +172,7 @@ function SortableTapRow({
           variant="ghost"
           size="icon"
           onClick={() => onDelete(tap)}
-          aria-label={`Delete ${tap.title || "content"}`}
+          aria-label={`Delete ${label}`}
           className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700"
         >
           <Trash2 className="h-3.5 w-3.5" />
@@ -352,6 +411,12 @@ export function TapBlocks({ classId }: TapBlocksProps) {
     }
   }
 
+  // Sequential "Slide N" numbering across slider-type taps, in list order.
+  let sliderSeq = 0;
+  const slideNumbers = taps.map((t) =>
+    t.type === "slider" ? ++sliderSeq : null,
+  );
+
   return (
     <div className="space-y-2">
       {loading ? (
@@ -404,6 +469,7 @@ export function TapBlocks({ classId }: TapBlocksProps) {
                       id={id}
                       tap={tap}
                       index={index}
+                      slideNumber={slideNumbers[index] ?? null}
                       question={question}
                       disabled={savingOrder}
                       onEdit={openEdit}
