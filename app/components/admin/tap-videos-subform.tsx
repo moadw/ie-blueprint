@@ -19,7 +19,9 @@ import type { narratorsFindManyQuery, tapVideosInput } from "~/gql/graphql";
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 // TODO(tap-video-endpoint): confirm real server limit; 500MB is a generous
 // client guard so valid uploads aren't blocked — server is the real backstop.
-const MAX_VIDEO_UPLOAD_BYTES = 500 * 1024 * 1024;
+// Shared with the slider edit subform + create pipeline so all three enforce
+// the same limit.
+export const MAX_VIDEO_UPLOAD_BYTES = 500 * 1024 * 1024;
 
 // Unambiguous audio file extensions, used to recognize an audio entry from a
 // pasted URL when the MIME `type` is unknown (uploads set `type` from the
@@ -128,6 +130,48 @@ export function videoEntriesFromTap(
       },
     ];
   });
+}
+
+/**
+ * Upload a media file to a tap's `PUT /admin/tap-video` endpoint (which appends
+ * or updates a video subdocument server-side and returns no usable body), then
+ * refetch the tap so the caller gets the canonical `_id` + url. Returns the
+ * fresh `videos` as form entries, or `null` when only the refetch fails (the
+ * upload itself still succeeded — callers fall back to a local preview). An
+ * upload failure rejects so the caller's catch can toast it.
+ *
+ * Shared by this multi-entry media subform and the single-media slider edit
+ * subform so both speak the same endpoint contract + read-back path.
+ */
+export async function uploadTapVideoAndRefetch(
+  tapId: string,
+  file: File,
+  existingVideoId?: string | null,
+  onProgress?: (pct: number) => void,
+): Promise<VideoEntry[] | null> {
+  const fd = new FormData();
+  // Endpoint contract (verified via /doc): `/admin/tap-video` takes `id`
+  // (tap _id) + `file`, and APPENDS a video subdocument. `video` is a
+  // best-effort hint for re-uploading into an existing subdoc; the refetch
+  // reconciles either outcome.
+  fd.append("file", file);
+  fd.append("id", tapId);
+  if (existingVideoId) fd.append("video", existingVideoId);
+  await uploadWithProgress(
+    "/admin/tap-video",
+    fd,
+    onProgress ? { onProgress } : undefined,
+  );
+  try {
+    const data = await gqlClient.request(TapFindManyDocument, {
+      filter: { _id: tapId },
+      limit: 1,
+    });
+    const fresh = data.TapFindMany?.[0];
+    return fresh ? videoEntriesFromTap(fresh.videos) : null;
+  } catch {
+    return null;
+  }
 }
 
 // MIME type inferred from a media URL's file extension — the "Format" field
@@ -410,41 +454,22 @@ export function TapVideosSubform({
     setUploadingKey(key);
     setUploadProgress(0);
     try {
-      const fd = new FormData();
-      // Endpoint contract (verified via /doc): `/admin/tap-video` takes only
-      // `id` (tap _id) + `file`, returns no usable body, and APPENDS a video
-      // subdocument server-side. We still pass `video` when re-uploading into
-      // an existing entry as a best-effort hint (the backend may update that
-      // subdoc in place); the refetch below reconciles either outcome.
-      fd.append("file", file);
-      fd.append("id", tapId);
-      if (videoId) fd.append("video", videoId);
-      await uploadWithProgress("/admin/tap-video", fd, {
-        onProgress: (pct) => setUploadProgress(pct),
-      });
-
-      // The upload persisted the file into a new (or updated) video subdoc,
-      // but the response carries neither its `_id` nor a URL. Re-query the tap
-      // so this row picks up the server `_id` + canonical URL. This is the
-      // load-bearing fix: without it the row keeps a `blob:` preview with
-      // `_id: null`, and the next TapUpdateOne — which replaces the `videos`
-      // array wholesale — drops the row, wiping the just-uploaded video.
+      // The upload persists the file into a new (or updated) video subdoc, but
+      // the response carries neither its `_id` nor a URL, so the helper refetches
+      // the tap for the canonical `_id` + url. This is load-bearing: without the
+      // refetch the row keeps a `blob:` preview with `_id: null`, and the next
+      // TapUpdateOne — which replaces the `videos` array wholesale — drops the
+      // row, wiping the just-uploaded video. `null` = refetch failed (fall back
+      // to a local blob below); an upload failure rejects into the catch.
       const priorIds = new Set(
         value.map((v) => v._id).filter((id): id is string => Boolean(id)),
       );
-      let serverVideos: VideoEntry[] | null = null;
-      try {
-        const data = await gqlClient.request(TapFindManyDocument, {
-          filter: { _id: tapId },
-          limit: 1,
-        });
-        const fresh = data.TapFindMany?.[0];
-        if (fresh) serverVideos = videoEntriesFromTap(fresh.videos);
-      } catch {
-        // Refetch failed — fall back to a local blob preview below. The save
-        // can still wipe it in this rare double-failure case, but the upload
-        // itself succeeded, so reopening the tap will show the persisted video.
-      }
+      const serverVideos = await uploadTapVideoAndRefetch(
+        tapId,
+        file,
+        videoId,
+        (pct) => setUploadProgress(pct),
+      );
 
       // Prefer the freshly-created subdoc (an `_id` we hadn't seen before);
       // fall back to the same-`_id` row when the backend updated in place.
