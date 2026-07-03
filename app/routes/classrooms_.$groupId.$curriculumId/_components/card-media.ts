@@ -41,6 +41,8 @@ export interface MediaDuration {
  */
 export interface CardMediaDescriptor {
   shape: CardMediaShape;
+  /** An `ie-journal` tap is present (drives the bottom-left journal icon). */
+  hasJournal: boolean;
   video?: MediaDuration;
   audios: {
     "full-audio"?: MediaDuration;
@@ -124,6 +126,7 @@ export function deriveCardMedia(
   let video: MediaDuration | undefined;
   let fullAudio: MediaDuration | undefined;
   let fiveMinAudio: MediaDuration | undefined;
+  let hasJournal = false;
 
   for (const tap of taps) {
     if (tap.deleted) continue;
@@ -134,6 +137,9 @@ export function deriveCardMedia(
       if (!fullAudio) fullAudio = { minutes: tapMinutes(tap) };
     } else if (type === "5min-audio") {
       if (!fiveMinAudio) fiveMinAudio = { minutes: tapMinutes(tap) };
+    } else if (type === "ie-journal" || type === "journal") {
+      // Journal tap identifiers (mirrors JOURNAL_TYPES in practice-steps.ts).
+      hasJournal = true;
     }
   }
 
@@ -148,7 +154,7 @@ export function deriveCardMedia(
   else if (video) shape = "video";
   else shape = "none";
 
-  const descriptor: CardMediaDescriptor = { shape, audios };
+  const descriptor: CardMediaDescriptor = { shape, audios, hasJournal };
   if (video) descriptor.video = video;
   return descriptor;
 }

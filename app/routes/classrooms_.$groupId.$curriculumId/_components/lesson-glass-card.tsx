@@ -5,7 +5,8 @@ import {
   primaryDurationMinutes,
   type CardMediaDescriptor,
 } from "./card-media";
-import { DurationPill, DurationTabs, PILL_GLASS_STYLE } from "./duration-pill";
+import { DurationPill, DurationTabs, SLIDER_PILL_GLASS } from "./duration-pill";
+import { MediaIndicatorIcons } from "./media-indicator-icons";
 
 export type LessonCardStatus = "watched" | "current" | "none";
 
@@ -125,13 +126,10 @@ export function LessonGlassCard({
       ) : status === "current" ? (
         <div
           className="absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-full px-3 py-1.5"
-          // Same glass recipe as the duration pill — single source of truth
-          // (`PILL_GLASS_STYLE`) so the two frosted pills can't drift apart. The
-          // neutral grey base (not the prototype's literal white-translucent)
-          // matches the prototype's RENDERED look on any cover image: its pill
-          // only READS grey because `backdrop-filter` frosts the dark card-top
-          // behind it (fidelity rule: match the RGB it renders).
-          style={PILL_GLASS_STYLE}
+          // Same white-translucent glass as the slider duration pill and media
+          // icons — one shared recipe (`SLIDER_PILL_GLASS`), matching the
+          // prototype's `ThemedGlassCard` badges/toggle.
+          style={SLIDER_PILL_GLASS}
         >
           <span className="text-xs font-medium uppercase tracking-wide text-white/90">
             Current
@@ -168,17 +166,29 @@ export function LessonGlassCard({
         </div>
       )}
 
-      {/* Duration pill (bottom-center). Single "N min" for video/full-audio;
-          two-segment "5 min | 9 min" tabs for both-audios. */}
-      {tabOptions && audioPref && onAudioPrefChange ? (
-        <DurationTabs
-          options={tabOptions}
-          value={audioPref}
-          onChange={onAudioPrefChange}
-          interactive={isActive}
-        />
-      ) : durationMinutes != null ? (
-        <DurationPill minutes={durationMinutes} />
+      {/* Bottom-of-cover overlays — the prototype shows these on the ACTIVE
+          card only. Duration pill (bottom-center): single "N min" for
+          video/full-audio/5min-audio, "5 min | 9 min" tabs for both-audios.
+          Media icons (bottom-left): Film for video, BookOpen for a journal. */}
+      {isActive ? (
+        <>
+          {tabOptions && audioPref && onAudioPrefChange ? (
+            <DurationTabs
+              options={tabOptions}
+              value={audioPref}
+              onChange={onAudioPrefChange}
+            />
+          ) : durationMinutes != null ? (
+            <DurationPill minutes={durationMinutes} />
+          ) : null}
+          {media ? (
+            <MediaIndicatorIcons
+              hasVideo={media.video != null}
+              hasJournal={media.hasJournal}
+              size="md"
+            />
+          ) : null}
+        </>
       ) : null}
 
       <style>{`
