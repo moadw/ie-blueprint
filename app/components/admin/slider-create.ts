@@ -1,5 +1,8 @@
 import type { SliderFileItem } from "~/components/admin/tap-slider-create-subform";
-import { MAX_VIDEO_UPLOAD_BYTES } from "~/components/admin/tap-videos-subform";
+import {
+  MAX_IMAGE_UPLOAD_BYTES,
+  MAX_VIDEO_UPLOAD_BYTES,
+} from "~/components/admin/tap-videos-subform";
 import { payloadErrorMessage, toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { uploadWithProgress } from "~/lib/upload";
@@ -68,10 +71,10 @@ async function runPool<T, R>(
  *    `tap-videos-subform`. A failed upload after a successful create is still a
  *    per-file failure — the empty tap is left in place (best-effort, not rolled
  *    back), surfaced in the summary.
- * 3. Image file → STOP after create: the placeholder tap now exists with an
- *    empty cover. TODO(tap-cover): once `PUT /admin/tap-cover` ships, upload the
- *    image here and persist `cover { url type }` (do NOT use
- *    `POST /admin/upload-image` as a stand-in).
+ * 3. Image file → `PUT /admin/tap-cover` (`file` + tap `id`), which writes the
+ *    tap's top-level `cover` server-side (mirrors `/admin/tap-video`). Like the
+ *    video branch, a failed upload after a successful create is a per-file
+ *    failure — the empty tap is left in place (best-effort, not rolled back).
  *
  * Never throws per file; returns one `{ file, ok, error? }` per input, in order.
  */
@@ -84,14 +87,21 @@ export async function runSliderCreate(
 
   return runPool(files, concurrency, async (item, index) => {
     const order = base + index;
-    // Guard oversize video uploads BEFORE creating the tap — otherwise the
-    // create succeeds but the upload can't, leaving an orphan empty tap. Matches
-    // the sibling subforms' client-side size guard (server is the real backstop).
+    // Guard oversize uploads BEFORE creating the tap — otherwise the create
+    // succeeds but the upload can't, leaving an orphan empty tap. Matches the
+    // sibling subforms' client-side size guards (server is the real backstop).
     if (item.kind === "video" && item.file.size > MAX_VIDEO_UPLOAD_BYTES) {
       return {
         file: item.file,
         ok: false,
         error: "Media must be 500 MB or smaller.",
+      } satisfies SliderCreateResult;
+    }
+    if (item.kind === "image" && item.file.size > MAX_IMAGE_UPLOAD_BYTES) {
+      return {
+        file: item.file,
+        ok: false,
+        error: "Image must be 5 MB or smaller.",
       } satisfies SliderCreateResult;
     }
     try {
@@ -114,15 +124,15 @@ export async function runSliderCreate(
         data.TapCreateOne?.recordId ?? data.TapCreateOne?.record?._id;
       if (!recordId) throw new Error("Content record was not created");
 
-      if (item.kind === "video") {
-        const fd = new FormData();
-        fd.append("file", item.file);
-        fd.append("id", recordId);
-        await uploadWithProgress("/admin/tap-video", fd);
-      }
-      // Image files: stop after create — the placeholder tap now exists with an
-      // empty cover. TODO(tap-cover): when `PUT /admin/tap-cover` ships, upload
-      // `item.file` here and persist `cover { url type }`.
+      const fd = new FormData();
+      fd.append("file", item.file);
+      fd.append("id", recordId);
+      // Video → append a video subdoc; image → write the tap's top-level cover.
+      // Both endpoints take (`file` + tap `id`) and persist server-side.
+      await uploadWithProgress(
+        item.kind === "video" ? "/admin/tap-video" : "/admin/tap-cover",
+        fd,
+      );
 
       return { file: item.file, ok: true } satisfies SliderCreateResult;
     } catch (err) {

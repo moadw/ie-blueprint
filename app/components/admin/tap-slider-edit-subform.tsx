@@ -6,7 +6,9 @@ import { toast } from "~/components/ui/toast";
 import { toErrorMessage } from "~/lib/errors";
 import { cn } from "~/lib/utils";
 import {
+  MAX_IMAGE_UPLOAD_BYTES,
   MAX_VIDEO_UPLOAD_BYTES,
+  uploadTapCoverAndRefetch,
   uploadTapVideoAndRefetch,
   type VideoEntry,
 } from "~/components/admin/tap-videos-subform";
@@ -27,13 +29,14 @@ export interface TapSliderEditSubformProps {
   onVideosChange: (
     update: VideoEntry[] | ((prev: VideoEntry[]) => VideoEntry[]),
   ) => void;
-  /** The tap's stored top-level cover. Display-only in pass 1 (see below). */
+  /** The tap's stored top-level cover — seeds the editable image field. */
   cover?: TapCoverLike;
   /**
-   * Notifies the parent whenever a video upload starts/stops. The parent can't
+   * Notifies the parent whenever a media upload starts/stops. The parent can't
    * otherwise see this subform's local `uploading` state, so it uses this to
    * disable Save/Cancel mid-upload (clicking Save then would wholesale-replace
-   * `videos` with the stale entry and drop the just-uploaded video).
+   * `videos` with the stale entry and drop the just-uploaded video; the cover
+   * write persists server-side but disabling Save/Cancel is still correct UX).
    */
   onUploadingChange?: (uploading: boolean) => void;
 }
@@ -45,12 +48,14 @@ export interface TapSliderEditSubformProps {
  * - `videos[0]` present → replace-video (upload → `PUT /admin/tap-video` →
  *   refetch → persist via the outer `TapUpdateOne`, `videos` wholesale-replaced
  *   with `_id` echoed).
- * - Otherwise → the cover field (image). GATED in pass 1: `PUT /admin/tap-cover`
- *   is not shipped, so the replace control is disabled ("coming soon"). This
- *   covers both a tap that already has `cover.url` (shows the image) and the
- *   common empty image-placeholder created from an image in the multi-create.
+ * - Otherwise → the cover field (image): current `<img>` preview + an add/replace
+ *   control → `PUT /admin/tap-cover` (file + tap id, writes `tap.cover`
+ *   server-side) → refetch for the canonical url. Persists immediately and
+ *   independently of the outer `TapUpdateOne` (which never sends `cover`, so it
+ *   can't wipe it). Covers both a tap that already has `cover.url` and the common
+ *   empty image-placeholder created from an image in the multi-create.
  *   *Edge case:* a video slider tap whose upload failed is also empty and lands
- *   here — acceptable for pass 1 (admin can delete + recreate).
+ *   here — acceptable (the admin can add an image, or delete + recreate).
  *
  * Deliberately media-only: no narrators / captions / thumbnail UI, unlike the
  * full `TapVideosSubform`.
@@ -83,7 +88,19 @@ export function TapSliderEditSubform({
 
   const videoEntry = videos[0] ?? null;
   const hasVideo = Boolean(videoEntry && (videoEntry.url.trim() || videoEntry._id));
-  const coverUrl = cover?.url?.trim() ?? "";
+
+  // A cover uploaded in THIS edit session (the dialog doesn't refetch the tap
+  // after our upload, so the `cover` prop stays stale — our local value wins).
+  // Tied to `tapId` so switching to a different tap drops the stale local value
+  // instead of showing the previous tap's image.
+  const [uploadedCover, setUploadedCover] = useState<{
+    tapId: string;
+    url: string;
+  } | null>(null);
+  const coverUrl =
+    uploadedCover && uploadedCover.tapId === tapId
+      ? uploadedCover.url
+      : (cover?.url?.trim() ?? "");
 
   async function handleReplaceVideo(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -148,6 +165,43 @@ export function TapSliderEditSubform({
     }
   }
 
+  async function handleReplaceImage(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !tapId || uploading) return;
+    if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
+      toast.error("Image must be 5 MB or smaller.");
+      return;
+    }
+    setUploading(true);
+    setUploadProgress(0);
+    try {
+      const result = await uploadTapCoverAndRefetch(tapId, file, (pct) =>
+        setUploadProgress(pct),
+      );
+      // Revoke any prior fallback blob before swapping in the new preview.
+      if (fallbackUrlRef.current) {
+        URL.revokeObjectURL(fallbackUrlRef.current);
+        fallbackUrlRef.current = null;
+      }
+      if (result) {
+        setUploadedCover({ tapId, url: result.url });
+      } else {
+        // Refetch failed — the upload persisted server-side, so show a local
+        // preview until the tap is reopened. Track the blob for unmount cleanup.
+        const blobUrl = URL.createObjectURL(file);
+        fallbackUrlRef.current = blobUrl;
+        setUploadedCover({ tapId, url: blobUrl });
+      }
+      toast.success("Image uploaded");
+    } catch (err) {
+      toast.error(toErrorMessage(err, "Image upload failed"));
+    } finally {
+      setUploadProgress(null);
+      setUploading(false);
+    }
+  }
+
   return (
     <div className="space-y-2">
       <p className="text-sm font-medium text-muted-foreground">Media</p>
@@ -203,16 +257,34 @@ export function TapSliderEditSubform({
                 No image yet
               </div>
             )}
-            {/* TODO(tap-cover): un-gate once `PUT /admin/tap-cover` ships — on
-                select, upload the image, refetch, and persist `cover { url type }`
-                via the outer TapUpdateOne (do NOT use POST /admin/upload-image). */}
             <div className="flex flex-wrap items-center gap-3">
-              <span className="inline-flex cursor-not-allowed items-center gap-2 rounded-md border border-dashed border-border bg-card px-3 py-2 text-xs text-muted-foreground opacity-60">
-                <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
-                Replace image
-              </span>
-              <span className="text-xs text-stone-400">Coming soon</span>
+              <label
+                className={cn(
+                  "inline-flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-border bg-card px-3 py-2 text-xs text-muted-foreground transition-colors hover:border-foreground/30 focus-within:ring-2 focus-within:ring-primary/30",
+                  uploading && "pointer-events-none opacity-60",
+                )}
+              >
+                {uploading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
+                )}
+                {coverUrl ? "Replace image" : "Add image"}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/webp,image/png"
+                  className="sr-only"
+                  disabled={uploading}
+                  onChange={handleReplaceImage}
+                />
+              </label>
             </div>
+            {uploading ? (
+              <Progress
+                value={uploadProgress ?? 0}
+                aria-label="Image upload progress"
+              />
+            ) : null}
           </>
         )}
       </div>
