@@ -16,7 +16,11 @@ import { NarratorsFindManyDocument } from "~/queries/narrators";
 import { TapFindManyDocument } from "~/queries/taps";
 import type { narratorsFindManyQuery, tapVideosInput } from "~/gql/graphql";
 
-const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+// Shared image-upload size guard (5 MB), reused by the tap-video thumbnail
+// upload below and the slider cover upload (create pipeline + edit subform) so
+// every image write to a tap enforces the same limit. Server is the real
+// backstop.
+export const MAX_IMAGE_UPLOAD_BYTES = 5 * 1024 * 1024;
 // TODO(tap-video-endpoint): confirm real server limit; 500MB is a generous
 // client guard so valid uploads aren't blocked — server is the real backstop.
 // Shared with the slider edit subform + create pipeline so all three enforce
@@ -169,6 +173,43 @@ export async function uploadTapVideoAndRefetch(
     });
     const fresh = data.TapFindMany?.[0];
     return fresh ? videoEntriesFromTap(fresh.videos) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The tap's top-level cover as read back from `TapFindMany` (`cover { url type }`). */
+export type TapCoverResult = { url: string; type: string | null };
+
+/**
+ * Upload an image as the tap's top-level cover and refetch to read the
+ * canonical `cover { url type }` back. Endpoint contract (verified via /doc):
+ * `PUT /admin/tap-cover` takes `id` (tap `_id`) + `file` and writes `tap.cover`
+ * SERVER-SIDE (mirrors how `/admin/tap-video` appends a video subdoc) — so the
+ * cover persists immediately, independent of `TapUpdateOne` (which never sends
+ * `cover`, so it can't wipe it). Returns the fresh cover, or `null` if the
+ * refetch fails (the upload still persisted; reopening the tap shows it).
+ */
+export async function uploadTapCoverAndRefetch(
+  tapId: string,
+  file: File,
+  onProgress?: (pct: number) => void,
+): Promise<TapCoverResult | null> {
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("id", tapId);
+  await uploadWithProgress(
+    "/admin/tap-cover",
+    fd,
+    onProgress ? { onProgress } : undefined,
+  );
+  try {
+    const data = await gqlClient.request(TapFindManyDocument, {
+      filter: { _id: tapId },
+      limit: 1,
+    });
+    const cover = data.TapFindMany?.[0]?.cover;
+    return cover?.url ? { url: cover.url, type: cover.type ?? null } : null;
   } catch {
     return null;
   }
@@ -388,7 +429,7 @@ export function TapVideosSubform({
     const entry = value[index];
     const videoId = entry?._id;
     if (!file || !tapId || !videoId || uploadingKey) return;
-    if (file.size > MAX_UPLOAD_BYTES) {
+    if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
       toast.error("Thumbnail must be 5 MB or smaller.");
       return;
     }
