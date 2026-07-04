@@ -3,6 +3,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { setToken } from "~/lib/auth";
 import { env } from "~/lib/env";
+import { setLastCurriculum } from "~/lib/last-curriculum";
 import { gqlClient } from "~/lib/graphql";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
@@ -238,6 +239,12 @@ export default function ClassroomCurriculumRoute() {
   useEffect(() => {
     if (token) setToken(token);
   }, [token]);
+
+  // Remember the last curriculum viewed for this group so the card selector can
+  // reopen it here next time (client-only localStorage; read in classrooms.tsx).
+  useEffect(() => {
+    if (groupId && curriculumId) setLastCurriculum(groupId, curriculumId);
+  }, [groupId, curriculumId]);
 
   // Track the carousel's centered card so the hero background follows it. The
   // slider reports its index via `onIndexChange`; we seed the same initial

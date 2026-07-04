@@ -84,3 +84,21 @@ body {
     animation: none;
   }
 }
+
+/* Interactive onboarding utilities (ported from ie-prototype/src/index.css:155-169
+   for the /onboarding/welcome slider — dark-canvas typography on hsl(0 0% 98%)). */
+.onboarding-text {
+  @apply text-center font-light tracking-wide leading-relaxed;
+  max-width: 480px;
+  color: hsl(0 0% 98%);
+}
+
+.onboarding-heading {
+  @apply text-2xl md:text-3xl font-medium tracking-tight;
+  color: hsl(0 0% 98%);
+}
+
+.stat-label {
+  @apply text-sm md:text-base mt-2;
+  color: hsl(0 0% 98% / 0.6);
+}

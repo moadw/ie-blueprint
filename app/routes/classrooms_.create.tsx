@@ -25,6 +25,7 @@ import { env } from "~/lib/env";
 import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { getInitials } from "~/lib/initials";
+import { hasSeenOnboardingWelcome } from "~/lib/onboarding-welcome";
 import { safe } from "~/lib/safe-loader";
 import { requireSessionToken } from "~/lib/session.server";
 import { homePathForIdentifier } from "~/lib/user";
@@ -180,8 +181,13 @@ export async function action({ request }: ActionFunctionArgs) {
     return { error: "Missing user context" };
   }
 
+  // Keep ONLY the mutation (and its `{ error }` failure return) inside the
+  // try/catch. All redirect branching lives AFTER it: a `throw redirect(...)`
+  // placed inside the try would be caught here and returned as an `{ error }`
+  // object, silently breaking the flow. So capture the result in outer scope.
+  let result;
   try {
-    await gqlClient.request(
+    result = await gqlClient.request(
       GroupCreateOneDocument,
       {
         name,
@@ -197,7 +203,23 @@ export async function action({ request }: ActionFunctionArgs) {
     return { error: message };
   }
 
-  throw redirect("/classrooms");
+  const created = result.GroupCreateOne;
+  const first = created?.curriculums?.[0];
+  // Defensive: the create-flow guards `curriculums.length === 0` before the
+  // mutation, so a created group always has ≥1 curriculum — but fall back to
+  // the list if the payload is somehow missing an id or curriculum.
+  if (!created?._id || !first) throw redirect("/classrooms");
+
+  const seriesPath = `/classrooms/${created._id}/${first}`;
+  // First-time creators (no seen-cookie) go through the welcome slider, which
+  // sets the cookie and lands them on the series view; everyone else goes
+  // straight to the series.
+  if (hasSeenOnboardingWelcome(request.headers.get("Cookie"))) {
+    throw redirect(seriesPath);
+  }
+  throw redirect(
+    `/onboarding/welcome?group=${created._id}&curriculum=${first}`,
+  );
 }
 
 const schema = z.object({
