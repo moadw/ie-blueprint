@@ -5,6 +5,9 @@ import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
 import { UsersFindOneDocument } from "~/queries/users";
 import { DistrictFindOneDocument } from "~/queries/districts";
+import { AnnouncementFindManyDocument } from "~/queries/announcements";
+import { SortFindManyannouncementInput } from "~/gql/graphql";
+import { isAnnouncementDismissed } from "~/lib/announcement-dismissal";
 import { homePathForIdentifier } from "~/lib/user";
 import { DistrictShell } from "~/routes/district/_components/district-shell";
 
@@ -35,6 +38,29 @@ export async function loader({ request }: LoaderFunctionArgs) {
         ),
       )
     : null;
+  // Latest active district-portal announcement (global — no platform filter).
+  // A failed fetch → announcement null; the layout must not break.
+  const announcementResult = await safe(
+    gqlClient.request(
+      AnnouncementFindManyDocument,
+      {
+        filter: { type: "district", active: true },
+        limit: 1,
+        sort: SortFindManyannouncementInput.CREATEDAT_DESC,
+      },
+      { "access-token": token },
+    ),
+  );
+  // Dismissal is resolved server-side via cookie so a closed bar never flashes
+  // on reload (the server just omits it).
+  const announcementRow = announcementResult.ok
+    ? (announcementResult.data.AnnouncementFindMany?.[0] ?? null)
+    : null;
+  const announcement =
+    announcementRow &&
+    !isAnnouncementDismissed(request.headers.get("Cookie"), announcementRow._id)
+      ? announcementRow
+      : null;
   return {
     district:
       districtResult && districtResult.ok
@@ -43,13 +69,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     error:
       districtResult && !districtResult.ok ? districtResult.error : null,
     authError: userResult.ok ? null : userResult.error,
+    announcement,
   };
 }
 
 export default function DistrictLayoutRoute() {
-  const { district } = useLoaderData<typeof loader>();
+  const { district, announcement } = useLoaderData<typeof loader>();
   return (
-    <DistrictShell district={district}>
+    <DistrictShell district={district} announcement={announcement}>
       <Outlet />
     </DistrictShell>
   );

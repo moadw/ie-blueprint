@@ -14,6 +14,7 @@ import { Label } from "~/components/ui/label";
 import { toast } from "~/components/ui/toast";
 import { api, ApiError } from "~/lib/api";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import {
   DistrictCreateOneDocument,
@@ -280,7 +281,7 @@ export function DistrictDialog(props: DistrictDialogProps) {
           ? { status: err.status, body: err.body }
           : {}),
       });
-      toast.error(err instanceof Error ? err.message : "Cover upload failed");
+      toast.error(toErrorMessage(err, "Cover upload failed"));
     } finally {
       setUploadingCover(false);
     }
@@ -326,7 +327,7 @@ export function DistrictDialog(props: DistrictDialogProps) {
           ? { status: err.status, body: err.body }
           : {}),
       });
-      toast.error(err instanceof Error ? err.message : "Logo upload failed");
+      toast.error(toErrorMessage(err, "Logo upload failed"));
     } finally {
       setUploadingLogo(false);
     }
@@ -417,7 +418,7 @@ export function DistrictDialog(props: DistrictDialogProps) {
             profileError = "Profile create returned no _id";
           }
         } catch (err) {
-          profileError = err instanceof Error ? err.message : String(err);
+          profileError = toErrorMessage(err);
           console.error("[district-profile-create] failed", err);
         }
 
@@ -491,8 +492,7 @@ export function DistrictDialog(props: DistrictDialogProps) {
         setLogoFile(null);
         revalidator.revalidate();
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Failed to create district";
+        const message = toErrorMessage(err, "Failed to create district");
         toast.error(message);
       } finally {
         setSubmitting(false);
@@ -578,8 +578,7 @@ export function DistrictDialog(props: DistrictDialogProps) {
       props.onUpdated(district);
       onOpenChange(false);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to update district";
+      const message = toErrorMessage(err, "Failed to update district");
       toast.error(message);
     } finally {
       setSubmitting(false);

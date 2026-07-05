@@ -10,6 +10,7 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import {
   SchoolCreateOneDocument,
@@ -76,9 +77,7 @@ export function SchoolsDialog({
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setLoadError(
-          err instanceof Error ? err.message : "Failed to load schools.",
-        );
+        setLoadError(toErrorMessage(err, "Failed to load schools."));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -131,9 +130,7 @@ export function SchoolsDialog({
       setNewName("");
       toast.success(`School "${name}" added`);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to create school",
-      );
+      toast.error(toErrorMessage(err, "Failed to create school"));
     } finally {
       setCreating(false);
     }
@@ -177,9 +174,7 @@ export function SchoolsDialog({
       cancelEdit();
       toast.success(`School renamed to "${name}"`);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to update school",
-      );
+      toast.error(toErrorMessage(err, "Failed to update school"));
     } finally {
       setSavingId(null);
     }

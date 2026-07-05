@@ -4,6 +4,7 @@ import { toast } from "~/components/ui/toast";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { ConfirmDialog } from "~/components/ui/alert-dialog";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { CurriculumCollectionDeleteOneDocument } from "~/queries/curriculum-collections";
 
@@ -57,9 +58,7 @@ export function ExperienceRow({
       onDeleted?.(experience._id);
       setConfirmOpen(false);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to delete experience",
-      );
+      toast.error(toErrorMessage(err, "Failed to delete experience"));
     } finally {
       setDeleting(false);
     }

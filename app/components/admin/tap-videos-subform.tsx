@@ -8,6 +8,7 @@ import { Progress } from "~/components/ui/progress";
 import { toast } from "~/components/ui/toast";
 import { api } from "~/lib/api";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { uploadWithProgress } from "~/lib/upload";
 import { gqlClient } from "~/lib/graphql";
 import { cn } from "~/lib/utils";
@@ -15,10 +16,16 @@ import { NarratorsFindManyDocument } from "~/queries/narrators";
 import { TapFindManyDocument } from "~/queries/taps";
 import type { narratorsFindManyQuery, tapVideosInput } from "~/gql/graphql";
 
-const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+// Shared image-upload size guard (5 MB), reused by the tap-video thumbnail
+// upload below and the slider cover upload (create pipeline + edit subform) so
+// every image write to a tap enforces the same limit. Server is the real
+// backstop.
+export const MAX_IMAGE_UPLOAD_BYTES = 5 * 1024 * 1024;
 // TODO(tap-video-endpoint): confirm real server limit; 500MB is a generous
 // client guard so valid uploads aren't blocked — server is the real backstop.
-const MAX_VIDEO_UPLOAD_BYTES = 500 * 1024 * 1024;
+// Shared with the slider edit subform + create pipeline so all three enforce
+// the same limit.
+export const MAX_VIDEO_UPLOAD_BYTES = 500 * 1024 * 1024;
 
 // Unambiguous audio file extensions, used to recognize an audio entry from a
 // pasted URL when the MIME `type` is unknown (uploads set `type` from the
@@ -127,6 +134,85 @@ export function videoEntriesFromTap(
       },
     ];
   });
+}
+
+/**
+ * Upload a media file to a tap's `PUT /admin/tap-video` endpoint (which appends
+ * or updates a video subdocument server-side and returns no usable body), then
+ * refetch the tap so the caller gets the canonical `_id` + url. Returns the
+ * fresh `videos` as form entries, or `null` when only the refetch fails (the
+ * upload itself still succeeded — callers fall back to a local preview). An
+ * upload failure rejects so the caller's catch can toast it.
+ *
+ * Shared by this multi-entry media subform and the single-media slider edit
+ * subform so both speak the same endpoint contract + read-back path.
+ */
+export async function uploadTapVideoAndRefetch(
+  tapId: string,
+  file: File,
+  existingVideoId?: string | null,
+  onProgress?: (pct: number) => void,
+): Promise<VideoEntry[] | null> {
+  const fd = new FormData();
+  // Endpoint contract (verified via /doc): `/admin/tap-video` takes `id`
+  // (tap _id) + `file`, and APPENDS a video subdocument. `video` is a
+  // best-effort hint for re-uploading into an existing subdoc; the refetch
+  // reconciles either outcome.
+  fd.append("file", file);
+  fd.append("id", tapId);
+  if (existingVideoId) fd.append("video", existingVideoId);
+  await uploadWithProgress(
+    "/admin/tap-video",
+    fd,
+    onProgress ? { onProgress } : undefined,
+  );
+  try {
+    const data = await gqlClient.request(TapFindManyDocument, {
+      filter: { _id: tapId },
+      limit: 1,
+    });
+    const fresh = data.TapFindMany?.[0];
+    return fresh ? videoEntriesFromTap(fresh.videos) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The tap's top-level cover as read back from `TapFindMany` (`cover { url type }`). */
+export type TapCoverResult = { url: string; type: string | null };
+
+/**
+ * Upload an image as the tap's top-level cover and refetch to read the
+ * canonical `cover { url type }` back. Endpoint contract (verified via /doc):
+ * `PUT /admin/tap-cover` takes `id` (tap `_id`) + `file` and writes `tap.cover`
+ * SERVER-SIDE (mirrors how `/admin/tap-video` appends a video subdoc) — so the
+ * cover persists immediately, independent of `TapUpdateOne` (which never sends
+ * `cover`, so it can't wipe it). Returns the fresh cover, or `null` if the
+ * refetch fails (the upload still persisted; reopening the tap shows it).
+ */
+export async function uploadTapCoverAndRefetch(
+  tapId: string,
+  file: File,
+  onProgress?: (pct: number) => void,
+): Promise<TapCoverResult | null> {
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("id", tapId);
+  await uploadWithProgress(
+    "/admin/tap-cover",
+    fd,
+    onProgress ? { onProgress } : undefined,
+  );
+  try {
+    const data = await gqlClient.request(TapFindManyDocument, {
+      filter: { _id: tapId },
+      limit: 1,
+    });
+    const cover = data.TapFindMany?.[0]?.cover;
+    return cover?.url ? { url: cover.url, type: cover.type ?? null } : null;
+  } catch {
+    return null;
+  }
 }
 
 // MIME type inferred from a media URL's file extension — the "Format" field
@@ -343,7 +429,7 @@ export function TapVideosSubform({
     const entry = value[index];
     const videoId = entry?._id;
     if (!file || !tapId || !videoId || uploadingKey) return;
-    if (file.size > MAX_UPLOAD_BYTES) {
+    if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
       toast.error("Thumbnail must be 5 MB or smaller.");
       return;
     }
@@ -385,7 +471,7 @@ export function TapVideosSubform({
       toast.success("Thumbnail uploaded");
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Thumbnail upload failed",
+        toErrorMessage(err, "Thumbnail upload failed"),
       );
     } finally {
       setUploadingKey(null);
@@ -409,41 +495,22 @@ export function TapVideosSubform({
     setUploadingKey(key);
     setUploadProgress(0);
     try {
-      const fd = new FormData();
-      // Endpoint contract (verified via /doc): `/admin/tap-video` takes only
-      // `id` (tap _id) + `file`, returns no usable body, and APPENDS a video
-      // subdocument server-side. We still pass `video` when re-uploading into
-      // an existing entry as a best-effort hint (the backend may update that
-      // subdoc in place); the refetch below reconciles either outcome.
-      fd.append("file", file);
-      fd.append("id", tapId);
-      if (videoId) fd.append("video", videoId);
-      await uploadWithProgress("/admin/tap-video", fd, {
-        onProgress: (pct) => setUploadProgress(pct),
-      });
-
-      // The upload persisted the file into a new (or updated) video subdoc,
-      // but the response carries neither its `_id` nor a URL. Re-query the tap
-      // so this row picks up the server `_id` + canonical URL. This is the
-      // load-bearing fix: without it the row keeps a `blob:` preview with
-      // `_id: null`, and the next TapUpdateOne — which replaces the `videos`
-      // array wholesale — drops the row, wiping the just-uploaded video.
+      // The upload persists the file into a new (or updated) video subdoc, but
+      // the response carries neither its `_id` nor a URL, so the helper refetches
+      // the tap for the canonical `_id` + url. This is load-bearing: without the
+      // refetch the row keeps a `blob:` preview with `_id: null`, and the next
+      // TapUpdateOne — which replaces the `videos` array wholesale — drops the
+      // row, wiping the just-uploaded video. `null` = refetch failed (fall back
+      // to a local blob below); an upload failure rejects into the catch.
       const priorIds = new Set(
         value.map((v) => v._id).filter((id): id is string => Boolean(id)),
       );
-      let serverVideos: VideoEntry[] | null = null;
-      try {
-        const data = await gqlClient.request(TapFindManyDocument, {
-          filter: { _id: tapId },
-          limit: 1,
-        });
-        const fresh = data.TapFindMany?.[0];
-        if (fresh) serverVideos = videoEntriesFromTap(fresh.videos);
-      } catch {
-        // Refetch failed — fall back to a local blob preview below. The save
-        // can still wipe it in this rare double-failure case, but the upload
-        // itself succeeded, so reopening the tap will show the persisted video.
-      }
+      const serverVideos = await uploadTapVideoAndRefetch(
+        tapId,
+        file,
+        videoId,
+        (pct) => setUploadProgress(pct),
+      );
 
       // Prefer the freshly-created subdoc (an `_id` we hadn't seen before);
       // fall back to the same-`_id` row when the backend updated in place.
@@ -481,7 +548,7 @@ export function TapVideosSubform({
       );
       toast.success("Media uploaded");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Media upload failed");
+      toast.error(toErrorMessage(err, "Media upload failed"));
     } finally {
       setUploadProgress(null);
       setUploadingKey(null);

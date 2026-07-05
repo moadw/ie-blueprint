@@ -16,6 +16,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { toast } from "~/components/ui/toast";
 import { api } from "~/lib/api";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { NarratorsCreateOneDocument } from "~/queries/narrators";
 import type { NarratorRowNarrator } from "./NarratorRow";
@@ -144,9 +145,7 @@ export function NarratorDialog({
       setAvatarFile(null);
       revalidator.revalidate();
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to create narrator";
-      toast.error(`Failed to create narrator: ${message}`);
+      toast.error(toErrorMessage(err, "Failed to create narrator"));
     } finally {
       setSubmitting(false);
     }

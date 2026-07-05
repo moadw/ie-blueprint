@@ -17,6 +17,7 @@ export const TapFindManyDocument = graphql(/* GraphQL */ `
       time
       createdAt
       updatedAt
+      cover { url type }
       videos {
         _id
         url

@@ -12,6 +12,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { User } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -21,8 +22,10 @@ import { deriveCourses } from "~/components/admin/experiences-selector";
 import type { CurriculumLite } from "~/components/admin/experiences-selector";
 import { setToken } from "~/lib/auth";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { getInitials } from "~/lib/initials";
+import { hasSeenOnboardingWelcome } from "~/lib/onboarding-welcome";
 import { safe } from "~/lib/safe-loader";
 import { requireSessionToken } from "~/lib/session.server";
 import { homePathForIdentifier } from "~/lib/user";
@@ -32,6 +35,7 @@ import { UserDistrictFindOneDocument } from "~/queries/districts";
 import { UsersFindOneDocument } from "~/queries/users";
 import { GroupCreateOneDocument } from "~/queries/groups";
 import { OnboardingLayout } from "./classrooms_.create/_components/onboarding-layout";
+import { ClassroomInfoCard } from "./classrooms_.create/_components/classroom-info-card";
 import { ClassroomPreviewCard } from "./classrooms_.create/_components/classroom-preview-card";
 import { CollectionSelect } from "./classrooms_.create/_components/collection-select";
 import { CourseMultiSelect } from "./classrooms_.create/_components/course-multi-select";
@@ -177,8 +181,13 @@ export async function action({ request }: ActionFunctionArgs) {
     return { error: "Missing user context" };
   }
 
+  // Keep ONLY the mutation (and its `{ error }` failure return) inside the
+  // try/catch. All redirect branching lives AFTER it: a `throw redirect(...)`
+  // placed inside the try would be caught here and returned as an `{ error }`
+  // object, silently breaking the flow. So capture the result in outer scope.
+  let result;
   try {
-    await gqlClient.request(
+    result = await gqlClient.request(
       GroupCreateOneDocument,
       {
         name,
@@ -190,11 +199,27 @@ export async function action({ request }: ActionFunctionArgs) {
       { "access-token": token },
     );
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Failed to create classroom";
+    const message = toErrorMessage(e, "Failed to create classroom");
     return { error: message };
   }
 
-  throw redirect("/classrooms");
+  const created = result.GroupCreateOne;
+  const first = created?.curriculums?.[0];
+  // Defensive: the create-flow guards `curriculums.length === 0` before the
+  // mutation, so a created group always has ≥1 curriculum — but fall back to
+  // the list if the payload is somehow missing an id or curriculum.
+  if (!created?._id || !first) throw redirect("/classrooms");
+
+  const seriesPath = `/classrooms/${created._id}/${first}`;
+  // First-time creators (no seen-cookie) go through the welcome slider, which
+  // sets the cookie and lands them on the series view; everyone else goes
+  // straight to the series.
+  if (hasSeenOnboardingWelcome(request.headers.get("Cookie"))) {
+    throw redirect(seriesPath);
+  }
+  throw redirect(
+    `/onboarding/welcome?group=${created._id}&curriculum=${first}`,
+  );
 }
 
 const schema = z.object({
@@ -283,7 +308,12 @@ export default function ClassroomCreateRoute() {
       title={step === 1 ? "Name your classroom" : "Classroom preferences"}
       currentStep={step}
       totalSteps={2}
-      preview={<ClassroomPreviewCard name={watchedName} />}
+      preview={
+        <div className="flex w-[340px] flex-col gap-6">
+          <ClassroomInfoCard />
+          <ClassroomPreviewCard name={watchedName} studentCount={watchedCount} />
+        </div>
+      }
     >
       <Form method="post" onSubmit={handleSubmit(onValid)} className="space-y-6">
         {step === 1 ? (
@@ -297,27 +327,9 @@ export default function ClassroomCreateRoute() {
               {...register("name")}
             />
             <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <label className="text-[14px] text-foreground font-medium">
-                  Number of students
-                </label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={50}
-                  value={watchedCount}
-                  onChange={(e) => {
-                    const n = Number(e.target.value);
-                    if (!Number.isNaN(n)) {
-                      setValue("studentCount", Math.max(1, Math.min(50, n)), {
-                        shouldValidate: true,
-                      });
-                    }
-                  }}
-                  containerClassName="w-24"
-                  className="h-10 text-center"
-                />
-              </div>
+              <label className="block text-[14px] text-foreground font-medium">
+                How many students?
+              </label>
               <Slider
                 value={watchedCount}
                 onValueChange={(n) =>
@@ -325,26 +337,51 @@ export default function ClassroomCreateRoute() {
                 }
                 min={1}
                 max={50}
-                aria-label="Number of students"
+                aria-label="How many students?"
               />
-              <div className="flex items-center -space-x-2 pt-1">
-                {Array.from({
-                  length: Math.min(5, Math.max(0, watchedCount)),
-                }).map((_, i) => (
-                  <span
-                    key={i}
-                    aria-hidden="true"
-                    className="w-7 h-7 rounded-full bg-primary/15 border-2 border-white"
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={watchedCount}
+                    onChange={(e) => {
+                      const n = Number(e.target.value);
+                      if (!Number.isNaN(n)) {
+                        setValue(
+                          "studentCount",
+                          Math.max(1, Math.min(50, n)),
+                          { shouldValidate: true },
+                        );
+                      }
+                    }}
+                    containerClassName="w-20"
+                    className="h-9 px-3 text-center text-sm"
                   />
-                ))}
-                {watchedCount > 5 ? (
-                  <span
-                    aria-hidden="true"
-                    className="ml-2 text-sm text-muted-foreground"
-                  >
-                    +{watchedCount - 5}
-                  </span>
-                ) : null}
+                  <span className="text-sm text-muted-foreground">students</span>
+                </div>
+                <div className="flex items-center -space-x-2">
+                  {Array.from({
+                    length: Math.min(5, Math.max(0, watchedCount)),
+                  }).map((_, i) => (
+                    <span
+                      key={i}
+                      aria-hidden="true"
+                      className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-muted sm:h-8 sm:w-8"
+                    >
+                      <User className="h-3.5 w-3.5 text-muted-foreground sm:h-4 sm:w-4" />
+                    </span>
+                  ))}
+                  {watchedCount > 5 ? (
+                    <span
+                      aria-hidden="true"
+                      className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-primary/10 text-[10px] font-medium text-primary sm:h-8 sm:w-8 sm:text-[11px]"
+                    >
+                      +{watchedCount - 5}
+                    </span>
+                  ) : null}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -352,10 +389,15 @@ export default function ClassroomCreateRoute() {
                 variant="outline"
                 type="button"
                 onClick={() => navigate("/classrooms")}
+                className="bg-transparent border-primary text-primary hover:bg-primary/5"
               >
                 Back
               </Button>
-              <Button variant="primary" type="submit" className="flex-1">
+              <Button
+                variant="primary"
+                type="submit"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
                 Next
               </Button>
             </div>

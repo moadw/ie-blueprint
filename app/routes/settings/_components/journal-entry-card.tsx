@@ -53,7 +53,7 @@ export function JournalEntryCard({ entry }: JournalEntryCardProps) {
 
           {/* Prompt */}
           {entry.prompt && (
-            <p className="text-sm text-muted-foreground italic mb-2 line-clamp-1">
+            <p className="text-sm text-muted-foreground italic mb-2">
               "{entry.prompt}"
             </p>
           )}

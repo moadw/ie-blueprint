@@ -8,6 +8,7 @@ import { Modal } from "~/components/ui/modal";
 import { Switch } from "~/components/ui/switch";
 import { api } from "~/lib/api";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { ClassesCreateOneDocument } from "~/mutations/classes";
 import { cn } from "~/lib/utils";
@@ -120,8 +121,7 @@ export function PracticeDialog({
       onClose();
       revalidator.revalidate();
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "Failed to create practice";
+      const msg = toErrorMessage(err, "Failed to create practice");
       setError(msg);
       toast.error(msg);
     } finally {

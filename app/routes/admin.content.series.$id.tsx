@@ -14,6 +14,7 @@ import {
   ADMIN_LIST_PAGE_SIZE,
 } from "~/components/admin/admin-list-pagination";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
@@ -169,7 +170,7 @@ export default function AdminContentSeriesDetail() {
       toast.success(next ? "Series set Live" : "Series set Draft");
       revalidator.revalidate();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to update series";
+      const msg = toErrorMessage(err, "Failed to update series");
       toast.error(msg);
     } finally {
       setStatusUpdating(false);

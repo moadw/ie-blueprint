@@ -15,6 +15,7 @@ import {
 import { ConfirmDialog } from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { readPageFromRequest } from "~/lib/pagination";
 import { safe } from "~/lib/safe-loader";
@@ -212,9 +213,7 @@ export default function AdminUsersRoute() {
       setDeleteTarget(null);
       revalidator.revalidate();
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to delete user",
-      );
+      toast.error(toErrorMessage(err, "Failed to delete user"));
     } finally {
       setDeleting(false);
     }

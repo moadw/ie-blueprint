@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Modal } from "~/components/ui/modal";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import type { ImpactStoryType } from "~/lib/district-impact.server";
 import type { CreateOneimpactInput } from "~/gql/graphql";
@@ -181,7 +182,7 @@ export function ImpactCreateDialog({
       onClose();
       revalidator.revalidate();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to share story";
+      const msg = toErrorMessage(err, "Failed to share story");
       setError(msg);
       toast.error(msg);
     } finally {

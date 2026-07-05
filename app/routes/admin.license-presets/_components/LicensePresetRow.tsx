@@ -15,6 +15,7 @@ import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { toast } from "~/components/ui/toast";
 import { env } from "~/lib/env";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import {
   LicensePresetDeleteOneDocument,
@@ -129,8 +130,7 @@ export function LicensePresetRow({
       setEditingLabel(false);
       toast.success("License preset renamed");
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to rename license preset";
+      const message = toErrorMessage(err, "Failed to rename license preset");
       toast.error(message);
     } finally {
       setSavingLabel(false);
@@ -191,8 +191,7 @@ export function LicensePresetRow({
       toast.success("License preset updated");
       setExpanded(false);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to update license preset";
+      const message = toErrorMessage(err, "Failed to update license preset");
       toast.error(message);
     } finally {
       setSavingExpanded(false);
@@ -230,8 +229,7 @@ export function LicensePresetRow({
       toast.success("License preset deleted");
       setConfirmOpen(false);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to delete license preset";
+      const message = toErrorMessage(err, "Failed to delete license preset");
       toast.error(message);
     } finally {
       setDeleting(false);

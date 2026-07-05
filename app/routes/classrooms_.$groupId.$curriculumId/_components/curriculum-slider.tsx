@@ -7,8 +7,10 @@ import {
 import type { CSSProperties, TouchEvent } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useAudioPreference } from "~/hooks/use-audio-preference";
 import { LessonGlassCard } from "./lesson-glass-card";
 import type { LessonCardStatus } from "./lesson-glass-card";
+import type { CardMediaDescriptor } from "./card-media";
 import type { GroupProgress } from "./profile-menu";
 
 export interface SliderLesson {
@@ -17,6 +19,8 @@ export interface SliderLesson {
   description?: string | null;
   order?: number | null;
   cover?: { url?: string | null } | null;
+  /** Per-class media descriptor (shape + durations) for the duration pill. */
+  media?: CardMediaDescriptor | null;
 }
 
 interface CurriculumSliderProps {
@@ -24,6 +28,10 @@ interface CurriculumSliderProps {
   groupId: string;
   curriculumId: string;
   groupProgress: GroupProgress | null | undefined;
+  /** Class ids the teacher has favorited — drives each active card's heart fill. */
+  likedIds: Set<string>;
+  /** Optimistically toggles a class's favorite state (owned by the route). */
+  onToggleFavorite: (classId: string) => void;
   /** Fires with the centered card's index on mount and every change, so the
    *  parent can drive the blurred hero background off the current cover. */
   onIndexChange?: (index: number) => void;
@@ -109,9 +117,14 @@ export function CurriculumSlider({
   groupId,
   curriculumId,
   groupProgress,
+  likedIds,
+  onToggleFavorite,
   onIndexChange,
 }: CurriculumSliderProps) {
   const navigate = useNavigate();
+  // Per-curriculum audio-length preference (live-synced). One subscription here
+  // drives every both-audios card's active tab; flipping it re-renders them all.
+  const [audioPref, setAudioPref] = useAudioPreference(curriculumId);
   // Membership is derived client-side via `.includes()` — Blueprint array
   // filters are exact-ordered-match, never "contains", so the watched set
   // must be checked here rather than queried.
@@ -360,6 +373,12 @@ export function CurriculumSlider({
                   title={lesson.title ?? ""}
                   isActive={isActive}
                   status={status}
+                  media={lesson.media ?? null}
+                  audioPref={audioPref}
+                  onAudioPrefChange={setAudioPref}
+                  classId={lessonId}
+                  isLiked={lessonId ? likedIds.has(lessonId) : false}
+                  onToggleFavorite={onToggleFavorite}
                 />
               </div>
             );

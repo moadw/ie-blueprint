@@ -10,6 +10,7 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { toast } from "~/components/ui/toast";
+import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { UsersSetPasswordAdminDocument } from "~/mutations/users";
 import type { AdminUserRow } from "./UserRow";
@@ -46,9 +47,7 @@ export function SetPasswordDialog({
       toast.success("Password updated");
       onOpenChange(false);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to update password",
-      );
+      toast.error(toErrorMessage(err, "Failed to update password"));
     } finally {
       setSaving(false);
     }
