@@ -62,7 +62,8 @@ export type PracticeStep =
   | { kind: "player"; media: MediaKind; tap: PracticeTap }
   | { kind: "journal"; tap: PracticeTap }
   | { kind: "slider"; slides: SliderSlide[] }
-  | { kind: "achievement"; pin: PracticePin };
+  | { kind: "achievement"; pin: PracticePin }
+  | { kind: "feedback" };
 
 // Backend `TapType.identifier`s, with legacy teacher-flow slugs kept as aliases.
 /** Tap-type identifiers that route to the journal screen. */
@@ -366,11 +367,16 @@ export function buildSliderStep(
  * SINGLE `slider` step (ordered slides), inserted at the position of the FIRST
  * slider tap. Every other tap maps one-to-one as before (journal vs player), so
  * non-slider classes are unaffected.
+ *
+ * When `includeFeedback` is true, a final `{ kind: "feedback" }` step is pushed
+ * AFTER the optional achievement step, so feedback is always structurally last.
+ * The caller gates this on "no existing feedback for this user + practice".
  */
 export function buildPracticeSteps(
   taps: readonly PracticeTap[],
   pin: PracticePin | null,
   resolver?: ReadonlyMap<string, string>,
+  includeFeedback = false,
 ): PracticeStep[] {
   const sliderTaps = taps.filter((t) => isSliderTap(t, resolver));
   let sliderInserted = false;
@@ -392,6 +398,9 @@ export function buildPracticeSteps(
   }
   if (pin) {
     steps.push({ kind: "achievement", pin });
+  }
+  if (includeFeedback) {
+    steps.push({ kind: "feedback" });
   }
   return steps;
 }
