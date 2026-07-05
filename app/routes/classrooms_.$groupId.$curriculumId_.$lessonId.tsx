@@ -13,14 +13,18 @@ import { TapFindManyDocument, TapTypeFindManyDocument } from "~/queries/taps";
 import { PinFindManyDocument } from "~/queries/pins";
 import { CurriculumsFindOneDocument } from "~/queries/curriculums";
 import { GroupProgressFindOneDocument } from "~/queries/groups";
-import { JournalsFindOneDocument } from "~/queries/journals";
+import { FeedbackFindOneDocument } from "~/queries/feedback";
 import { UsersFindOneDocument } from "~/queries/users";
 import { GroupFinishedClassDocument } from "~/mutations/groups";
 import { TeacherGroupJournalCreateOneDocument } from "~/mutations/journals";
+import { FeedbackCreateOneDocument } from "~/mutations/feedback";
 import { SortFindManytapInput } from "~/gql/graphql";
 import { JournalScreen } from "~/components/lesson/journal-screen";
 import { MilestoneScreen } from "~/components/lesson/milestone-screen";
 import { PlayerStage } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/player-stage";
+import { FeedbackOverlay } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/feedback-overlay";
+import type { MoodValue } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/mood-selector";
+import { SliderStage } from "./classrooms_.$groupId.$curriculumId_.$lessonId/_components/slider-stage";
 import {
   buildPracticeSteps,
   buildTapTypeResolver,
@@ -69,7 +73,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       tapTypes: [],
       curriculumTitle: null,
       questionLabels: {} as Record<string, string>,
-      existingJournal: null,
       classError:
         "Platform is not configured. Please contact your administrator.",
       tapsError: null,
@@ -144,7 +147,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ),
       safe(
         // The logged-in teacher (token resolves "me" when `_id` is omitted).
-        // Used to scope the existing-journal lookup to this teacher.
+        // Scopes the existing-feedback pre-check and stamps the feedback entry.
         gqlClient.request(UsersFindOneDocument, {}, headers),
       ),
     ]);
@@ -187,32 +190,38 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Journal taps store their prompt as a `questions` entity id in
   // `extraQuestions[0].question` (NOT text); resolve those ids to label text so
   // the journal screen shows the real prompt instead of a UUID.
-  // The logged-in teacher's id scopes the existing-journal lookup. A journal is
-  // class-scoped (one per teacher per class), so its presence flips the journal
-  // form into read-only "already submitted" mode for THIS teacher only.
+  //
+  // We intentionally do NOT load any previously-saved journal entry: the journal
+  // is a repeatable reflection, so the form always opens empty and the teacher
+  // can fill it again on every visit (see the `JournalScreen` render below — no
+  // `alreadySaved`/`savedContent` is passed).
+  //
+  // The logged-in teacher's id scopes the existing-feedback pre-check and stamps
+  // the feedback entry on submit.
   const teacherId = userResult.ok
     ? (userResult.data.UsersFindOne?._id ?? null)
     : null;
 
   const tapTypeResolver = buildTapTypeResolver(tapTypes);
-  const [questionLabels, journalResult] = await Promise.all([
+  const [questionLabels, feedbackResult] = await Promise.all([
     resolveJournalQuestionLabels(taps, tapTypeResolver, headers),
-    // Non-critical: a failed lookup degrades to "not saved" (normal create
-    // flow), never blocks playback.
+    // Existing-feedback pre-check, scoped to this teacher + practice. A failed
+    // fetch degrades to `null` → the form shows (degrade-to-show), never a white
+    // screen.
     teacherId
       ? safe(
           gqlClient.request(
-            JournalsFindOneDocument,
-            { filter: { teacher: teacherId, class: lessonId } },
+            FeedbackFindOneDocument,
+            { filter: { user: teacherId, class: lessonId } },
             headers,
           ),
         )
       : Promise.resolve(null),
   ]);
 
-  const existingJournal =
-    journalResult && journalResult.ok
-      ? (journalResult.data.JournalsFindOne ?? null)
+  const existingFeedback =
+    feedbackResult && feedbackResult.ok
+      ? (feedbackResult.data.FeedbackFindOne ?? null)
       : null;
 
   return {
@@ -226,7 +235,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     curriculumTitle,
     groupProgressId,
     questionLabels,
-    existingJournal,
+    teacherId,
+    existingFeedback,
     classError: classResult.error,
     tapsError: tapsResult.error,
   };
@@ -244,7 +254,8 @@ export default function LessonPlayerRoute() {
     curriculumTitle,
     groupProgressId,
     questionLabels,
-    existingJournal,
+    teacherId,
+    existingFeedback,
     classError,
     tapsError,
   } = useLoaderData<typeof loader>();
@@ -261,6 +272,8 @@ export default function LessonPlayerRoute() {
   const [stepIndex, setStepIndex] = useState(0);
   // Disables the journal buttons + shows a spinner while the entry is saving.
   const [savingJournal, setSavingJournal] = useState(false);
+  // Disables the feedback Submit button + shows "Submitting..." while in flight.
+  const [savingFeedback, setSavingFeedback] = useState(false);
 
   // Fire `GroupFinishedClass` at most once per practice completion — a ref (not
   // state) so re-renders / replays of the final media step don't re-fire it.
@@ -287,7 +300,7 @@ export default function LessonPlayerRoute() {
   // first/only media step — `firstMediaStepIndex` + `handleMediaEnded` (and thus
   // completion + journal handoff) are unchanged.
   const filteredTaps = selectAudioTaps(taps, audioPref, resolver);
-  const steps = buildPracticeSteps(filteredTaps, pin, resolver);
+  const steps = buildPracticeSteps(filteredTaps, pin, resolver, !existingFeedback);
   const current = steps[stepIndex];
 
   // Index of the FIRST media (player) step. Completion fires when this first
@@ -406,6 +419,35 @@ export default function LessonPlayerRoute() {
     }
   };
 
+  // Persist the post-practice feedback via `FeedbackCreateOne`, then advance
+  // (last step → `exitToCurriculum`). Mirrors `handleJournalSubmit`: client-side
+  // `gqlClient` injects `access-token` (no header). `state` is the raw
+  // `MoodValue` string; `class`/`curriculum` come from route params; `user` is
+  // the logged-in teacher (spread conditionally to satisfy
+  // `exactOptionalPropertyTypes` — omit entirely when null). On failure we toast
+  // and stay so the user can retry.
+  const handleFeedbackSubmit = async (state: MoodValue, comment: string) => {
+    setSavingFeedback(true);
+    try {
+      await gqlClient.request(FeedbackCreateOneDocument, {
+        record: {
+          state,
+          comment,
+          class: lessonId,
+          curriculum: curriculumId,
+          ...(teacherId ? { user: teacherId } : {}),
+        },
+      });
+      advance(); // last step → exitToCurriculum()
+    } catch (err) {
+      toast.error(
+        toErrorMessage(err, "Couldn't submit your feedback. Please try again."),
+      );
+    } finally {
+      setSavingFeedback(false);
+    }
+  };
+
   // Class-level chrome stays constant across a class's taps; only the media
   // changes per tap. `seriesName` = curriculum title, falling back to the class
   // title. There is no grade data source, so `gradeLabel` is empty (the badge
@@ -436,13 +478,26 @@ export default function LessonPlayerRoute() {
       ) : null}
 
       {current?.kind === "journal" ? (
+        // No `alreadySaved`/`savedContent`: the journal is repeatable, so the
+        // form always opens empty and the teacher can submit a fresh entry on
+        // every visit rather than seeing a locked, previously-saved answer.
         <JournalScreen
           prompt={journalPromptForTap(current.tap, questionLabels)}
           submitting={savingJournal}
           onSubmit={handleJournalSubmit}
           onSkip={advance}
-          alreadySaved={!!existingJournal}
-          savedContent={existingJournal?.body ?? ""}
+        />
+      ) : null}
+
+      {current?.kind === "slider" ? (
+        <SliderStage
+          slides={current.slides}
+          title={classItem?.title ?? ""}
+          onExit={exitToCurriculum}
+          onReachLastSlide={() => {
+            void recordCompletion();
+          }}
+          onAdvancePastEnd={advance}
         />
       ) : null}
 
@@ -450,6 +505,14 @@ export default function LessonPlayerRoute() {
         <MilestoneScreen
           {...milestonePropsForPin(current.pin, classItem?.title)}
           onContinue={advance}
+        />
+      ) : null}
+
+      {current?.kind === "feedback" ? (
+        <FeedbackOverlay
+          onSubmit={handleFeedbackSubmit}
+          onClose={advance}
+          submitting={savingFeedback}
         />
       ) : null}
     </div>

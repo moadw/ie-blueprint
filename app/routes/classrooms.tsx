@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { setToken } from "~/lib/auth";
 import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
+import { getLastCurriculum } from "~/lib/last-curriculum";
 import { safe } from "~/lib/safe-loader";
 import { requireSessionToken } from "~/lib/session.server";
 import { homePathForIdentifier } from "~/lib/user";
@@ -122,21 +123,40 @@ export default function ClassroomsRoute() {
           </div>
         ) : (
           <div className="flex flex-col items-center gap-8 md:gap-10">
-            <div className="flex flex-col items-center gap-8 md:flex-row md:gap-10">
+            {/* Cards flow left-to-right and wrap into a centered grid, so a
+                handful stays a single row while a larger roster fills rows of
+                up to six (max-w caps the column count) instead of overflowing. */}
+            <div className="flex max-w-[980px] flex-wrap items-start justify-center gap-8 md:gap-10">
               {groups.map((g, i) => (
                 <ClassroomCard
                   key={g._id}
                   name={g.name ?? ""}
                   index={i}
                   onSelect={() => {
-                    const firstCurriculumId = g.curriculums?.[0];
-                    if (!firstCurriculumId) {
+                    const curriculums = g.curriculums ?? [];
+                    if (curriculums.length === 0) {
                       toast.error(
                         "This Classroom does not have any series assigned.",
                       );
                       return;
                     }
-                    navigate(`/classrooms/${g._id}/${firstCurriculumId}`);
+                    // Reopen the last curriculum viewed for this group (if it's
+                    // still assigned); otherwise fall back to the first one.
+                    const saved = getLastCurriculum(g._id);
+                    const target =
+                      saved && curriculums.includes(saved)
+                        ? saved
+                        : curriculums[0];
+                    // `g.curriculums` is `(string | null)[] | null`, so the
+                    // resolved target can still be falsy (e.g. `[null]`) — guard
+                    // before navigating, matching the old first-curriculum check.
+                    if (!target) {
+                      toast.error(
+                        "This Classroom does not have any series assigned.",
+                      );
+                      return;
+                    }
+                    navigate(`/classrooms/${g._id}/${target}`);
                   }}
                   onDelete={() => handleDelete(g._id)}
                   deleting={deletingId === g._id}

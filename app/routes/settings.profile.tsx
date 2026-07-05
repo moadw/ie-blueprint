@@ -1,9 +1,28 @@
-import { Calendar, CreditCard, Mail, Phone, Shield } from "lucide-react";
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
+import { Mail, Phone } from "lucide-react";
 
+import { gqlClient } from "~/lib/graphql";
+import { safe } from "~/lib/safe-loader";
+import { requireSessionToken } from "~/lib/session.server";
+import { UsersFindOneDocument } from "~/queries/users";
 import { SectionHeader } from "~/routes/settings/_components/section-header";
 import { profileFixture } from "~/routes/settings/_fixtures";
 
+export async function loader({ request }: LoaderFunctionArgs) {
+  const token = await requireSessionToken(request);
+  // Load the logged-in teacher's email ("me" — the token resolves the current
+  // user when `_id` is omitted). `safe` keeps a backend 500 from white-screening
+  // the settings modal; a miss degrades to an em dash in the UI.
+  const result = await safe(
+    gqlClient.request(UsersFindOneDocument, {}, { "access-token": token }),
+  );
+  const email = result.ok ? (result.data.UsersFindOne?.email ?? null) : null;
+  return { email };
+}
+
 export default function SettingsProfileRoute() {
+  const { email } = useLoaderData<typeof loader>();
   const profile = profileFixture;
   const initial = profile.displayName.charAt(0).toUpperCase();
 
@@ -11,7 +30,7 @@ export default function SettingsProfileRoute() {
     <div className="max-w-2xl">
       <SectionHeader
         title="Manage Profile"
-        subtitle="View your account information and subscription details."
+        subtitle="View your account information."
       />
 
       <div className="space-y-6">
@@ -41,100 +60,21 @@ export default function SettingsProfileRoute() {
 
           <div className="space-y-5">
             {/* Email */}
-            <div className="flex items-start justify-between">
-              <div>
-                <label className="text-xs text-muted-foreground uppercase tracking-wide">
-                  Email
-                </label>
-                <p className="text-foreground mt-1 font-medium">
-                  {profile.email}
-                </p>
-              </div>
-              <a
-                href="#"
-                className="text-xs text-primary hover:underline font-medium"
-              >
-                Verify Email
-              </a>
-            </div>
-
-            {/* Country */}
             <div>
               <label className="text-xs text-muted-foreground uppercase tracking-wide">
-                Country
+                Email
               </label>
-              <p className="text-foreground mt-1">{profile.country}</p>
+              <p className="text-foreground mt-1 font-medium">{email ?? "—"}</p>
             </div>
 
             {/* Phone Number */}
-            <div className="flex items-start justify-between">
-              <div>
-                <label className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                  <Phone className="w-3 h-3" />
-                  Phone Number
-                </label>
-                <p className="text-muted-foreground mt-1 italic">
-                  {profile.phone}
-                </p>
-              </div>
-              <a
-                href="#"
-                className="text-xs text-primary hover:underline font-medium"
-              >
-                Verify Number
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* Subscription Details */}
-        <div className="bg-muted/30 rounded-[24px] p-6">
-          <h3 className="text-sm font-semibold text-foreground mb-5 flex items-center gap-2">
-            <CreditCard className="w-4 h-4 text-muted-foreground" />
-            Subscription Details
-          </h3>
-
-          <div className="grid grid-cols-2 gap-5">
-            {/* Start Date */}
             <div>
               <label className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                <Calendar className="w-3 h-3" />
-                Subscription Start Date
+                <Phone className="w-3 h-3" />
+                Phone Number
               </label>
-              <p className="text-foreground mt-1 font-medium">
-                {profile.subscriptionStart}
-              </p>
-            </div>
-
-            {/* End Date */}
-            <div>
-              <label className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                <Calendar className="w-3 h-3" />
-                Subscription End Date
-              </label>
-              <p className="text-foreground mt-1 font-medium">
-                {profile.subscriptionEnd ?? "No expiration"}
-              </p>
-            </div>
-
-            {/* Subscription Type */}
-            <div>
-              <label className="text-xs text-muted-foreground uppercase tracking-wide">
-                Subscription Type
-              </label>
-              <p className="text-foreground mt-1 font-medium">
-                {profile.subscriptionType}
-              </p>
-            </div>
-
-            {/* Admin Email */}
-            <div>
-              <label className="text-xs text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                <Shield className="w-3 h-3" />
-                Admin Email
-              </label>
-              <p className="text-foreground mt-1 font-medium">
-                {profile.adminEmail}
+              <p className="text-muted-foreground mt-1 italic">
+                {profile.phone}
               </p>
             </div>
           </div>

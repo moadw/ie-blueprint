@@ -5,8 +5,9 @@ import type { MoodValue } from "./mood-selector";
 import { GlassTextarea } from "./glass-textarea";
 
 interface FeedbackOverlayProps {
-  /** Submit & close (X) both → curriculum page. */
-  onExit: () => void;
+  onSubmit: (state: MoodValue, comment: string) => void;
+  onClose: () => void;
+  submitting?: boolean;
 }
 
 /**
@@ -15,10 +16,15 @@ interface FeedbackOverlayProps {
  * only) with CSS entrances instead of a JS animation lib: a heavy-glass card with
  * two decorative orbs, a header (`MessageSquare` + "Feedback" + close X), the
  * 5-mood selector, a glass comment textarea (`maxLength=500`), and a green
- * "Submit Now" pill disabled until a mood is chosen. UI ONLY — Submit and the
- * close X both exit to the curriculum page.
+ * "Submit Now" pill disabled until a mood is chosen. Controlled: `onSubmit`
+ * fires the mood + comment (parent persists then advances), while `onClose`
+ * (backdrop + close X) dismisses without saving.
  */
-export function FeedbackOverlay({ onExit }: FeedbackOverlayProps) {
+export function FeedbackOverlay({
+  onSubmit,
+  onClose,
+  submitting,
+}: FeedbackOverlayProps) {
   const [mood, setMood] = useState<MoodValue | null>(null);
   const [comment, setComment] = useState("");
 
@@ -39,7 +45,7 @@ export function FeedbackOverlay({ onExit }: FeedbackOverlayProps) {
       <button
         type="button"
         aria-label="Close feedback"
-        onClick={onExit}
+        onClick={onClose}
         className="absolute inset-0 cursor-default"
         style={{
           backdropFilter: "blur(8px)",
@@ -112,7 +118,7 @@ export function FeedbackOverlay({ onExit }: FeedbackOverlayProps) {
 
             <button
               type="button"
-              onClick={onExit}
+              onClick={onClose}
               aria-label="Close feedback"
               className="flex h-10 w-10 items-center justify-center rounded-full transition-all hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 active:scale-95"
               style={{ background: "rgba(255,255,255,0.15)" }}
@@ -156,8 +162,10 @@ export function FeedbackOverlay({ onExit }: FeedbackOverlayProps) {
           {/* Submit */}
           <button
             type="button"
-            onClick={onExit}
-            disabled={!mood}
+            onClick={() => {
+              if (mood) onSubmit(mood, comment);
+            }}
+            disabled={!mood || submitting}
             className="w-full rounded-2xl py-4 font-sans text-lg font-semibold text-white transition-all hover:scale-[1.02] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
             style={{
               background:
@@ -167,7 +175,7 @@ export function FeedbackOverlay({ onExit }: FeedbackOverlayProps) {
                 : "0 4px 15px rgba(45, 150, 100, 0.2)",
             }}
           >
-            Submit Now
+            {submitting ? "Submitting..." : "Submit Now"}
           </button>
         </div>
       </div>

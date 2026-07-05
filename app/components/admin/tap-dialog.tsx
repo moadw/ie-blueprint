@@ -12,7 +12,7 @@ import { Label } from "~/components/ui/label";
 import { Select } from "~/components/ui/select";
 import { toast } from "~/components/ui/toast";
 import { env } from "~/lib/env";
-import { toErrorMessage } from "~/lib/errors";
+import { payloadErrorMessage, toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { TapFindManyDocument, TapTypeFindManyDocument } from "~/queries/taps";
 import { TapCreateOneDocument, TapUpdateOneDocument } from "~/mutations/taps";
@@ -32,13 +32,19 @@ import {
   TapQuestionsSubform,
   type ExtraQuestionEntry,
 } from "~/components/admin/tap-questions-subform";
+import {
+  TapSliderCreateSubform,
+  type SliderFileItem,
+} from "~/components/admin/tap-slider-create-subform";
+import { TapSliderEditSubform } from "~/components/admin/tap-slider-edit-subform";
+import { runSliderCreate } from "~/components/admin/slider-create";
 import type { TapFindManyQuery, TapTypeFindManyQuery } from "~/gql/graphql";
 
 export type TapItem = TapFindManyQuery["TapFindMany"][number];
 type TapTypeItem = TapTypeFindManyQuery["TapTypeFindMany"][number];
 
 /** Which subform a configured type renders. */
-type TapSubform = "journal" | "video";
+type TapSubform = "journal" | "video" | "slider";
 
 /**
  * Per-type config keyed by the canonical type slug (mirrors the teacher-flow
@@ -49,12 +55,13 @@ type TapSubform = "journal" | "video";
  */
 // Keyed by the backend `TapType.identifier` (NOT the teacher-flow slugs in
 // practice-steps.ts). Source of truth: `main.taptype` — ie-journal, video,
-// full-audio, 5min-audio. Titles mirror each type's `label`.
+// full-audio, 5min-audio, slider. Titles mirror each type's `label`.
 const KNOWN_TYPES: Record<string, { title: string; subform: TapSubform }> = {
   "ie-journal": { title: "Journal", subform: "journal" },
   video: { title: "Video", subform: "video" },
   "full-audio": { title: "Full Audio", subform: "video" },
   "5min-audio": { title: "5-min Audio", subform: "video" },
+  slider: { title: "Slider", subform: "slider" },
 };
 
 export interface TapDialogProps {
@@ -122,16 +129,6 @@ function extraQuestionsFromTap(
   );
 }
 
-// Blueprint payloads surface domain errors via `error.message` (the
-// ErrorInterface has no resolveType, so a thrown payload error masks the real
-// message — see CLAUDE.md). Pull it out defensively.
-function payloadErrorMessage(payload: unknown): string | null {
-  const err = (
-    payload as { error?: { message?: string } | null } | null | undefined
-  )?.error;
-  return err?.message ?? null;
-}
-
 /**
  * Coerce the form's `time` string (whole minutes, kept in sync with the media
  * file's real duration by the extraction effect) to the numeric minutes the
@@ -178,6 +175,15 @@ export function TapDialog({
   // above still carries the id + points reference that the tap is saved with.
   const [journalText, setJournalText] = useState("");
   const [journalResolving, setJournalResolving] = useState(false);
+  // Slider create mode holds the pending dropped files here (owned by the
+  // dialog, edited via the slider create subform). Phase 3 wires the multi-tap
+  // Save; Phase 2 only enables Save when at least one file is selected.
+  const [sliderFiles, setSliderFiles] = useState<SliderFileItem[]>([]);
+  // Mirrors the slider edit subform's in-flight upload state (which the dialog
+  // can't otherwise see) so Save/Cancel are disabled while a replace-video
+  // upload runs — clicking Save mid-upload would wholesale-replace `videos`
+  // with the stale entry and drop the just-uploaded video.
+  const [sliderEditUploading, setSliderEditUploading] = useState(false);
 
   // Prefill (edit) / reset (create) on open transitions and when the target
   // `tap` changes. `defaultOrder` is intentionally NOT a dependency: it is
@@ -194,6 +200,8 @@ export function TapDialog({
     setVideos(videoEntriesFromTap(tap?.videos));
     setExtraQuestions(extraQuestionsFromTap(tap));
     setJournalText("");
+    setSliderFiles([]);
+    setSliderEditUploading(false);
     setError(null);
     setSubmitting(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -254,6 +262,18 @@ export function TapDialog({
   const resolvedSlug = resolver.get(form.type) ?? form.type;
   const config = KNOWN_TYPES[resolvedSlug] ?? null;
   const hasType = form.type.trim().length > 0;
+  // Slider + create mode swaps the normal (type-select-only) create body for a
+  // multi-file dropzone. Edit mode is handled separately (Phase 4).
+  const isSliderCreate = config?.subform === "slider" && !isEdit;
+
+  // Changing the selected type discards any pending slider files: they belong
+  // to the previous selection, and the slider subform revokes their object URLs
+  // on unmount, so clearing here avoids showing stale (revoked) previews if the
+  // admin toggles back to Slider.
+  function handleTypeChange(nextType: string) {
+    setForm((f) => ({ ...f, type: nextType }));
+    setSliderFiles([]);
+  }
 
   // The single journal question's reference (id + points) and its record id.
   const journalEntry =
@@ -317,6 +337,53 @@ export function TapDialog({
     if (submitting) return;
     // Save is only meaningful for a configured type.
     if (!config) return;
+    // Slider create is a dedicated multi-tap Save: one `slider` tap per selected
+    // file, created via a bounded promise pool (best-effort per file). It does
+    // NOT reuse the single-tap create→auto-edit flip — on completion it toasts a
+    // per-file summary, refetches the list, and closes.
+    if (isSliderCreate) {
+      if (sliderFiles.length === 0) return;
+      setSubmitting(true);
+      setError(null);
+      try {
+        const results = await runSliderCreate(sliderFiles, {
+          classId,
+          platform: env.PLATFORM,
+          // `form.type` is the selected option value; in this branch it resolves
+          // to the `slider` identifier (mirrors the single-tap create's `type`).
+          type: form.type,
+          defaultOrder,
+        });
+        const failed = results.filter((r) => !r.ok);
+        const added = results.filter((r) => r.ok).length;
+        if (failed.length === 0) {
+          toast.success(`${added} ${added === 1 ? "slide" : "slides"} added`);
+        } else {
+          // Image placeholders count as successes (the tap was created); only
+          // create/upload failures land here, named for the admin to retry.
+          const names = failed.map((r) => r.file.name || "untitled").join(", ");
+          const prefix = added > 0 ? `${added} added · ` : "";
+          toast.error(`${prefix}${failed.length} failed: ${names}`);
+        }
+        // Only refresh + close when at least one slide was created. On a TOTAL
+        // failure keep the dialog open with `sliderFiles` intact so the admin
+        // can retry (mirrors the single-tap create path, which stays open on
+        // error). The summary toast above still fires in every case.
+        if (added > 0) {
+          onSaved();
+          onOpenChange(false);
+        }
+      } catch (err) {
+        // runSliderCreate is best-effort per file and shouldn't reject; guard so
+        // an unexpected throw surfaces instead of leaving Save spinning.
+        const message = toErrorMessage(err, "Failed to create slides");
+        setError(message);
+        toast.error(message);
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
 
     setSubmitting(true);
     setError(null);
@@ -423,10 +490,8 @@ export function TapDialog({
           },
         });
         const payload = data.TapCreateOne;
-        const payloadError = (
-          payload as { error?: { message?: string } | null } | null | undefined
-        )?.error;
-        if (payloadError?.message) throw new Error(payloadError.message);
+        const createError = payloadErrorMessage(payload);
+        if (createError) throw new Error(createError);
         const recordId = payload?.recordId ?? payload?.record?._id;
         if (!recordId) throw new Error("Content record was not created");
 
@@ -484,9 +549,7 @@ export function TapDialog({
                 id="tap-type"
                 value={form.type}
                 disabled={typesLoading || isEdit}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, type: e.target.value }))
-                }
+                onChange={(e) => handleTypeChange(e.target.value)}
                 className="h-10 text-sm"
               >
                 <option value="">
@@ -507,9 +570,7 @@ export function TapDialog({
                   id="tap-type"
                   value={form.type}
                   disabled={isEdit}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, type: e.target.value }))
-                  }
+                  onChange={(e) => handleTypeChange(e.target.value)}
                   placeholder="e.g. video"
                   className="h-10 text-sm"
                 />
@@ -529,14 +590,31 @@ export function TapDialog({
             ) : null}
           </div>
 
-          {/* Subforms render only in edit mode for a configured type. In create
-              mode only the type select + actions show. */}
-          {isEdit && config ? (
+          {/* Slider + create mode swaps the (otherwise type-select-only) create
+              body for the multi-file dropzone. Other configured types show
+              their subform only in edit mode. */}
+          {isSliderCreate ? (
+            <TapSliderCreateSubform
+              value={sliderFiles}
+              onChange={setSliderFiles}
+            />
+          ) : isEdit && config ? (
             config.subform === "journal" ? (
               <TapQuestionsSubform
                 value={journalText}
                 onChange={setJournalText}
                 loading={journalResolving}
+              />
+            ) : config.subform === "slider" ? (
+              // Media-only edit: shows only the field matching the tap's stored
+              // media (replace-video, or a gated cover). The outer Save persists
+              // `videos` via TapUpdateOne (wholesale replace, `_id` echoed).
+              <TapSliderEditSubform
+                tapId={effectiveTap?._id ?? null}
+                videos={videos}
+                onVideosChange={setVideos}
+                cover={effectiveTap?.cover ?? null}
+                onUploadingChange={setSliderEditUploading}
               />
             ) : (
               <TapVideosSubform
@@ -560,7 +638,7 @@ export function TapDialog({
               type="button"
               variant="ghost"
               onClick={() => onOpenChange(false)}
-              disabled={submitting}
+              disabled={submitting || sliderEditUploading}
               className="h-10 px-4 text-sm font-medium"
             >
               Cancel
@@ -569,7 +647,12 @@ export function TapDialog({
               type="submit"
               variant="primary"
               loading={submitting}
-              disabled={submitting || !config}
+              disabled={
+                submitting ||
+                sliderEditUploading ||
+                !config ||
+                (isSliderCreate && sliderFiles.length === 0)
+              }
               className="h-10 px-4 text-sm font-medium"
             >
               Save

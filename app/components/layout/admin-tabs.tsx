@@ -9,6 +9,7 @@ const TABS = [
   { to: "/admin/users", label: "Users" },
   { to: "/admin/districts", label: "Districts" },
   { to: "/admin/license-presets", label: "License Presets" },
+  { to: "/admin/announcements", label: "Announcements" },
 ] as const;
 
 export function AdminTabs() {
