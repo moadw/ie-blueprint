@@ -28,6 +28,10 @@ interface CurriculumSliderProps {
   groupId: string;
   curriculumId: string;
   groupProgress: GroupProgress | null | undefined;
+  /** Class ids the teacher has favorited — drives each active card's heart fill. */
+  likedIds: Set<string>;
+  /** Optimistically toggles a class's favorite state (owned by the route). */
+  onToggleFavorite: (classId: string) => void;
   /** Fires with the centered card's index on mount and every change, so the
    *  parent can drive the blurred hero background off the current cover. */
   onIndexChange?: (index: number) => void;
@@ -113,6 +117,8 @@ export function CurriculumSlider({
   groupId,
   curriculumId,
   groupProgress,
+  likedIds,
+  onToggleFavorite,
   onIndexChange,
 }: CurriculumSliderProps) {
   const navigate = useNavigate();
@@ -370,6 +376,9 @@ export function CurriculumSlider({
                   media={lesson.media ?? null}
                   audioPref={audioPref}
                   onAudioPrefChange={setAudioPref}
+                  classId={lessonId}
+                  isLiked={lessonId ? likedIds.has(lessonId) : false}
+                  onToggleFavorite={onToggleFavorite}
                 />
               </div>
             );

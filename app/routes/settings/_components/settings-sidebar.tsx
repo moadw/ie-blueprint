@@ -1,12 +1,13 @@
 import { NavLink } from "react-router";
 import type { LucideIcon } from "lucide-react";
-import { User, BookOpen, BarChart3, Wrench, HelpCircle } from "lucide-react";
+import { User, BookOpen, Heart, BarChart3, Wrench, HelpCircle } from "lucide-react";
 import { Logo } from "~/components/ui/logo";
 import { cn } from "~/lib/utils";
 
 const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/settings/profile", label: "Manage Profile", icon: User },
   { to: "/settings/journals", label: "My Journals", icon: BookOpen },
+  { to: "/settings/favorites", label: "My Favorites", icon: Heart },
   { to: "/settings/stats", label: "My Stats", icon: BarChart3 },
   { to: "/settings/toolkit", label: "Toolkit", icon: Wrench },
   { to: "/settings/get-help", label: "Get Help", icon: HelpCircle },

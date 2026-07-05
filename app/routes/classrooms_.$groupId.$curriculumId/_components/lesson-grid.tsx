@@ -7,6 +7,7 @@ import {
   type CardMediaDescriptor,
 } from "./card-media";
 import { DurationPill, DurationTabs } from "./duration-pill";
+import { FavoriteHeart } from "./favorite-heart";
 import { MediaIndicatorIcons } from "./media-indicator-icons";
 import type { GroupProgress } from "./profile-menu";
 
@@ -25,6 +26,10 @@ interface LessonGridProps {
   groupId: string;
   curriculumId: string;
   groupProgress: GroupProgress | null | undefined;
+  /** Class ids the teacher has favorited — drives each tile's heart fill. */
+  likedIds: Set<string>;
+  /** Optimistically toggles a class's favorite state (owned by the route). */
+  onToggleFavorite: (classId: string) => void;
 }
 
 /**
@@ -44,6 +49,8 @@ export function LessonGrid({
   groupId,
   curriculumId,
   groupProgress,
+  likedIds,
+  onToggleFavorite,
 }: LessonGridProps) {
   const navigate = useNavigate();
   // Per-curriculum audio-length preference (live-synced). Shared module store,
@@ -170,6 +177,21 @@ export function LessonGrid({
                   hasSlider={lesson.media.hasSlider}
                   size="sm"
                 />
+              ) : null}
+
+              {/* Favorite heart (bottom-right). Always shown on the grid (not
+                  gated on hover/active); stopPropagation keeps the card's
+                  navigate onClick from firing. */}
+              {lesson._id ? (
+                <div className="absolute bottom-2 right-2 z-10">
+                  <FavoriteHeart
+                    variant="grid"
+                    liked={likedIds.has(lesson._id)}
+                    onToggle={() =>
+                      lesson._id && onToggleFavorite(lesson._id)
+                    }
+                  />
+                </div>
               ) : null}
             </div>
 
