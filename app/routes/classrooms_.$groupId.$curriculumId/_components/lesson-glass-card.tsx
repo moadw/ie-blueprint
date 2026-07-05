@@ -6,6 +6,7 @@ import {
   type CardMediaDescriptor,
 } from "./card-media";
 import { DurationPill, DurationTabs, SLIDER_PILL_GLASS } from "./duration-pill";
+import { FavoriteHeart } from "./favorite-heart";
 import { MediaIndicatorIcons } from "./media-indicator-icons";
 
 export type LessonCardStatus = "watched" | "current" | "none";
@@ -24,6 +25,12 @@ interface LessonGlassCardProps {
   audioPref?: AudioPref;
   /** Persist a new audio-length preference (live-synced across cards). */
   onAudioPrefChange?: (pref: AudioPref) => void;
+  /** This card's class id — enables the favorite heart when present. */
+  classId?: string | null;
+  /** Whether this class is currently favorited (drives the heart fill). */
+  isLiked?: boolean;
+  /** Optimistically toggles this class's favorite state. */
+  onToggleFavorite?: (classId: string) => void;
 }
 
 // Glass-theme token literals ported verbatim from the prototype's
@@ -53,6 +60,9 @@ export function LessonGlassCard({
   media,
   audioPref,
   onAudioPrefChange,
+  classId,
+  isLiked,
+  onToggleFavorite,
 }: LessonGlassCardProps) {
   // Single "N min" pill for video-only / full-audio-only practices. Both-audios
   // (tabs variant) and none render nothing here; `minutes` is non-null for the
@@ -188,6 +198,15 @@ export function LessonGlassCard({
               hasSlider={media.hasSlider}
               size="md"
             />
+          ) : null}
+          {classId && onToggleFavorite ? (
+            <div className="absolute bottom-4 right-4 z-20">
+              <FavoriteHeart
+                variant="slider"
+                liked={!!isLiked}
+                onToggle={() => classId && onToggleFavorite?.(classId)}
+              />
+            </div>
           ) : null}
         </>
       ) : null}
