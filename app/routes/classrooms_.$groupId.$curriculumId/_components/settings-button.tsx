@@ -1,12 +1,5 @@
 import { useState } from "react";
-import {
-  Check,
-  ChevronRight,
-  Globe,
-  GraduationCap,
-  Palette,
-  Settings,
-} from "lucide-react";
+import { Check, ChevronRight, Globe, GraduationCap, Settings } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -26,20 +19,13 @@ const MENU_BORDER = "1px solid rgba(255, 255, 255, 0.3)";
 const MENU_SHADOW =
   "inset 0 1px 1px rgba(255,255,255,0.4), 0 8px 32px rgba(0, 0, 0, 0.2)";
 
-const THEME_OPTIONS = [
-  { value: "glass", label: "Glass", icon: "✨" },
-  { value: "light", label: "Light", icon: "☀️" },
-  { value: "dark", label: "Dark", icon: "🌙" },
-] as const;
-
 const LANGUAGES = [
   { code: "en", name: "English", flag: "🇺🇸" },
   { code: "es", name: "Español", flag: "🇪🇸" },
 ] as const;
 
-// Shipped defaults: glass theme + English. The Theme/Language submenus render
-// and check-mark the active option but selecting any row is a no-op for now.
-const ACTIVE_THEME = "glass";
+// Shipped default: English. The Language submenu renders and check-marks the
+// active option but selecting any row is a no-op for now.
 const ACTIVE_LANGUAGE = "en";
 
 const MENU_STYLE = {
@@ -52,10 +38,10 @@ const MENU_STYLE = {
 
 /**
  * Fixed bottom-left glass settings gear. Opens a Radix `Popover` (top/start)
- * with Change Classroom, nested Theme + Language submenus (open to the right),
- * a divider, and Admin Panel. Fully interactive (gear rotates 90° on open,
- * submenus open + check-mark the active option) but every action is a no-op —
- * links are intentionally unwired for this step.
+ * with Change Classroom and a nested Language submenu (opens to the right).
+ * Fully interactive (gear rotates 90° on open, the submenu opens + check-marks
+ * the active option) but every action is a no-op — links are intentionally
+ * unwired for this step.
  */
 export function SettingsButton() {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -105,49 +91,6 @@ export function SettingsButton() {
             <ChevronRight className="h-4 w-4 flex-shrink-0 text-white/40" />
           </button>
 
-          {/* Theme submenu */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/90 transition-colors duration-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
-              >
-                <Palette className="h-4 w-4 flex-shrink-0 text-white/70" />
-                <span className="flex-1 text-left">Theme</span>
-                <span className="text-xs text-white/70">
-                  {THEME_OPTIONS.find((t) => t.value === ACTIVE_THEME)?.icon}
-                </span>
-                <ChevronRight className="h-4 w-4 flex-shrink-0 text-white/40" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent
-              side="right"
-              align="start"
-              sideOffset={8}
-              className="z-[102] w-40 rounded-[12px] p-2 text-white"
-              style={MENU_STYLE}
-            >
-              <div className="flex flex-col gap-1">
-                {THEME_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => {
-                      // TODO(settings): apply the selected theme.
-                    }}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white/90 transition-colors duration-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
-                  >
-                    <span>{option.icon}</span>
-                    <span className="flex-1 text-left">{option.label}</span>
-                    {option.value === ACTIVE_THEME ? (
-                      <Check className="h-4 w-4 text-green-500" />
-                    ) : null}
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-
           {/* Language submenu */}
           <Popover>
             <PopoverTrigger asChild>
@@ -190,21 +133,6 @@ export function SettingsButton() {
               </div>
             </PopoverContent>
           </Popover>
-
-          <div className="my-1 h-px bg-white/10" />
-
-          {/* Admin Panel */}
-          <button
-            type="button"
-            onClick={() => {
-              // TODO(settings): open the admin panel.
-            }}
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/90 transition-colors duration-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
-          >
-            <Settings className="h-4 w-4 flex-shrink-0 text-white/70" />
-            <span className="flex-1 text-left">Admin Panel</span>
-            <ChevronRight className="h-4 w-4 flex-shrink-0 text-white/40" />
-          </button>
         </div>
       </PopoverContent>
     </Popover>
