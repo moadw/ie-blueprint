@@ -61,6 +61,48 @@ export async function requireSessionToken(request: Request): Promise<string> {
   return token;
 }
 
+/**
+ * Blueprint's `blueprint-user` service has no clean 401 path: when an
+ * `access-token` no longer resolves to a user (expired/invalid JWT), its
+ * `checkAccess` guard throws `TypeError: Cannot read properties of undefined
+ * (reading '_id')` and returns it as a GraphQL `INTERNAL_SERVER_ERROR`. We
+ * treat that exact message — surfaced on a `UsersFindOne` session lookup — as
+ * "the session is dead, force re-login".
+ */
+export const INVALID_SESSION_SIGNATURE =
+  "Cannot read properties of undefined (reading '_id')";
+
+/**
+ * True when a thrown error — or a `safe()` error string — carries the
+ * invalid-token signature above. Accepts the raw graphql-request `ClientError`
+ * shape as well as the already-normalized message string.
+ */
+export function isInvalidSessionError(err: unknown): boolean {
+  if (typeof err === "string") return err.includes(INVALID_SESSION_SIGNATURE);
+  const gqlMessage = (
+    err as {
+      response?: {
+        errors?: ReadonlyArray<{ message?: string | null }> | null;
+      } | null;
+    } | null
+  )?.response?.errors?.[0]?.message;
+  if (
+    typeof gqlMessage === "string" &&
+    gqlMessage.includes(INVALID_SESSION_SIGNATURE)
+  ) {
+    return true;
+  }
+  return err instanceof Error && err.message.includes(INVALID_SESSION_SIGNATURE);
+}
+
+/** Clear the session cookie and redirect to /login. Always throws. */
+export async function logoutRedirect(request: Request): Promise<never> {
+  const session = await getSession(request);
+  throw redirect("/login", {
+    headers: { "Set-Cookie": await destroySession(session) },
+  });
+}
+
 export async function setSessionToken(
   session: Session,
   token: string,
