@@ -1,176 +1,178 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
-import { Pencil, Plus, Search, Trash2, Video } from "lucide-react";
+import { useLoaderData, useRevalidator } from "react-router";
+import { Award, Pencil, Plus, Video } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import {
+  AchievementDialog,
+  type PinItem,
+} from "~/components/admin/achievement-dialog";
 import { requireSessionToken } from "~/lib/session.server";
 import { env } from "~/lib/env";
+import { gqlClient } from "~/lib/graphql";
+import { safe } from "~/lib/safe-loader";
+import { PinFindManyDocument } from "~/queries/pins";
+import { ClassesAdminFindManyDocument } from "~/queries/classes";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requireSessionToken(request);
+  const token = await requireSessionToken(request);
   if (!env.PLATFORM) {
     return {
+      pins: [],
+      classNames: {} as Record<string, string>,
       error: "Platform is not configured. Please contact your administrator.",
     };
   }
-  return { error: null as string | null };
-}
+  const result = await safe(
+    gqlClient.request(
+      PinFindManyDocument,
+      { filter: { platform: env.PLATFORM }, limit: 100 },
+      { "access-token": token },
+    ),
+  );
+  // Soft delete = non-null deletedAt — drop those rows.
+  const pins = result.ok
+    ? (result.data.PinFindMany ?? []).filter((p) => !p.deletedAt)
+    : [];
 
-interface DummyAchievement {
-  id: string;
-  title: string;
-  awarded_for: string;
-  description: string;
-  badge_image_url?: string;
-  video_url?: string;
-}
+  // Resolve the practice (class) each pin is attached to, so the card can show
+  // its title. Batch every referenced class id into one query via the `_id in`
+  // operator (no platform filter — a pin's class may live under a different
+  // platform id than env.PLATFORM). A failed lookup just leaves names unknown;
+  // it doesn't take down the list.
+  const classIds = [
+    ...new Set(pins.map((p) => p.class).filter((id): id is string => !!id)),
+  ];
+  let classNames: Record<string, string> = {};
+  if (classIds.length > 0) {
+    const classesResult = await safe(
+      gqlClient.request(
+        ClassesAdminFindManyDocument,
+        { filter: { _operators: { _id: { in: classIds } } }, limit: classIds.length },
+        { "access-token": token },
+      ),
+    );
+    if (classesResult.ok) {
+      classNames = Object.fromEntries(
+        (classesResult.data.ClassesAdminFindMany ?? []).map((c) => [
+          c._id,
+          c.title ?? "Untitled practice",
+        ]),
+      );
+    }
+  }
 
-const DUMMY_ACHIEVEMENTS: DummyAchievement[] = [
-  {
-    id: "ach-1",
-    title: "First Breath",
-    awarded_for: "Completing your first breathing exercise",
-    description: "Awarded when a learner completes their very first guided breathing practice from start to finish.",
-    video_url: "https://example.com/first-breath.mp4",
-  },
-  {
-    id: "ach-2",
-    title: "Steady Streak",
-    awarded_for: "Practicing 7 days in a row",
-    description: "Recognizes consistent daily practice across a full week without a gap.",
-  },
-  {
-    id: "ach-3",
-    title: "Mindful Explorer",
-    awarded_for: "Trying 5 different practices",
-    description: "Granted after experiencing five distinct practice types from any series in the library.",
-    video_url: "https://example.com/mindful-explorer.mp4",
-  },
-  {
-    id: "ach-4",
-    title: "Quiet Mind",
-    awarded_for: "Completing a 10-minute silent sit",
-    description: "Earned by finishing a full ten-minute silent meditation without skipping ahead.",
-  },
-  {
-    id: "ach-5",
-    title: "Compassion Champion",
-    awarded_for: "Finishing the loving-kindness series",
-    description: "Recognizes the completion of every practice in the loving-kindness curriculum.",
-    video_url: "https://example.com/compassion.mp4",
-  },
-  {
-    id: "ach-6",
-    title: "Curious Beginner",
-    awarded_for: "Asking a reflection question",
-    description: "Awarded when a learner submits their first written reflection or question after a practice.",
-  },
-];
+  return { pins, classNames, error: result.error };
+}
 
 export default function AdminContentAchievements() {
-  const { error } = useLoaderData<typeof loader>();
-  const [query, setQuery] = useState("");
+  const { pins, classNames, error } = useLoaderData<typeof loader>();
+  const revalidator = useRevalidator();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editPin, setEditPin] = useState<PinItem | null>(null);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return DUMMY_ACHIEVEMENTS;
-    return DUMMY_ACHIEVEMENTS.filter((a) => a.title.toLowerCase().includes(q));
-  }, [query]);
-
-  if (error) {
-    return (
-      <div className="rounded-xl border-2 border-dashed border-red-200 bg-red-50 py-10 text-center">
-        <p className="mb-1 text-sm font-medium text-red-700">
-          Couldn't load achievements
-        </p>
-        <p className="text-xs text-red-600">{error}</p>
-      </div>
-    );
-  }
+  const openCreate = () => {
+    setEditPin(null);
+    setDialogOpen(true);
+  };
+  const openEdit = (pin: PinItem) => {
+    setEditPin(pin);
+    setDialogOpen(true);
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-serif text-xl text-foreground">Achievements Library</h2>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h2 className="font-serif text-xl text-foreground">
+            Achievements Library
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
             Global achievement templates that can be copied to any series
           </p>
         </div>
-        <Button
-          variant="primary"
-          onClick={() => {
-            console.log("new achievement (stub)");
-          }}
-        >
+        <Button variant="primary" onClick={openCreate}>
           <Plus className="h-4 w-4" />
-          New Template
+          New Achievement
         </Button>
       </div>
 
-      <div className="relative">
-        <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search achievements"
-          className="w-full h-[44px] pl-9 pr-4 bg-card border border-border rounded-lg text-[15px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-        />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((a) => (
-          <div
-            key={a.id}
-            className="bg-card border border-border rounded-xl p-4 space-y-3 shadow-sm hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-start gap-3">
-              {a.badge_image_url ? (
+      {error ? (
+        <div className="rounded-xl border-2 border-dashed border-red-200 bg-red-50 py-10 text-center">
+          <p className="mb-1 text-sm font-medium text-red-700">
+            Couldn't load achievements
+          </p>
+          <p className="text-xs text-red-600">{error}</p>
+        </div>
+      ) : pins.length === 0 ? (
+        <div className="rounded-xl border-2 border-dashed border-stone-200 bg-stone-50 py-16 text-center">
+          <Award className="mx-auto mb-3 h-12 w-12 text-stone-300" />
+          <p className="mb-4 text-stone-600">No achievements yet</p>
+          <div className="flex justify-center">
+            <Button variant="primary" onClick={openCreate}>
+              <Plus className="h-4 w-4" />
+              New Template
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {pins.map((p) => (
+            <div
+              key={p._id}
+              className="flex items-start gap-3 rounded-xl border border-border bg-card p-4 shadow-xs transition-shadow hover:shadow-sm"
+            >
+              {p.cover?.url ? (
                 <img
-                  src={a.badge_image_url}
+                  src={p.cover.url}
                   alt=""
-                  className="h-10 w-10 rounded-full object-cover flex-shrink-0"
+                  className="h-10 w-10 flex-shrink-0 rounded-full object-cover"
                 />
               ) : (
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex-shrink-0" />
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-500">
+                  <Award className="h-5 w-5 text-white" />
+                </div>
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="font-medium text-stone-900 truncate">{a.title}</p>
-                  {a.video_url ? <Video className="h-4 w-4 text-stone-400 flex-shrink-0" /> : null}
+                  <p className="truncate font-medium text-foreground">
+                    {p.label || "Untitled"}
+                  </p>
+                  {p.video?.url ? (
+                    <Video className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                  ) : null}
                 </div>
-                <p className="text-xs text-stone-500 truncate">{a.awarded_for}</p>
+                {p.class && classNames[p.class] ? (
+                  <p className="truncate text-xs text-muted-foreground">
+                    {classNames[p.class]}
+                  </p>
+                ) : (
+                  <p className="truncate text-xs italic text-muted-foreground/70">
+                    Not attached to a practice
+                  </p>
+                )}
               </div>
-            </div>
-
-            <p className="text-sm text-stone-500 line-clamp-2">{a.description}</p>
-
-            <div className="flex justify-end gap-1">
               <Button
                 variant="ghost"
-                className="h-8 w-8 px-0 text-[13px]"
-                onClick={() => {
-                  console.log("edit achievement (stub)", a.id);
-                }}
-                aria-label="Edit"
+                size="icon"
+                onClick={() => openEdit(p)}
+                aria-label={`Edit ${p.label || "achievement"}`}
+                className="h-8 w-8 flex-shrink-0"
               >
                 <Pencil className="h-4 w-4" />
               </Button>
-              <Button
-                variant="ghost"
-                className="h-8 w-8 px-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                onClick={() => {
-                  console.log("delete achievement (stub)", a.id);
-                }}
-                aria-label="Delete"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
+
+      <AchievementDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        curriculumId={null}
+        pin={editPin}
+        onSaved={() => revalidator.revalidate()}
+      />
     </div>
   );
 }
