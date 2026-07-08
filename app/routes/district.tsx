@@ -66,6 +66,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       districtResult && districtResult.ok
         ? (districtResult.data.DistrictFindOne ?? null)
         : null,
+    // Surfaced for the header account menu (avatar initials, name, email).
+    // Null when the user query 500s — the menu degrades gracefully.
+    user: userResult.ok ? (userResult.data.UsersFindOne ?? null) : null,
     error:
       districtResult && !districtResult.ok ? districtResult.error : null,
     authError: userResult.ok ? null : userResult.error,
@@ -74,9 +77,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function DistrictLayoutRoute() {
-  const { district, announcement } = useLoaderData<typeof loader>();
+  const { district, user, announcement } = useLoaderData<typeof loader>();
   return (
-    <DistrictShell district={district} announcement={announcement}>
+    <DistrictShell district={district} user={user} announcement={announcement}>
       <Outlet />
     </DistrictShell>
   );
