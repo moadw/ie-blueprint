@@ -6,14 +6,19 @@ import { Logo } from "~/components/ui/logo";
 import { AnnouncementBar } from "~/components/ui/announcement-bar";
 import type { UserDistrictFindOneQuery } from "~/gql/graphql";
 import { DistrictNav } from "~/routes/district/_components/district-nav";
+import {
+  DistrictAccountMenu,
+  type DistrictAccountMenuUser,
+} from "~/routes/district/_components/district-account-menu";
 
 export interface DistrictShellProps {
   district: UserDistrictFindOneQuery["UserDistrictFindOne"] | null;
+  user?: DistrictAccountMenuUser | null;
   announcement?: { _id: string; message?: string | null } | null;
   children: ReactNode;
 }
 
-export function DistrictShell({ announcement, children }: DistrictShellProps) {
+export function DistrictShell({ user, announcement, children }: DistrictShellProps) {
   const navigate = useNavigate();
 
   return (
@@ -47,9 +52,7 @@ export function DistrictShell({ announcement, children }: DistrictShellProps) {
           >
             <Bell className="w-5 h-5 text-muted-foreground" />
           </button>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
-            DA
-          </div>
+          <DistrictAccountMenu user={user} />
         </div>
       </header>
       <div className="flex-1 min-h-0 overflow-auto print:overflow-visible">{children}</div>
