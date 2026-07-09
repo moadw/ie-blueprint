@@ -10,6 +10,10 @@ export const GroupFindManyDocument = graphql(`
       organization
       platform
       curriculums
+      cover {
+        url
+        type
+      }
       managerObj {
         _id
         firstName

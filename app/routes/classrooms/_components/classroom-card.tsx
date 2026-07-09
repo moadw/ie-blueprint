@@ -7,6 +7,8 @@ interface ClassroomCardProps {
   name: string;
   /** selects placeholder gradient (index % 5) */
   index: number;
+  /** cover image URL; falls back to the gradient-letter placeholder when absent */
+  coverUrl?: string | null;
   /** card click (navigation wired by parent) */
   onSelect: () => void;
   /** confirmed delete */
@@ -27,6 +29,7 @@ const placeholderGradients = [
 export function ClassroomCard({
   name,
   index,
+  coverUrl,
   onSelect,
   onDelete,
   deleting = false,
@@ -129,7 +132,7 @@ export function ClassroomCard({
               backdropFilter: "blur(8px)",
             }}
           >
-            {/* Inner card with gradient-letter placeholder */}
+            {/* Inner card: cover image when present, else gradient-letter placeholder */}
             <div
               className="flex h-full w-full items-center justify-center overflow-hidden rounded-[22px]"
               style={{
@@ -137,15 +140,23 @@ export function ClassroomCard({
                 boxShadow: "inset 0 2px 8px rgba(0,0,0,0.04)",
               }}
             >
-              <span
-                className="text-4xl font-medium"
-                style={{
-                  color: "rgba(255,255,255,0.95)",
-                  textShadow: "0 1px 2px rgba(0,0,0,0.1)",
-                }}
-              >
-                {name.charAt(0).toUpperCase()}
-              </span>
+              {coverUrl ? (
+                <img
+                  src={coverUrl}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span
+                  className="text-4xl font-medium"
+                  style={{
+                    color: "rgba(255,255,255,0.95)",
+                    textShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  {name.charAt(0).toUpperCase()}
+                </span>
+              )}
             </div>
           </div>
 
