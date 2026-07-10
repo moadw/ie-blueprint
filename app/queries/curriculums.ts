@@ -36,6 +36,10 @@ export const CurriculumsFindOneDocument = graphql(/* GraphQL */ `
       curriculumCollection { _id }
       cover { type url }
       bgImage { type url }
+      language {
+        english { title description identifier label }
+        spanish { title description identifier label }
+      }
     }
   }
 `);

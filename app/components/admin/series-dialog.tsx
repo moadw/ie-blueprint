@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Modal } from "~/components/ui/modal";
+import { SegmentedTabs } from "~/components/ui/segmented-tabs";
 import { api } from "~/lib/api";
 import { activeHiddenFromStatus, statusFromActiveHidden } from "~/lib/curriculum";
 import type { CurriculumStatus } from "~/lib/curriculum";
@@ -29,6 +30,10 @@ export interface SeriesDialogCurriculum {
   hidden?: boolean | null;
   cover?: { url?: string | null } | null;
   bgImage?: { url?: string | null } | null;
+  language?: {
+    english?: { title?: string | null; description?: string | null } | null;
+    spanish?: { title?: string | null; description?: string | null } | null;
+  } | null;
 }
 
 export interface SeriesDialogProps {
@@ -65,6 +70,9 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
   const [description, setDescription] = useState("");
+  const [spanishTitle, setSpanishTitle] = useState("");
+  const [spanishDescription, setSpanishDescription] = useState("");
+  const [locale, setLocale] = useState<"en" | "es">("en");
   const [category, setCategory] = useState<string>("core");
   const [grade, setGrade] = useState<string>("all_levels");
   const [status, setStatus] = useState<CurriculumStatus>("live");
@@ -112,6 +120,9 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
       setSlug(curriculum.slug ?? "");
       setSlugTouched(true);
       setDescription(curriculum.description ?? "");
+      setSpanishTitle(curriculum.language?.spanish?.title ?? "");
+      setSpanishDescription(curriculum.language?.spanish?.description ?? "");
+      setLocale("en");
       setCategory(curriculum.category ?? "core");
       setGrade(curriculum.grade ?? "all_levels");
       setStatus(statusFromActiveHidden(curriculum));
@@ -129,6 +140,9 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
     setSlug("");
     setSlugTouched(false);
     setDescription("");
+    setSpanishTitle("");
+    setSpanishDescription("");
+    setLocale("en");
     setCategory("core");
     setGrade("all_levels");
     setStatus("live");
@@ -150,9 +164,45 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
     try {
       const { active, hidden } = activeHiddenFromStatus(status);
       const trimmedSlug = slug.trim();
+
+      const enTitle = title.trim();
+      const enDescription = description.trim();
+      const esTitle = spanishTitle.trim();
+      const esDescription = spanishDescription.trim();
+      const hasSpanish = Boolean(esTitle || esDescription);
+      const hadSpanish = Boolean(
+        curriculum?.language?.spanish?.title ||
+          curriculum?.language?.spanish?.description,
+      );
+
+      const englishLocale = {
+        title: enTitle,
+        description: enDescription || null,
+        label: "English",
+        identifier: "en",
+      };
+      // Written only when language participates:
+      const spanishLocale = {
+        title: esTitle || null,
+        description: esDescription || null,
+        label: "Spanish",
+        identifier: "es",
+      };
+
+      let language:
+        | { english: typeof englishLocale; spanish: typeof spanishLocale | null }
+        | undefined;
+      if (hasSpanish) {
+        language = { english: englishLocale, spanish: spanishLocale };
+      } else if (isEdit && hadSpanish) {
+        // remove Spanish, keep English synced
+        language = { english: englishLocale, spanish: null };
+      }
+      // else: leave `language` undefined → omitted from record
+
       const record = {
-        title: title.trim(),
-        description: description.trim() || null,
+        title: enTitle,
+        description: enDescription || null,
         category,
         grade,
         active,
@@ -164,6 +214,7 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
         // so the backend auto-generates one (create) / leaves it unchanged
         // (update) — matches the tap-dialog fix.
         ...(trimmedSlug ? { slug: trimmedSlug } : {}),
+        ...(language ? { language } : {}),
       };
 
       let recordId: string | null | undefined;
@@ -243,16 +294,75 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
     }
   }
 
+  const existingCoverUrl = curriculum?.cover?.url ?? null;
+  const existingBgUrl = curriculum?.bgImage?.url ?? null;
+
   return (
     <Modal open={open} onClose={onClose} title={isEdit ? "Edit Series" : "New Series"}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Title"
-          required
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Mindful Mornings"
-        />
+        <div className="rounded-[14px] border border-border bg-card p-4 space-y-4">
+          <SegmentedTabs
+            value={locale}
+            onChange={setLocale}
+            options={[
+              { value: "en", label: "English" },
+              { value: "es", label: "Spanish" },
+            ]}
+            ariaLabel="Content language"
+          />
+
+          {locale === "en" ? (
+            <>
+              <Input
+                label="Title"
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Mindful Mornings"
+              />
+
+              <div>
+                <label className={labelClass} htmlFor="series-description">
+                  Description
+                </label>
+                <textarea
+                  id="series-description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  className="w-full bg-card border border-border rounded-lg p-3 text-[15px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  placeholder="What is this series about?"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <Input
+                label="Title"
+                value={spanishTitle}
+                onChange={(e) => setSpanishTitle(e.target.value)}
+                placeholder="p. ej. Mañanas conscientes"
+              />
+
+              <div>
+                <label
+                  className={labelClass}
+                  htmlFor="series-spanish-description"
+                >
+                  Description
+                </label>
+                <textarea
+                  id="series-spanish-description"
+                  value={spanishDescription}
+                  onChange={(e) => setSpanishDescription(e.target.value)}
+                  rows={3}
+                  className="w-full bg-card border border-border rounded-lg p-3 text-[15px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  placeholder="¿De qué trata esta serie?"
+                />
+              </div>
+            </>
+          )}
+        </div>
 
         <Input
           label="Slug"
@@ -263,20 +373,6 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
           }}
           placeholder="auto-derived-from-title"
         />
-
-        <div>
-          <label className={labelClass} htmlFor="series-description">
-            Description
-          </label>
-          <textarea
-            id="series-description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            className="w-full bg-card border border-border rounded-lg p-3 text-[15px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-            placeholder="What is this series about?"
-          />
-        </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
@@ -385,14 +481,22 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
             </div>
           ) : (
             <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-stone-200 bg-stone-50/50 p-6 text-center hover:bg-stone-50">
-              {isEdit && curriculum?.cover?.url ? (
-                <span className="text-xs text-stone-500 mb-2">
-                  Current cover will be kept unless you upload a new one
+              {existingCoverUrl ? (
+                <>
+                  <img
+                    src={existingCoverUrl}
+                    alt="Current cover"
+                    className="mb-2 h-20 w-20 rounded-md object-cover"
+                  />
+                  <span className="text-sm font-medium text-stone-700">
+                    Click to replace image
+                  </span>
+                </>
+              ) : (
+                <span className="text-sm font-medium text-stone-700">
+                  Click to upload an image
                 </span>
-              ) : null}
-              <span className="text-sm font-medium text-stone-700">
-                Click to upload an image
-              </span>
+              )}
               <span className="mt-1 text-xs text-stone-500">
                 PNG or JPEG
               </span>
@@ -437,14 +541,22 @@ export function SeriesDialog({ open, onClose, curriculum }: SeriesDialogProps) {
             </div>
           ) : (
             <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-stone-200 bg-stone-50/50 p-6 text-center hover:bg-stone-50">
-              {isEdit && curriculum?.bgImage?.url ? (
-                <span className="text-xs text-stone-500 mb-2">
-                  Current background will be kept unless you upload a new one
+              {existingBgUrl ? (
+                <>
+                  <img
+                    src={existingBgUrl}
+                    alt="Current background"
+                    className="mb-2 h-20 w-20 rounded-md object-cover"
+                  />
+                  <span className="text-sm font-medium text-stone-700">
+                    Click to replace image
+                  </span>
+                </>
+              ) : (
+                <span className="text-sm font-medium text-stone-700">
+                  Click to upload an image
                 </span>
-              ) : null}
-              <span className="text-sm font-medium text-stone-700">
-                Click to upload an image
-              </span>
+              )}
               <span className="mt-1 text-xs text-stone-500">
                 PNG or JPEG
               </span>
