@@ -64,6 +64,14 @@ const KNOWN_TYPES: Record<string, { title: string; subform: TapSubform }> = {
   slider: { title: "Slider", subform: "slider" },
 };
 
+// tap.language is an open string scalar. These values MUST match what the
+// migration writes (`migration/taps.mjs` -> `language: row.lang`, "en" | "es")
+// so admin-edited taps stay consistent with migrated data. Empty = unset.
+const LANGUAGE_OPTIONS = [
+  { value: "en", label: "English" },
+  { value: "es", label: "Spanish" },
+] as const;
+
 export interface TapDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -78,6 +86,7 @@ type FormState = {
   title: string;
   order: number;
   type: string;
+  language: string;
   points: string;
   time: string;
   intro: string;
@@ -93,6 +102,7 @@ function formFromTap(
     title: tap?.title ?? "",
     order: Math.max(1, Math.round(tap?.order ?? defaultOrder)),
     type: tap?.type ?? "",
+    language: tap?.language ?? "",
     points: tap?.points != null ? String(tap.points) : "",
     time: tap?.time != null ? String(tap.time) : "5",
     intro: tap?.intro ?? "",
@@ -255,6 +265,11 @@ export function TapDialog({
   // Keep an unknown stored/selected type selectable so it never silently clears.
   const typeValueUnknown =
     form.type !== "" && !typeOptions.some((opt) => opt.value === form.type);
+  // Same guard for language: a legacy/unexpected stored value (not en/es) stays
+  // selectable so re-saving an untouched tap never wipes it.
+  const languageValueUnknown =
+    form.language !== "" &&
+    !LANGUAGE_OPTIONS.some((opt) => opt.value === form.language);
 
   // Resolve the selected type to its canonical slug, then look up its config.
   // A null config = an unconfigured ("5th") type: no subform, Save disabled.
@@ -458,6 +473,9 @@ export function TapDialog({
           record: {
             title: config.title,
             time: timeMinutes,
+            // Open string scalar; empty select => null (clear). Safe to null
+            // (unlike slug, language has no sparse-unique index / E11000 risk).
+            language: form.language || null,
             videos: videosRecord,
             extraQuestions: extraQuestionsRecord,
           },
@@ -625,6 +643,42 @@ export function TapDialog({
                 tapType={form.type.trim()}
               />
             )
+          ) : null}
+
+          {/* Language is a per-tap open string; its values mirror the migration
+              ("en" | "es", empty = unset). Last field, edit-only like the other
+              per-tap fields (create is deliberately type-only). */}
+          {isEdit ? (
+            <div className="flex flex-col gap-1.5">
+              <Label
+                htmlFor="tap-language"
+                className="text-sm font-medium text-muted-foreground"
+              >
+                Language
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Show this content only in the selected language. Leave empty to
+                show it in all languages.
+              </p>
+              <Select
+                id="tap-language"
+                value={form.language}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, language: e.target.value }))
+                }
+                className="h-10 text-sm"
+              >
+                <option value="">None</option>
+                {languageValueUnknown ? (
+                  <option value={form.language}>{form.language}</option>
+                ) : null}
+                {LANGUAGE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
           ) : null}
 
           {error ? (
