@@ -4,6 +4,10 @@ import { FileUp, ImagePlus, Loader2, Plus } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import {
+  MultiSelectCombobox,
+  type MultiSelectOption,
+} from "~/components/ui/multi-select-combobox";
 import { Progress } from "~/components/ui/progress";
 import { toast } from "~/components/ui/toast";
 import { api } from "~/lib/api";
@@ -405,20 +409,21 @@ export function TapVideosSubform({
     );
   }
 
-  function toggleNarrator(index: number, narratorId: string) {
+  // The combobox owns add/remove and emits the full next selection; store it.
+  function setNarratorSelection(index: number, ids: string[]) {
     onChange((prev) =>
       prev.map((entry, i) =>
-        i === index
-          ? {
-              ...entry,
-              narrator: entry.narrator.includes(narratorId)
-                ? entry.narrator.filter((id) => id !== narratorId)
-                : [...entry.narrator, narratorId],
-            }
-          : entry,
+        i === index ? { ...entry, narrator: ids } : entry,
       ),
     );
   }
+
+  // Narrator options (shared across entries): value = _id, label = name.
+  const narratorOptions: MultiSelectOption[] = narrators.map((narrator) => ({
+    value: narrator._id,
+    label: narrator.name ?? "Unnamed",
+    imageUrl: narrator.avatar?.url ?? null,
+  }));
 
   async function handleThumbnailChange(
     index: number,
@@ -763,52 +768,14 @@ export function TapVideosSubform({
                           No narrators available.
                         </p>
                       ) : (
-                        <div className="flex flex-wrap gap-x-4 gap-y-2">
-                          {narrators.map((narrator) => {
-                            const checked = entry.narrator.includes(
-                              narrator._id,
-                            );
-                            const checkboxId = `tap-video-${vi}-narrator-${narrator._id}`;
-                            return (
-                              <div
-                                key={narrator._id}
-                                className="flex items-center gap-2"
-                              >
-                                <input
-                                  id={checkboxId}
-                                  type="checkbox"
-                                  checked={checked}
-                                  onChange={() =>
-                                    toggleNarrator(vi, narrator._id)
-                                  }
-                                  className="h-4 w-4 rounded border-border accent-foreground cursor-pointer"
-                                />
-                                {narrator.avatar?.url ? (
-                                  <img
-                                    src={narrator.avatar.url}
-                                    alt=""
-                                    className="h-4 w-4 rounded-full object-cover"
-                                  />
-                                ) : (
-                                  <span
-                                    className="h-4 w-4 rounded-full bg-muted"
-                                    aria-hidden="true"
-                                  />
-                                )}
-                                <Label
-                                  htmlFor={checkboxId}
-                                  className={
-                                    checked
-                                      ? "text-sm cursor-pointer"
-                                      : "text-sm text-muted-foreground cursor-pointer"
-                                  }
-                                >
-                                  {narrator.name ?? "Unnamed"}
-                                </Label>
-                              </div>
-                            );
-                          })}
-                        </div>
+                        <MultiSelectCombobox
+                          id={`tap-video-${vi}-narrators`}
+                          options={narratorOptions}
+                          selected={entry.narrator}
+                          onChange={(ids) => setNarratorSelection(vi, ids)}
+                          placeholder="Select narrator…"
+                          searchPlaceholder="Search narrators…"
+                        />
                       )}
                     </div>
                   </>
