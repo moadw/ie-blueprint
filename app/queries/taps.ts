@@ -8,6 +8,7 @@ export const TapFindManyDocument = graphql(/* GraphQL */ `
       title
       order
       type
+      language
       points
       intro
       description
