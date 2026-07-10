@@ -656,6 +656,10 @@ export function TapDialog({
               >
                 Language
               </Label>
+              <p className="text-xs text-muted-foreground">
+                Show this content only in the selected language. Leave empty to
+                show it in all languages.
+              </p>
               <Select
                 id="tap-language"
                 value={form.language}
