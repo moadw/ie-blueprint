@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Modal } from "~/components/ui/modal";
+import { SegmentedTabs } from "~/components/ui/segmented-tabs";
 import { Switch } from "~/components/ui/switch";
 import { api } from "~/lib/api";
 import { env } from "~/lib/env";
@@ -32,6 +33,9 @@ export function PracticeDialog({
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [spanishTitle, setSpanishTitle] = useState("");
+  const [spanishDescription, setSpanishDescription] = useState("");
+  const [locale, setLocale] = useState<"en" | "es">("en");
   const [day, setDay] = useState<number>(defaultOrder ?? 1);
 
   // Visual-only fields
@@ -57,6 +61,9 @@ export function PracticeDialog({
     if (open) return;
     setTitle("");
     setDescription("");
+    setSpanishTitle("");
+    setSpanishDescription("");
+    setLocale("en");
     setDay(defaultOrder ?? 1);
     setActive(true);
     setCoverFile(null);
@@ -79,6 +86,30 @@ export function PracticeDialog({
     setError(null);
     try {
       const dayValue = Math.max(1, Math.round(day || 1));
+
+      // Shared write helper: build `language` from the trimmed EN/ES values and
+      // whether Spanish participates. Create has no prior record, so `hadSpanish`
+      // is always false. English is mirrored from the top-level fields; empty
+      // subfields are sent as "" (migration-fidelity shape, no label/identifier).
+      const enTitle = title.trim();
+      const enDescription = description.trim();
+      const esTitle = spanishTitle.trim();
+      const esDescription = spanishDescription.trim();
+      const hasSpanish = Boolean(esTitle || esDescription);
+      const hadSpanish = false; // create dialog: no prior record
+      let language:
+        | {
+            english: { title: string; description: string };
+            spanish: { title: string; description: string };
+          }
+        | undefined;
+      if (hasSpanish || hadSpanish) {
+        language = {
+          english: { title: enTitle, description: enDescription },
+          spanish: { title: esTitle, description: esDescription },
+        };
+      }
+
       const data = await gqlClient.request(ClassesCreateOneDocument, {
         record: {
           title: title.trim(),
@@ -90,6 +121,7 @@ export function PracticeDialog({
           // (the prior form default). Active is visual-only.
           free: true,
           // `deleted` is intentionally omitted (I1) — loader treats null/false as visible.
+          ...(language ? { language } : {}),
         },
       });
       const payload = data.ClassesCreateOne;
@@ -133,14 +165,65 @@ export function PracticeDialog({
     <Modal open={open} onClose={onClose} title="Add Practice">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2">
-            <Input
-              label="Title"
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Morning Breath"
+          <div className="col-span-2 rounded-[14px] border border-border bg-card p-4 space-y-4">
+            <SegmentedTabs
+              value={locale}
+              onChange={setLocale}
+              options={[
+                { value: "en", label: "English" },
+                { value: "es", label: "Spanish" },
+              ]}
+              ariaLabel="Content language"
             />
+
+            {locale === "en" ? (
+              <>
+                <Input
+                  label="Title"
+                  required
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Morning Breath"
+                />
+
+                <div>
+                  <label className={labelClass} htmlFor="practice-description">
+                    Description
+                  </label>
+                  <textarea
+                    id="practice-description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="h-24 w-full rounded-lg border border-border bg-card p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <Input
+                  label="Title"
+                  value={spanishTitle}
+                  onChange={(e) => setSpanishTitle(e.target.value)}
+                  placeholder="p. ej. Respiración matutina"
+                />
+
+                <div>
+                  <label
+                    className={labelClass}
+                    htmlFor="practice-spanish-description"
+                  >
+                    Description
+                  </label>
+                  <textarea
+                    id="practice-spanish-description"
+                    value={spanishDescription}
+                    onChange={(e) => setSpanishDescription(e.target.value)}
+                    className="h-24 w-full rounded-lg border border-border bg-card p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    placeholder="¿De qué trata esta práctica?"
+                  />
+                </div>
+              </>
+            )}
           </div>
 
           <div>
@@ -157,18 +240,6 @@ export function PracticeDialog({
                 setDay(Math.max(1, Number(e.target.value) || 1))
               }
               className="w-full h-[44px] px-3 bg-card border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
-
-          <div className="col-span-2">
-            <label className={labelClass} htmlFor="practice-description">
-              Description
-            </label>
-            <textarea
-              id="practice-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="h-24 w-full rounded-lg border border-border bg-card p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
 

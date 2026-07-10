@@ -14,6 +14,8 @@ import {
 import { toast } from "sonner";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { SegmentedTabs } from "~/components/ui/segmented-tabs";
 import { Switch } from "~/components/ui/switch";
 import { TapBlocks } from "~/components/admin/tap-blocks";
 import { AchievementBlock } from "~/components/admin/achievement-block";
@@ -42,6 +44,8 @@ const GRADE_OPTIONS = [
   { value: "sports", label: "Sports" },
 ] as const;
 
+const labelClass = "block text-[14px] text-foreground mb-2 font-medium";
+
 export function PracticeRow({ practice, onChange }: PracticeRowProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const bgInputRef = useRef<HTMLInputElement | null>(null);
@@ -50,6 +54,13 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
   const [expanded, setExpanded] = useState(false);
   const [title, setTitle] = useState(practice.title ?? "");
   const [description, setDescription] = useState(practice.description ?? "");
+  const [spanishTitle, setSpanishTitle] = useState(
+    practice.language?.spanish?.title ?? "",
+  );
+  const [spanishDescription, setSpanishDescription] = useState(
+    practice.language?.spanish?.description ?? "",
+  );
+  const [locale, setLocale] = useState<"en" | "es">("en");
   const initialDay = Math.max(1, Math.round(practice.order ?? 1));
   const [day, setDay] = useState<number>(initialDay);
 
@@ -87,7 +98,16 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
     setTitle(practice.title ?? "");
     setDescription(practice.description ?? "");
     setDay(Math.max(1, Math.round(practice.order ?? 1)));
-  }, [practice._id, practice.title, practice.description, practice.order]);
+    setSpanishTitle(practice.language?.spanish?.title ?? "");
+    setSpanishDescription(practice.language?.spanish?.description ?? "");
+  }, [
+    practice._id,
+    practice.title,
+    practice.description,
+    practice.order,
+    practice.language?.spanish?.title,
+    practice.language?.spanish?.description,
+  ]);
 
   const dayValue = Math.max(1, Math.round(day || 1));
   const completeness = (() => {
@@ -135,6 +155,34 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
   async function handleSave() {
     setSubmitting(true);
     try {
+      // Shared write helper (mirrors practice-dialog): build `language` from the
+      // trimmed EN/ES values and whether Spanish participates now (`hasSpanish`)
+      // or previously (`hadSpanish`). English mirrors the top-level fields; empty
+      // subfields are sent as "" (migration-fidelity shape, no label/identifier).
+      // Blanking both Spanish fields on a record that HAD Spanish therefore sends
+      // `spanish: { title: "", description: "" }` (empty strings, NOT null).
+      const enTitle = title.trim();
+      const enDescription = description.trim();
+      const esTitle = spanishTitle.trim();
+      const esDescription = spanishDescription.trim();
+      const hasSpanish = Boolean(esTitle || esDescription);
+      const hadSpanish = Boolean(
+        practice.language?.spanish?.title ||
+          practice.language?.spanish?.description,
+      );
+      let language:
+        | {
+            english: { title: string; description: string };
+            spanish: { title: string; description: string };
+          }
+        | undefined;
+      if (hasSpanish || hadSpanish) {
+        language = {
+          english: { title: enTitle, description: enDescription },
+          spanish: { title: esTitle, description: esDescription },
+        };
+      }
+
       const data = await gqlClient.request(ClassesUpdateOneDocument, {
         _id: practiceId,
         record: {
@@ -144,6 +192,7 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
           free: accessLevel === "free",
           // Category, Grade, Active are visual-only (I2/I3).
           // `deleted` is not written here — soft delete is the Delete button's job (I3).
+          ...(language ? { language } : {}),
         },
       });
       const payloadError = (
@@ -429,6 +478,69 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
 
       {expanded ? (
         <div className="space-y-4 border-t border-stone-100 px-4 pt-2 pb-4">
+          <div className="rounded-[14px] border border-border bg-card p-4 space-y-4">
+            <SegmentedTabs
+              value={locale}
+              onChange={setLocale}
+              options={[
+                { value: "en", label: "English" },
+                { value: "es", label: "Spanish" },
+              ]}
+              ariaLabel="Content language"
+            />
+
+            {locale === "en" ? (
+              <>
+                <Input
+                  label="Title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Morning Breath"
+                />
+
+                <div>
+                  <label
+                    className={labelClass}
+                    htmlFor={`practice-${practiceId}-description`}
+                  >
+                    Description
+                  </label>
+                  <textarea
+                    id={`practice-${practiceId}-description`}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="h-24 w-full rounded-lg border border-border bg-card p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <Input
+                  label="Title"
+                  value={spanishTitle}
+                  onChange={(e) => setSpanishTitle(e.target.value)}
+                  placeholder="p. ej. Respiración matutina"
+                />
+
+                <div>
+                  <label
+                    className={labelClass}
+                    htmlFor={`practice-${practiceId}-spanish-description`}
+                  >
+                    Description
+                  </label>
+                  <textarea
+                    id={`practice-${practiceId}-spanish-description`}
+                    value={spanishDescription}
+                    onChange={(e) => setSpanishDescription(e.target.value)}
+                    className="h-24 w-full rounded-lg border border-border bg-card p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    placeholder="¿De qué trata esta práctica?"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
           <div className="w-32">
             <label className="mb-1 block text-xs font-medium text-stone-600">
               Day
@@ -448,17 +560,6 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
           <div className="flex items-center justify-between rounded-md border border-stone-200 bg-stone-50/40 px-3 py-2">
             <span className="text-sm text-stone-600">Active</span>
             <Switch checked={active} onCheckedChange={setActive} />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-xs font-medium text-stone-600">
-              Description
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="h-20 w-full rounded-md border border-stone-200 bg-card p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
           </div>
 
           {/* Taps persist via their own mutations — independent of the
