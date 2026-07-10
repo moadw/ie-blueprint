@@ -14,6 +14,7 @@ import { Toaster } from "sonner";
 import type { Route } from "./+types/root";
 import stylesheet from "~/styles/app.css?url";
 import { setToken } from "~/lib/auth";
+import { readLanguage } from "~/lib/language";
 import { getSessionToken } from "~/lib/session.server";
 import { AmplitudeAnalytics } from "~/components/analytics/amplitude-analytics";
 
@@ -41,7 +42,10 @@ export async function loader({ request }: Route.LoaderArgs) {
   // here rather than fetched once on mount so it stays correct across SPA
   // navigations — notably the post-login redirect, after which the root loader
   // revalidates and the token flips from null to the real value.
-  return { accessToken: await getSessionToken(request) };
+  return {
+    accessToken: await getSessionToken(request),
+    lang: readLanguage(request.headers.get("Cookie")),
+  };
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {

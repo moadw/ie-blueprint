@@ -8,6 +8,7 @@ import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
+import { keepTapForLang, readLanguage } from "~/lib/language";
 import { ClassesFindOneDocument } from "~/queries/classes";
 import { TapFindManyDocument, TapTypeFindManyDocument } from "~/queries/taps";
 import { PinFindManyDocument } from "~/queries/pins";
@@ -61,6 +62,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const headers = { "access-token": token };
+
+  // Active teacher-flow language (global cookie). Drives the tap filter below so
+  // the player hides taps tagged with the opposite language; the toggle calls
+  // `revalidate()`, so this loader re-reads the cookie when the language changes.
+  const lang = readLanguage(request.headers.get("Cookie"));
 
   if (!env.PLATFORM) {
     return {
@@ -155,10 +161,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const classItem = classResult.ok ? classResult.data.ClassesFindOne : null;
 
   // Soft delete = { deleted: true }; filter client-side then order by `order`
-  // (matches the admin `tap-blocks.tsx` precedent).
+  // (matches the admin `tap-blocks.tsx` precedent). Also drop taps tagged with
+  // the OPPOSITE language (`keepTapForLang`): unset/matching/unknown-language
+  // taps stay, so the journal (null language) shows in both modes.
   const taps = tapsResult.ok
     ? (tapsResult.data.TapFindMany ?? [])
-        .filter((t) => !t.deleted)
+        .filter((t) => !t.deleted && keepTapForLang(t.language, lang))
         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     : [];
 
