@@ -1,14 +1,6 @@
-import { useEffect, useState } from "react";
-import {
-  Form,
-  redirect,
-  useActionData,
-  useLoaderData,
-  useNavigate,
-  useNavigation,
-  useSubmit,
-} from "react-router";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useEffect, useRef, useState } from "react";
+import { redirect, useLoaderData, useNavigate } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -16,13 +8,13 @@ import { User } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { IconTile } from "~/components/ui/icon-tile";
 import { Slider } from "~/components/ui/slider";
 import { deriveCourses } from "~/components/admin/experiences-selector";
 import type { CurriculumLite } from "~/components/admin/experiences-selector";
 import { setToken } from "~/lib/auth";
 import { env } from "~/lib/env";
 import { toErrorMessage } from "~/lib/errors";
+import { uploadGroupCover } from "~/lib/group-cover";
 import { gqlClient } from "~/lib/graphql";
 import { getInitials } from "~/lib/initials";
 import { hasSeenOnboardingWelcome } from "~/lib/onboarding-welcome";
@@ -35,6 +27,7 @@ import { UserDistrictFindOneDocument } from "~/queries/districts";
 import { UsersFindOneDocument } from "~/queries/users";
 import { GroupCreateOneDocument } from "~/queries/groups";
 import { OnboardingLayout } from "./classrooms_.create/_components/onboarding-layout";
+import { ClassroomIconUpload } from "./classrooms_.create/_components/classroom-icon-upload";
 import { ClassroomInfoCard } from "./classrooms_.create/_components/classroom-info-card";
 import { ClassroomPreviewCard } from "./classrooms_.create/_components/classroom-preview-card";
 import { CollectionSelect } from "./classrooms_.create/_components/collection-select";
@@ -141,86 +134,28 @@ export async function loader({ request }: LoaderFunctionArgs) {
     curriculaRes.error ??
     null;
 
-  return { token, user, mode, collections, fallbackCourses, error };
+  // Read the once-ever onboarding-welcome cookie SERVER-side and hand the flag
+  // to the client so the client-side submit chain can reproduce the
+  // onboarding/series navigation branch without a server round-trip (there is
+  // no client-side cookie reader in `onboarding-welcome.ts`).
+  const hasSeenWelcome = hasSeenOnboardingWelcome(
+    request.headers.get("Cookie"),
+  );
+
+  return {
+    token,
+    user,
+    mode,
+    collections,
+    fallbackCourses,
+    error,
+    hasSeenWelcome,
+  };
 }
 
-type ActionData = { error: string } | undefined;
-
-export async function action({ request }: ActionFunctionArgs) {
-  const token = await requireSessionToken(request);
-  const formData = await request.formData();
-  const nameRaw = formData.get("name");
-  const name = typeof nameRaw === "string" ? nameRaw.trim() : "";
-  if (name.length < 1) {
-    return { error: "Classroom name is required" };
-  }
-
-  const curriculumsRaw = formData.get("curriculums");
-  let curriculums: string[] = [];
-  if (typeof curriculumsRaw === "string") {
-    try {
-      const parsed: unknown = JSON.parse(curriculumsRaw);
-      if (Array.isArray(parsed)) {
-        curriculums = parsed.filter((c): c is string => typeof c === "string");
-      }
-    } catch {
-      // fall through to the empty guard
-    }
-  }
-  if (curriculums.length === 0) {
-    return { error: "Select at least one course" };
-  }
-
-  const userData = await gqlClient.request(
-    UsersFindOneDocument,
-    {},
-    { "access-token": token },
-  );
-  const user = userData.UsersFindOne;
-  if (!user?._id || !user.organization) {
-    return { error: "Missing user context" };
-  }
-
-  // Keep ONLY the mutation (and its `{ error }` failure return) inside the
-  // try/catch. All redirect branching lives AFTER it: a `throw redirect(...)`
-  // placed inside the try would be caught here and returned as an `{ error }`
-  // object, silently breaking the flow. So capture the result in outer scope.
-  let result;
-  try {
-    result = await gqlClient.request(
-      GroupCreateOneDocument,
-      {
-        name,
-        teacher: user._id,
-        platform: env.PLATFORM,
-        organization: user.organization,
-        curriculums,
-      },
-      { "access-token": token },
-    );
-  } catch (e) {
-    const message = toErrorMessage(e, "Failed to create classroom");
-    return { error: message };
-  }
-
-  const created = result.GroupCreateOne;
-  const first = created?.curriculums?.[0];
-  // Defensive: the create-flow guards `curriculums.length === 0` before the
-  // mutation, so a created group always has ≥1 curriculum — but fall back to
-  // the list if the payload is somehow missing an id or curriculum.
-  if (!created?._id || !first) throw redirect("/classrooms");
-
-  const seriesPath = `/classrooms/${created._id}/${first}`;
-  // First-time creators (no seen-cookie) go through the welcome slider, which
-  // sets the cookie and lands them on the series view; everyone else goes
-  // straight to the series.
-  if (hasSeenOnboardingWelcome(request.headers.get("Cookie"))) {
-    throw redirect(seriesPath);
-  }
-  throw redirect(
-    `/onboarding/welcome?group=${created._id}&curriculum=${first}`,
-  );
-}
+// Classroom-icon pick validation (mirrors the prototype's AvatarUpload).
+const ACCEPTED_ICON_TYPES = ["image/png", "image/jpeg", "image/webp"];
+const MAX_ICON_SIZE_MB = 5;
 
 const schema = z.object({
   name: z.string().min(1, "Required"),
@@ -230,19 +165,54 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function ClassroomCreateRoute() {
-  const { token, mode, collections, fallbackCourses, error } =
-    useLoaderData<typeof loader>();
-  const actionData = useActionData() as ActionData;
-  const navigation = useNavigation();
+  const {
+    token,
+    user,
+    mode,
+    collections,
+    fallbackCourses,
+    error,
+    hasSeenWelcome,
+  } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
-  const submit = useSubmit();
-  const isSubmitting = navigation.state !== "idle";
+  const [submitting, setSubmitting] = useState(false);
 
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedCollectionId, setSelectedCollectionId] = useState<
     string | null
   >(collections[0]?._id ?? null);
   const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+
+  // Classroom-icon pick: the File is held for the Phase 3 upload chain;
+  // `coverPreview` is an object URL rendered instantly in the tile.
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  // Track the live object URL so we can revoke the previous one on replace and
+  // on unmount (avoids leaking blob URLs).
+  const objectUrlRef = useRef<string | null>(null);
+
+  const handleIconPick = (file: File) => {
+    if (!ACCEPTED_ICON_TYPES.includes(file.type)) {
+      toast.error("Please upload a JPEG, PNG, or WebP image.");
+      return;
+    }
+    if (file.size > MAX_ICON_SIZE_MB * 1024 * 1024) {
+      toast.error("Image must be under 5MB.");
+      return;
+    }
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    const url = URL.createObjectURL(file);
+    objectUrlRef.current = url;
+    setCoverPreview(url);
+    setCoverFile(file);
+  };
+
+  useEffect(
+    () => () => {
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    },
+    [],
+  );
 
   const toggleCourse = (id: string) => {
     setSelectedCourses((prev) =>
@@ -260,12 +230,6 @@ export default function ClassroomCreateRoute() {
   useEffect(() => {
     setToken(token);
   }, [token]);
-
-  useEffect(() => {
-    if (actionData?.error) {
-      toast.error(actionData.error);
-    }
-  }, [actionData]);
 
   const {
     register,
@@ -285,7 +249,7 @@ export default function ClassroomCreateRoute() {
   const watchedName = watch("name") ?? "";
   const watchedCount = watch("studentCount");
 
-  const onValid = (values: FormValues) => {
+  const onValid = async (values: FormValues) => {
     if (step === 1) {
       setStep(2);
       return;
@@ -295,10 +259,64 @@ export default function ClassroomCreateRoute() {
         ? (selectedCollection?.curriculumIds ?? [])
         : selectedCourses;
     if (curriculums.length === 0) return; // belt-and-braces; button is disabled anyway
-    void submit(
-      { name: values.name, curriculums: JSON.stringify(curriculums) },
-      { method: "post" },
-    );
+    if (!user?._id || !user.organization) {
+      toast.error("Missing user context");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // Client-side create (token was set on mount via setToken, so gqlClient
+      // attaches `access-token`). Same variables the retired server action sent.
+      const created = (
+        await gqlClient.request(
+          GroupCreateOneDocument,
+          {
+            name: values.name.trim(),
+            teacher: user._id,
+            platform: env.PLATFORM,
+            organization: user.organization,
+            curriculums,
+          },
+          { "access-token": token },
+        )
+      ).GroupCreateOne;
+
+      const first = created?.curriculums?.[0];
+      // Defensive: the create flow guards `curriculums.length === 0` before the
+      // mutation, so a created group always has ≥1 curriculum — but fall back to
+      // the list if the payload is somehow missing an id or curriculum.
+      if (!created?._id || !first) {
+        navigate("/classrooms");
+        return;
+      }
+
+      // Best-effort cover upload: a failure toasts but MUST still navigate.
+      if (coverFile) {
+        try {
+          await uploadGroupCover(created._id, coverFile);
+        } catch (err) {
+          toast.error(toErrorMessage(err, "Cover upload failed"));
+        }
+      }
+
+      const seriesPath = `/classrooms/${created._id}/${first}`;
+      // First-time creators (no seen-cookie) go through the welcome slider,
+      // which sets the cookie and lands them on the series view; everyone else
+      // goes straight to the series.
+      if (hasSeenWelcome) {
+        navigate(seriesPath);
+      } else {
+        navigate(
+          `/onboarding/welcome?group=${created._id}&curriculum=${first}`,
+        );
+      }
+    } catch (e) {
+      toast.error(toErrorMessage(e, "Failed to create classroom"));
+    } finally {
+      // Navigation unmounts the route on success; this only matters on failure.
+      setSubmitting(false);
+    }
   };
 
   const initials = getInitials(watchedName.trim());
@@ -315,10 +333,19 @@ export default function ClassroomCreateRoute() {
         </div>
       }
     >
-      <Form method="post" onSubmit={handleSubmit(onValid)} className="space-y-6">
+      <form onSubmit={handleSubmit(onValid)} className="space-y-6">
         {step === 1 ? (
           <div className="space-y-6">
-            <IconTile size="lg" {...(initials ? { initials } : {})} />
+            <div>
+              <label className="mb-2 block text-[14px] font-medium text-foreground">
+                Classroom icon
+              </label>
+              <ClassroomIconUpload
+                initials={initials}
+                previewUrl={coverPreview}
+                onPick={handleIconPick}
+              />
+            </div>
             <Input
               label="Classroom name"
               placeholder="e.g. Mrs. Smith's 3rd Grade"
@@ -447,8 +474,8 @@ export default function ClassroomCreateRoute() {
               <Button
                 variant="primary"
                 type="submit"
-                loading={isSubmitting}
-                disabled={!canCreate || isSubmitting}
+                loading={submitting}
+                disabled={!canCreate || submitting}
                 className="flex-1"
               >
                 Create Classroom
@@ -456,7 +483,7 @@ export default function ClassroomCreateRoute() {
             </div>
           </div>
         )}
-      </Form>
+      </form>
     </OnboardingLayout>
   );
 }

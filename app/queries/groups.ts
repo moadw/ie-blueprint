@@ -10,6 +10,10 @@ export const GroupFindManyDocument = graphql(`
       organization
       platform
       curriculums
+      cover {
+        url
+        type
+      }
       managerObj {
         _id
         firstName
@@ -43,6 +47,10 @@ export const GroupFindOneDocument = graphql(`
         bgImage {
           type
           url
+        }
+        language {
+          english { title description }
+          spanish { title description }
         }
       }
     }

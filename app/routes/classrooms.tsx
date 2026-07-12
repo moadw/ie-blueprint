@@ -132,6 +132,7 @@ export default function ClassroomsRoute() {
                   key={g._id}
                   name={g.name ?? ""}
                   index={i}
+                  coverUrl={g.cover?.url ?? null}
                   onSelect={() => {
                     const curriculums = g.curriculums ?? [];
                     if (curriculums.length === 0) {
