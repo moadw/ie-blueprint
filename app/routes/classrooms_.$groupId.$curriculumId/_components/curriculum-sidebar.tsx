@@ -10,6 +10,12 @@ interface CurriculumSidebarProps {
   curriculums: SidebarCurriculum[];
   groupId: string;
   curriculumId: string;
+  /**
+   * Per-curriculum practice (class) count, keyed by curriculum `_id`. Derived
+   * loader-side because `curriculum.totalLesson` is null on this platform;
+   * falls back to `totalLesson ?? 0` for any id not present in the map.
+   */
+  counts: Record<string, number>;
 }
 
 /**
@@ -22,6 +28,7 @@ export function CurriculumTabs({
   curriculums,
   groupId,
   curriculumId,
+  counts,
 }: CurriculumSidebarProps) {
   if (curriculums.length === 0) return null;
 
@@ -41,7 +48,7 @@ export function CurriculumTabs({
               }`}
               aria-current={isActive ? "page" : undefined}
             >
-              {c.title} ({c.totalLesson ?? 0})
+              {c.title} ({counts[c._id] ?? c.totalLesson ?? 0})
             </Link>
           );
         })}
@@ -59,6 +66,7 @@ export function CurriculumSidebar({
   curriculums,
   groupId,
   curriculumId,
+  counts,
 }: CurriculumSidebarProps) {
   if (curriculums.length === 0) return null;
 
@@ -83,7 +91,7 @@ export function CurriculumSidebar({
             >
               <span className="truncate font-sans text-sm">{c.title}</span>
               <span className="ml-2 flex-shrink-0 text-xs text-zinc-500">
-                {c.totalLesson ?? 0}
+                {counts[c._id] ?? c.totalLesson ?? 0}
               </span>
             </Link>
           );
