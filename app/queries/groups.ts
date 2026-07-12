@@ -48,6 +48,10 @@ export const GroupFindOneDocument = graphql(`
           type
           url
         }
+        language {
+          english { title description }
+          spanish { title description }
+        }
       }
     }
   }

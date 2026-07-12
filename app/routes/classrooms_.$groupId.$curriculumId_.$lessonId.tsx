@@ -8,7 +8,7 @@ import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
-import { keepTapForLang, readLanguage } from "~/lib/language";
+import { keepTapForLang, pickLocalized, readLanguage } from "~/lib/language";
 import { ClassesFindOneDocument } from "~/queries/classes";
 import { TapFindManyDocument, TapTypeFindManyDocument } from "~/queries/taps";
 import { PinFindManyDocument } from "~/queries/pins";
@@ -158,7 +158,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ),
     ]);
 
-  const classItem = classResult.ok ? classResult.data.ClassesFindOne : null;
+  const rawClassItem = classResult.ok ? classResult.data.ClassesFindOne : null;
+  // Localize the class title/description shown in the player (header + milestone
+  // labels) from the global language cookie, per-field ES→EN fallback.
+  const classItem = rawClassItem
+    ? (() => {
+        const { title, description } = pickLocalized(
+          rawClassItem,
+          rawClassItem.language?.spanish,
+          lang,
+        );
+        return {
+          ...rawClassItem,
+          title: title ?? rawClassItem.title,
+          description: description ?? rawClassItem.description,
+        };
+      })()
+    : null;
 
   // Soft delete = { deleted: true }; filter client-side then order by `order`
   // (matches the admin `tap-blocks.tsx` precedent). Also drop taps tagged with
@@ -183,9 +199,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     : [];
 
   // Curriculum title drives the player's `seriesName`. Non-critical chrome —
-  // a failed fetch falls back to the class title, no error card.
-  const curriculumTitle = curriculumResult.ok
-    ? (curriculumResult.data.CurriculumsFindOne?.title ?? null)
+  // a failed fetch falls back to the class title, no error card. Localized from
+  // the global language cookie (ES→EN fallback) so the series name matches.
+  const curriculumForTitle = curriculumResult.ok
+    ? curriculumResult.data.CurriculumsFindOne
+    : null;
+  const curriculumTitle = curriculumForTitle
+    ? (pickLocalized(
+        curriculumForTitle,
+        curriculumForTitle.language?.spanish,
+        lang,
+      ).title ?? null)
     : null;
 
   // Group-progress `_id` for the completion mutation. Non-critical chrome: on a

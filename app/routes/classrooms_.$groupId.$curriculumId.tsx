@@ -241,10 +241,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const { title, description } = pickLocalized(c, c.language?.spanish, lang);
     return { ...c, title: title ?? null, description: description ?? null };
   });
+  // Localize the sibling-curriculum nav (header tabs + left sidebar), which is
+  // fed by `group.curriculumsObj`. Only the title is shown there, so we resolve
+  // just that field (per-field ES→EN fallback) and leave the rest of the group
+  // untouched.
+  const localizedGroup = group
+    ? {
+        ...group,
+        curriculumsObj: (group.curriculumsObj ?? []).map((c) => {
+          if (!c) return c;
+          const { title } = pickLocalized(c, c.language?.spanish, lang);
+          // Cast back to the element type: only the title STRING is swapped, so
+          // the shape is unchanged. This preserves `title`'s original optionality
+          // so the component's `c is SidebarCurriculum` predicate still holds.
+          return { ...c, title: title ?? c.title ?? null } as typeof c;
+        }),
+      }
+    : null;
 
   return {
     token,
-    group,
+    group: localizedGroup,
     curriculum: localizedCurriculum,
     classes: localizedClasses,
     mediaByClass,
