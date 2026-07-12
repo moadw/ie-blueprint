@@ -58,6 +58,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       curriculum: null,
       classes: [],
       mediaByClass: {} as Record<string, CardMediaDescriptor>,
+      practiceCountByCurriculum: {} as Record<string, number>,
       user: null,
       groupProgress: null,
       likedClassIds: [] as string[],
@@ -185,6 +186,36 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         .filter((id): id is string => Boolean(id))
     : [];
 
+  // Practice counts for the left rail (`CurriculumSidebar`) + mobile tabs.
+  // `curriculum.totalLesson` is unpopulated on this platform (null for every
+  // curriculum), so we derive each curriculum's count by tallying its
+  // non-deleted classes — the same measure the header uses for the current
+  // curriculum (`totalClasses={classes.length}`). The current curriculum
+  // reuses the already-fetched `classes`; siblings are fetched in parallel via
+  // the teacher-safe `ClassesByCurriculumFindOne`, each wrapped in `safe()` so
+  // a failure degrades that row's count to 0 rather than crashing the rail.
+  // Fired here (not awaited yet) so it overlaps the taps fetch below.
+  const siblingCurriculumIds = (group?.curriculumsObj ?? [])
+    .map((c) => c?._id)
+    .filter((id): id is string => Boolean(id) && id !== curriculumId);
+  const siblingCountsPromise = Promise.all(
+    siblingCurriculumIds.map(async (id) => {
+      const r = await safe(
+        gqlClient.request(
+          ClassesByCurriculumFindOneDocument,
+          { curriculum: id },
+          headers,
+        ),
+      );
+      const count = r.ok
+        ? (r.data.ClassesByCurriculumFindOne ?? []).filter(
+            (c) => c != null && !c.deleted,
+          ).length
+        : 0;
+      return [id, count] as const;
+    }),
+  );
+
   // Per-card media durations (Q1: `tap.time` read raw as minutes). Fetch the
   // curriculum's taps in ONE batched query (`class in [ids]` via the scalar
   // `_operators.class.in`) and group client-side. Wrapped in `safe()` so a
@@ -216,6 +247,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
       mediaByClass = deriveCardMediaByClass(taps, tapTypes);
     }
+  }
+
+  // Fold the sibling counts (fired above) plus the current curriculum's own
+  // count into a single id→count map consumed by the rail/tabs.
+  const practiceCountByCurriculum: Record<string, number> = {
+    [curriculumId]: classes.length,
+  };
+  for (const [id, count] of await siblingCountsPromise) {
+    practiceCountByCurriculum[id] = count;
   }
 
   // Localize curriculum + class titles/descriptions from the global language
@@ -265,6 +305,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     curriculum: localizedCurriculum,
     classes: localizedClasses,
     mediaByClass,
+    practiceCountByCurriculum,
     user,
     groupProgress,
     announcement,
@@ -285,6 +326,7 @@ export default function ClassroomCurriculumRoute() {
     curriculum,
     classes,
     mediaByClass,
+    practiceCountByCurriculum,
     user,
     groupProgress,
     announcement,
@@ -443,6 +485,7 @@ export default function ClassroomCurriculumRoute() {
           curriculums={sidebarCurriculums}
           groupId={groupId}
           curriculumId={curriculumId}
+          counts={practiceCountByCurriculum}
         />
 
         <div className="flex">
@@ -450,6 +493,7 @@ export default function ClassroomCurriculumRoute() {
             curriculums={sidebarCurriculums}
             groupId={groupId}
             curriculumId={curriculumId}
+            counts={practiceCountByCurriculum}
           />
 
           <main className="flex-1 px-4 py-6 lg:px-12 lg:py-12">
