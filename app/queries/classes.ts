@@ -53,6 +53,10 @@ export const ClassesByCurriculumFindOneDocument = graphql(/* GraphQL */ `
       curriculum
       cover { type url }
       background { type url }
+      language {
+        english { title description }
+        spanish { title description }
+      }
     }
   }
 `);
@@ -69,6 +73,10 @@ export const ClassesFindOneDocument = graphql(/* GraphQL */ `
       curriculum
       cover { type url }
       background { type url }
+      language {
+        english { title description }
+        spanish { title description }
+      }
     }
   }
 `);
