@@ -1,10 +1,13 @@
 import { useState } from "react";
+import { useRevalidator, useRouteLoaderData } from "react-router";
 import { Check, ChevronRight, Globe, GraduationCap, Settings } from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import { setLanguage } from "~/lib/language";
+import type { loader as rootLoader } from "~/root";
 
 // Glass-theme literals ported verbatim from the prototype's `ThemedNavbar`
 // settings menu (glass branch only — light/dark theming is out of scope, so we
@@ -24,10 +27,6 @@ const LANGUAGES = [
   { code: "es", name: "Español", flag: "🇪🇸" },
 ] as const;
 
-// Shipped default: English. The Language submenu renders and check-marks the
-// active option but selecting any row is a no-op for now.
-const ACTIVE_LANGUAGE = "en";
-
 const MENU_STYLE = {
   background: MENU_BG,
   backdropFilter: "blur(40px) saturate(1.8)",
@@ -39,12 +38,17 @@ const MENU_STYLE = {
 /**
  * Fixed bottom-left glass settings gear. Opens a Radix `Popover` (top/start)
  * with Change Classroom and a nested Language submenu (opens to the right).
- * Fully interactive (gear rotates 90° on open, the submenu opens + check-marks
- * the active option) but every action is a no-op — links are intentionally
- * unwired for this step.
+ * The gear rotates 90° on open and the Language submenu check-marks the active
+ * language (read from the root loader's cookie-backed `lang`). Selecting a
+ * language persists the cookie and revalidates so every loader re-reads it.
+ * Change Classroom remains a no-op for now.
  */
 export function SettingsButton() {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { lang } = useRouteLoaderData<typeof rootLoader>("root") ?? {
+    lang: "en" as const,
+  };
+  const revalidator = useRevalidator();
 
   return (
     <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
@@ -101,7 +105,7 @@ export function SettingsButton() {
                 <Globe className="h-4 w-4 flex-shrink-0 text-white/70" />
                 <span className="flex-1 text-left">Language</span>
                 <span className="text-xs text-white/70">
-                  {LANGUAGES.find((l) => l.code === ACTIVE_LANGUAGE)?.flag}
+                  {LANGUAGES.find((l) => l.code === lang)?.flag}
                 </span>
                 <ChevronRight className="h-4 w-4 flex-shrink-0 text-white/40" />
               </button>
@@ -114,18 +118,20 @@ export function SettingsButton() {
               style={MENU_STYLE}
             >
               <div className="flex flex-col gap-1">
-                {LANGUAGES.map((lang) => (
+                {LANGUAGES.map((option) => (
                   <button
-                    key={lang.code}
+                    key={option.code}
                     type="button"
                     onClick={() => {
-                      // TODO(settings): change the player language.
+                      setLanguage(option.code);
+                      revalidator.revalidate();
+                      setSettingsOpen(false);
                     }}
                     className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-white/90 transition-colors duration-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
                   >
-                    <span>{lang.flag}</span>
-                    <span className="flex-1 text-left">{lang.name}</span>
-                    {lang.code === ACTIVE_LANGUAGE ? (
+                    <span>{option.flag}</span>
+                    <span className="flex-1 text-left">{option.name}</span>
+                    {option.code === lang ? (
                       <Check className="h-4 w-4 text-green-500" />
                     ) : null}
                   </button>
