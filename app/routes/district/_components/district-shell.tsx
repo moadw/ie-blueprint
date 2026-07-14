@@ -1,7 +1,5 @@
 import type { ReactNode } from "react";
-import { useNavigate } from "react-router";
-import { ArrowLeft, Bell } from "lucide-react";
-import { Button } from "~/components/ui/button";
+import { Bell } from "lucide-react";
 import { Logo } from "~/components/ui/logo";
 import { AnnouncementBar } from "~/components/ui/announcement-bar";
 import type { UserDistrictFindOneQuery } from "~/gql/graphql";
@@ -19,8 +17,6 @@ export interface DistrictShellProps {
 }
 
 export function DistrictShell({ user, announcement, children }: DistrictShellProps) {
-  const navigate = useNavigate();
-
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-white print:h-auto print:overflow-visible">
       {announcement ? (
@@ -37,14 +33,6 @@ export function DistrictShell({ user, announcement, children }: DistrictShellPro
           <DistrictNav />
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <Button
-            size="sm"
-            className="h-9 px-3 gap-1.5 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium"
-            onClick={() => navigate("/classrooms")}
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Return to Platform</span>
-          </Button>
           <button
             type="button"
             className="p-2 rounded-full hover:bg-muted transition-colors"
