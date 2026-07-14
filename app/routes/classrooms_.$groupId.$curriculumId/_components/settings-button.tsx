@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useRevalidator, useRouteLoaderData } from "react-router";
+import { useParams, useRevalidator } from "react-router";
 import { Check, ChevronRight, Globe, GraduationCap, Settings } from "lucide-react";
 import {
   Popover,
@@ -7,7 +7,7 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { setLanguage } from "~/lib/language";
-import type { loader as rootLoader } from "~/root";
+import type { Lang } from "~/lib/language";
 
 // Glass-theme literals ported verbatim from the prototype's `ThemedNavbar`
 // settings menu (glass branch only — light/dark theming is out of scope, so we
@@ -39,15 +39,15 @@ const MENU_STYLE = {
  * Fixed bottom-left glass settings gear. Opens a Radix `Popover` (top/start)
  * with Change Classroom and a nested Language submenu (opens to the right).
  * The gear rotates 90° on open and the Language submenu check-marks the active
- * language (read from the root loader's cookie-backed `lang`). Selecting a
- * language persists the cookie and revalidates so every loader re-reads it.
- * Change Classroom remains a no-op for now.
+ * language for THIS classroom (the `lang` prop, resolved server-side by the
+ * curriculum loader from the per-group cookie entry). Selecting a language
+ * persists the current group's cookie entry and revalidates so the loader
+ * re-reads it and the check-mark updates. Change Classroom remains a no-op for
+ * now.
  */
-export function SettingsButton() {
+export function SettingsButton({ lang }: { lang: Lang }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const { lang } = useRouteLoaderData<typeof rootLoader>("root") ?? {
-    lang: "en" as const,
-  };
+  const { groupId } = useParams();
   const revalidator = useRevalidator();
 
   return (
@@ -123,7 +123,7 @@ export function SettingsButton() {
                     key={option.code}
                     type="button"
                     onClick={() => {
-                      setLanguage(option.code);
+                      if (groupId) setLanguage(groupId, option.code);
                       revalidator.revalidate();
                       setSettingsOpen(false);
                     }}

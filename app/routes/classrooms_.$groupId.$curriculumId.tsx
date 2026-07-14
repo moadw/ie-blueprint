@@ -26,7 +26,7 @@ import {
 } from "~/mutations/class-likes";
 import { AnnouncementBar } from "~/components/ui/announcement-bar";
 import { isAnnouncementDismissed } from "~/lib/announcement-dismissal";
-import { pickLocalized, readLanguage } from "~/lib/language";
+import { DEFAULT_LANG, pickLocalized, readLanguage } from "~/lib/language";
 import {
   deriveCardMediaByClass,
   type CardMediaDescriptor,
@@ -54,6 +54,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!env.PLATFORM) {
     return {
       token,
+      lang: DEFAULT_LANG,
       group: null,
       curriculum: null,
       classes: [],
@@ -258,15 +259,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     practiceCountByCurriculum[id] = count;
   }
 
-  // Localize curriculum + class titles/descriptions from the global language
-  // cookie (server-side, so Spanish appears on first paint — no English flash).
-  // Per-field English fallback via pickLocalized. The component prop interfaces
-  // (SliderLesson, GridLesson) don't carry `language`, so the localized value
-  // flows through the existing top-level title/description fields. The `?? null`
-  // coalesces the picked value to `string | null` (the optional source `title?`
-  // widens `pickLocalized`'s result to include `undefined`, which the component
-  // prop types don't accept under exactOptionalPropertyTypes).
-  const lang = readLanguage(request.headers.get("Cookie"));
+  // Localize curriculum + class titles/descriptions from THIS classroom's
+  // language cookie entry (server-side, so Spanish appears on first paint — no
+  // English flash). Per-field English fallback via pickLocalized. The component
+  // prop interfaces (SliderLesson, GridLesson) don't carry `language`, so the
+  // localized value flows through the existing top-level title/description
+  // fields. The `?? null` coalesces the picked value to `string | null` (the
+  // optional source `title?` widens `pickLocalized`'s result to include
+  // `undefined`, which the component prop types don't accept under
+  // exactOptionalPropertyTypes).
+  const lang = readLanguage(request.headers.get("Cookie"), groupId);
   const localizedCurriculum = curriculum
     ? (() => {
         const { title, description } = pickLocalized(
@@ -301,6 +303,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     token,
+    lang,
     group: localizedGroup,
     curriculum: localizedCurriculum,
     classes: localizedClasses,
@@ -322,6 +325,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function ClassroomCurriculumRoute() {
   const {
     token,
+    lang,
     group,
     curriculum,
     classes,
@@ -524,7 +528,7 @@ export default function ClassroomCurriculumRoute() {
         </div>
       </section>
 
-      <SettingsButton />
+      <SettingsButton lang={lang} />
     </div>
   );
 }
