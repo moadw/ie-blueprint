@@ -63,10 +63,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const headers = { "access-token": token };
 
-  // Active teacher-flow language (global cookie). Drives the tap filter below so
-  // the player hides taps tagged with the opposite language; the toggle calls
-  // `revalidate()`, so this loader re-reads the cookie when the language changes.
-  const lang = readLanguage(request.headers.get("Cookie"));
+  // Active language for THIS classroom (per-group cookie entry). Drives the tap
+  // filter below so the player hides taps tagged with the opposite language;
+  // the toggle calls `revalidate()`, so this loader re-reads the cookie when the
+  // language changes.
+  const lang = readLanguage(request.headers.get("Cookie"), groupId);
 
   if (!env.PLATFORM) {
     return {

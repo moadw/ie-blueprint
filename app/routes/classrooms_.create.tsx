@@ -1,10 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  redirect,
-  useLoaderData,
-  useNavigate,
-  useRouteLoaderData,
-} from "react-router";
+import { redirect, useLoaderData, useNavigate } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -40,7 +35,6 @@ import { ClassroomPreviewCard } from "./classrooms_.create/_components/classroom
 import { CollectionSelect } from "./classrooms_.create/_components/collection-select";
 import { CourseMultiSelect } from "./classrooms_.create/_components/course-multi-select";
 import { LanguageSelect } from "./classrooms_.create/_components/language-select";
-import type { loader as rootLoader } from "~/root";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const token = await requireSessionToken(request);
@@ -186,14 +180,10 @@ export default function ClassroomCreateRoute() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
 
-  // Seed the step-2 language selector from the app-wide language cookie exposed
-  // by the root loader (falls back to English). Persisted globally on submit.
-  const { lang } = useRouteLoaderData<typeof rootLoader>("root") ?? {
-    lang: "en" as const,
-  };
-
   const [step, setStep] = useState<1 | 2>(1);
-  const [selectedLanguage, setSelectedLanguage] = useState<Lang>(lang);
+  // The step-2 language selector always defaults to English; the choice is
+  // persisted against the newly-created group (per-group cookie) after create.
+  const [selectedLanguage, setSelectedLanguage] = useState<Lang>("en");
   const [selectedCollectionId, setSelectedCollectionId] = useState<
     string | null
   >(collections[0]?._id ?? null);
@@ -280,11 +270,6 @@ export default function ClassroomCreateRoute() {
       return;
     }
 
-    // Persist the chosen language as the teacher's GLOBAL preference (the
-    // app-wide `ie-lang` cookie) before creating, so the new classroom and
-    // every subsequent loader open in the selected language.
-    setLanguage(selectedLanguage);
-
     setSubmitting(true);
     try {
       // Client-side create (token was set on mount via setToken, so gqlClient
@@ -311,6 +296,11 @@ export default function ClassroomCreateRoute() {
         navigate("/classrooms");
         return;
       }
+
+      // Persist the chosen language against the NEW classroom (per-group cookie
+      // entry) now that `created._id` is guaranteed, so the destination group's
+      // loader localizes it on navigation.
+      setLanguage(created._id, selectedLanguage);
 
       // Best-effort cover upload: a failure toasts but MUST still navigate.
       if (coverFile) {
