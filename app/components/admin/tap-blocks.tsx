@@ -38,6 +38,26 @@ import { TapUpdateOneDocument } from "~/mutations/taps";
 import { SortFindManytapInput } from "~/gql/graphql";
 import { TapDialog, type TapItem } from "~/components/admin/tap-dialog";
 
+// Human labels for the backend `TapType.identifier` values (mirrors
+// KNOWN_TYPES in tap-dialog.tsx). Falls back to the raw identifier for an
+// unconfigured type so the row never shows a blank subtitle.
+const TAP_TYPE_LABELS: Record<string, string> = {
+  "ie-journal": "Journal",
+  video: "Video",
+  "full-audio": "Full Audio",
+  "5min-audio": "5-min Audio",
+  slider: "Slider",
+};
+
+// tap.language is a scalar "en" | "es" | null/empty. Empty = the content is
+// shown in both languages (matches the tap dialog's "leave empty to show it in
+// all languages" copy).
+function tapLanguageLabel(language: string | null | undefined): string {
+  if (language === "en") return "English";
+  if (language === "es") return "Spanish";
+  return "Both";
+}
+
 interface SortableTapRowProps {
   id: string;
   tap: TapItem;
@@ -92,6 +112,14 @@ function SortableTapRow({
     : null;
   const slideVideoUrl = slideIsVideo ? (tap.videos?.[0]?.url ?? null) : null;
   const label = isSlide ? `Slide ${slideNumber}` : tap.title || "content";
+
+  // Subtitle metadata for non-slide rows: the tap type followed by its
+  // language ("Both" when unset). e.g. "Journal · Both", "Video · English".
+  const rawType = tap.type ?? "";
+  const typeLabel = TAP_TYPE_LABELS[rawType] ?? (rawType || null);
+  const metaLine = [typeLabel, tapLanguageLabel(tap.language)]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div
@@ -150,6 +178,7 @@ function SortableTapRow({
             <p className="truncate text-sm font-medium text-stone-900">
               {tap.title || "Untitled"}
             </p>
+            <p className="mt-0.5 truncate text-xs text-stone-500">{metaLine}</p>
             {question ? (
               <p className="mt-0.5 line-clamp-2 text-xs text-stone-500">
                 {question}

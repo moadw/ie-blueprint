@@ -8,7 +8,11 @@ import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
 import { SeriesDialog } from "~/components/admin/series-dialog";
 import { PracticeDialog } from "~/components/admin/practice-dialog";
-import { PracticeRow } from "~/components/admin/practice-row";
+import {
+  PracticeRow,
+  EMPTY_CONTENT_SUMMARY,
+  type ClassContentSummary,
+} from "~/components/admin/practice-row";
 import {
   AdminListPagination,
   ADMIN_LIST_PAGE_SIZE,
@@ -22,6 +26,7 @@ import { activeHiddenFromStatus, statusFromActiveHidden } from "~/lib/curriculum
 import { CurriculumsFindOneDocument } from "~/queries/curriculums";
 import { CurriculumsUpdateOneDocument } from "~/mutations/curriculums";
 import { ClassesAdminFindManyDocument } from "~/queries/classes";
+import { TapFindManyDocument } from "~/queries/taps";
 import { SortFindManyclassesInput } from "~/gql/graphql";
 import { cn } from "~/lib/utils";
 
@@ -32,6 +37,79 @@ import { cn } from "~/lib/utils";
 // comfortably above any real series (curricula top out around 300 classes);
 // we warn if a series ever exceeds it so we don't silently truncate again.
 const SERIES_CLASSES_LIMIT = 500;
+
+// One TapFindMany fetches every tap across the series' classes (via
+// `_operators.class.in`) to build the collapsed-row content indicators. Sized
+// well above any real series (≤500 classes × a handful of taps each); we warn
+// if it's ever hit so indicators don't silently go incomplete.
+const SERIES_TAPS_LIMIT = 2000;
+
+// tap.type identifier → which indicator box it feeds. Slider (and any other
+// type) is intentionally unmapped: it has no box (matches the prototype).
+const TAP_TYPE_TO_BOX: Record<string, keyof ClassContentSummary> = {
+  "ie-journal": "journal",
+  "full-audio": "full",
+  "5min-audio": "fiveMin",
+  video: "video",
+};
+
+// A tap's scalar language → box tag. Empty/null = shown in both languages.
+function tapLangLabel(language: string | null | undefined): string {
+  if (language === "en") return "EN";
+  if (language === "es") return "ES";
+  return "Both";
+}
+
+const LANG_SORT = ["EN", "ES", "Both"];
+
+// Group the series' taps by class into per-class content summaries. Each box
+// field collects the distinct language labels of that type's taps, sorted.
+function summarizeContentByClass(
+  taps: ReadonlyArray<{
+    class?: string | null;
+    type?: string | null;
+    language?: string | null;
+  }>,
+): Record<string, ClassContentSummary> {
+  const acc = new Map<
+    string,
+    {
+      journal: Set<string>;
+      full: Set<string>;
+      fiveMin: Set<string>;
+      video: Set<string>;
+    }
+  >();
+  for (const tap of taps) {
+    const classId = tap.class;
+    if (!classId) continue;
+    const box = TAP_TYPE_TO_BOX[tap.type ?? ""];
+    if (!box) continue;
+    let bucket = acc.get(classId);
+    if (!bucket) {
+      bucket = {
+        journal: new Set(),
+        full: new Set(),
+        fiveMin: new Set(),
+        video: new Set(),
+      };
+      acc.set(classId, bucket);
+    }
+    bucket[box].add(tapLangLabel(tap.language));
+  }
+  const sortLangs = (s: Set<string>) =>
+    [...s].sort((a, b) => LANG_SORT.indexOf(a) - LANG_SORT.indexOf(b));
+  const out: Record<string, ClassContentSummary> = {};
+  for (const [classId, b] of acc) {
+    out[classId] = {
+      journal: sortLangs(b.journal),
+      full: sortLangs(b.full),
+      fiveMin: sortLangs(b.fiveMin),
+      video: sortLangs(b.video),
+    };
+  }
+  return out;
+}
 
 const GRADE_LABELS: Record<string, string> = {
   early_learning: "Early Learning",
@@ -56,6 +134,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return {
       curriculum: null,
       classes: [],
+      contentByClass: null as Record<string, ClassContentSummary> | null,
       curriculumError:
         "Platform is not configured. Please contact your administrator.",
       classesError: null,
@@ -97,16 +176,54 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         "client pagination may be truncated — switch to server-side paging.",
     );
   }
+
+  // Collapsed-row content indicators: one query for every tap across the
+  // series' classes, grouped into per-class summaries. Non-critical — on
+  // failure we hide the boxes (contentByClass=null) rather than render a
+  // misleading all-empty checklist.
+  const classIds = classes.flatMap((c) => (c._id ? [c._id] : []));
+  let contentByClass: Record<string, ClassContentSummary> | null = {};
+  if (classIds.length > 0) {
+    const tapsResult = await safe(
+      gqlClient.request(
+        TapFindManyDocument,
+        {
+          filter: {
+            platform: env.PLATFORM,
+            _operators: { class: { in: classIds } },
+          },
+          limit: SERIES_TAPS_LIMIT,
+        },
+        headers,
+      ),
+    );
+    if (tapsResult.ok) {
+      const allTaps = tapsResult.data.TapFindMany ?? [];
+      if (allTaps.length >= SERIES_TAPS_LIMIT) {
+        console.warn(
+          `[admin/series] curriculum ${id} returned >= ${SERIES_TAPS_LIMIT} taps; ` +
+            "row content indicators may be incomplete — raise the limit or page.",
+        );
+      }
+      contentByClass = summarizeContentByClass(
+        allTaps.filter((t) => !t.deleted),
+      );
+    } else {
+      contentByClass = null;
+    }
+  }
+
   return {
     curriculum,
     classes,
+    contentByClass,
     curriculumError: curriculumResult.error,
     classesError: classesResult.error,
   };
 }
 
 export default function AdminContentSeriesDetail() {
-  const { curriculum, classes, classesError, curriculumError } =
+  const { curriculum, classes, contentByClass, classesError, curriculumError } =
     useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
   const navigate = useNavigate();
@@ -290,6 +407,12 @@ export default function AdminContentSeriesDetail() {
               <PracticeRow
                 key={practice._id}
                 practice={practice}
+                content={
+                  contentByClass
+                    ? (contentByClass[practice._id ?? ""] ??
+                      EMPTY_CONTENT_SUMMARY)
+                    : null
+                }
                 onChange={() => revalidator.revalidate()}
               />
             ))}
