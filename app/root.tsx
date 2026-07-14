@@ -14,7 +14,6 @@ import { Toaster } from "sonner";
 import type { Route } from "./+types/root";
 import stylesheet from "~/styles/app.css?url";
 import { setToken } from "~/lib/auth";
-import { readLanguage } from "~/lib/language";
 import { getSessionToken } from "~/lib/session.server";
 import { AmplitudeAnalytics } from "~/components/analytics/amplitude-analytics";
 
@@ -44,7 +43,6 @@ export async function loader({ request }: Route.LoaderArgs) {
   // revalidates and the token flips from null to the real value.
   return {
     accessToken: await getSessionToken(request),
-    lang: readLanguage(request.headers.get("Cookie")),
   };
 }
 
