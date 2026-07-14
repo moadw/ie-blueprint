@@ -4,12 +4,17 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Clock,
+  Film,
   GripVertical,
   Image as ImageIcon,
   ImageIcon as ImageOverlay,
   Loader2,
+  Music,
+  NotebookPen,
   Trash2,
   X,
+  type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "~/components/ui/badge";
@@ -30,8 +35,79 @@ type Practice = NonNullable<
   ClassesAdminFindManyQuery["ClassesAdminFindMany"]
 >[number];
 
+/**
+ * Per-class content summary rendered as the collapsed-row indicator boxes.
+ * Each field holds the distinct language labels ("EN" | "ES" | "Both") of the
+ * taps of that type in the class; an empty array = the class has no tap of that
+ * type (its box renders inactive/dashed). Built server-side in the series
+ * loader from one TapFindMany over all the series' classes.
+ */
+export type ClassContentSummary = {
+  journal: string[];
+  full: string[];
+  fiveMin: string[];
+  video: string[];
+};
+
+export const EMPTY_CONTENT_SUMMARY: ClassContentSummary = {
+  journal: [],
+  full: [],
+  fiveMin: [],
+  video: [],
+};
+
+// The four content-block boxes, in display order. Active tint per type mirrors
+// the prototype (Full=blue, 5min=amber, Video=purple); Journal=teal is added
+// per request. Inactive types fall back to a dashed grey box.
+const CONTENT_BOXES: ReadonlyArray<{
+  key: keyof ClassContentSummary;
+  label: string;
+  Icon: LucideIcon;
+  active: string;
+}> = [
+  { key: "journal", label: "Journal", Icon: NotebookPen, active: "border-teal-200 bg-teal-50 text-teal-600" },
+  { key: "full", label: "Full", Icon: Music, active: "border-blue-200 bg-blue-50 text-blue-600" },
+  { key: "fiveMin", label: "5min", Icon: Clock, active: "border-amber-300 bg-amber-50 text-amber-700" },
+  { key: "video", label: "Video", Icon: Film, active: "border-purple-200 bg-purple-50 text-purple-600" },
+];
+
+// Collapsed-row content checklist. One box per block type; colored when the
+// class has that type (with its EN/ES/Both language tag), dashed grey when not.
+// Hidden below `sm` to keep narrow rows uncluttered — the info is still on the
+// tap subtitles inside the accordion.
+function ContentTypeBoxes({ content }: { content: ClassContentSummary }) {
+  return (
+    <div className="hidden flex-shrink-0 items-stretch gap-2 sm:flex">
+      {CONTENT_BOXES.map(({ key, label, Icon, active }) => {
+        const langs = content[key];
+        const isActive = langs.length > 0;
+        return (
+          <div
+            key={key}
+            title={isActive ? `${label}: ${langs.join(", ")}` : `No ${label} content`}
+            className={cn(
+              "flex w-14 flex-col items-center justify-center gap-0.5 rounded-[12px] border px-1 py-1.5 text-center",
+              isActive
+                ? active
+                : "border-dashed border-stone-200 bg-transparent text-stone-300",
+            )}
+          >
+            <Icon className="h-4 w-4" />
+            <span className="text-[10px] font-medium leading-none">{label}</span>
+            <span className="text-[9px] leading-none">
+              {isActive ? langs.join(" ") : "—"}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export interface PracticeRowProps {
   practice: Practice;
+  /** Content-block summary for the collapsed row; null hides the boxes. */
+  content?: ClassContentSummary | null;
   onChange: () => void;
 }
 
@@ -46,7 +122,7 @@ const GRADE_OPTIONS = [
 
 const labelClass = "block text-[14px] text-foreground mb-2 font-medium";
 
-export function PracticeRow({ practice, onChange }: PracticeRowProps) {
+export function PracticeRow({ practice, content = null, onChange }: PracticeRowProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const bgInputRef = useRef<HTMLInputElement | null>(null);
   const practiceId = practice._id ?? "";
@@ -444,6 +520,8 @@ export function PracticeRow({ practice, onChange }: PracticeRowProps) {
             )}
           </div>
         </div>
+
+        {content ? <ContentTypeBoxes content={content} /> : null}
 
         <div className="flex flex-shrink-0 gap-1">
           <Button

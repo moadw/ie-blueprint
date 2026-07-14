@@ -14,6 +14,8 @@ import type { CurriculumLite } from "~/components/admin/experiences-selector";
 import { setToken } from "~/lib/auth";
 import { env } from "~/lib/env";
 import { toErrorMessage } from "~/lib/errors";
+import type { Lang } from "~/lib/language";
+import { setLanguage } from "~/lib/language";
 import { uploadGroupCover } from "~/lib/group-cover";
 import { gqlClient } from "~/lib/graphql";
 import { getInitials } from "~/lib/initials";
@@ -32,6 +34,7 @@ import { ClassroomInfoCard } from "./classrooms_.create/_components/classroom-in
 import { ClassroomPreviewCard } from "./classrooms_.create/_components/classroom-preview-card";
 import { CollectionSelect } from "./classrooms_.create/_components/collection-select";
 import { CourseMultiSelect } from "./classrooms_.create/_components/course-multi-select";
+import { LanguageSelect } from "./classrooms_.create/_components/language-select";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const token = await requireSessionToken(request);
@@ -178,6 +181,9 @@ export default function ClassroomCreateRoute() {
   const [submitting, setSubmitting] = useState(false);
 
   const [step, setStep] = useState<1 | 2>(1);
+  // The step-2 language selector always defaults to English; the choice is
+  // persisted against the newly-created group (per-group cookie) after create.
+  const [selectedLanguage, setSelectedLanguage] = useState<Lang>("en");
   const [selectedCollectionId, setSelectedCollectionId] = useState<
     string | null
   >(collections[0]?._id ?? null);
@@ -290,6 +296,11 @@ export default function ClassroomCreateRoute() {
         navigate("/classrooms");
         return;
       }
+
+      // Persist the chosen language against the NEW classroom (per-group cookie
+      // entry) now that `created._id` is guaranteed, so the destination group's
+      // loader localizes it on navigation.
+      setLanguage(created._id, selectedLanguage);
 
       // Best-effort cover upload: a failure toasts but MUST still navigate.
       if (coverFile) {
@@ -431,6 +442,15 @@ export default function ClassroomCreateRoute() {
           </div>
         ) : (
           <div className="space-y-6">
+            <div className="space-y-3">
+              <p className="text-[14px] text-foreground font-medium">
+                Select your language
+              </p>
+              <LanguageSelect
+                value={selectedLanguage}
+                onChange={setSelectedLanguage}
+              />
+            </div>
             {error ? (
               <div className="rounded-[14px] border border-dashed border-red-300 bg-red-50 p-3 text-sm text-red-600">
                 Couldn't load your district's experiences. Try again later.
