@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { redirect, useLoaderData, useNavigate } from "react-router";
+import {
+  redirect,
+  useLoaderData,
+  useNavigate,
+  useRouteLoaderData,
+} from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +19,8 @@ import type { CurriculumLite } from "~/components/admin/experiences-selector";
 import { setToken } from "~/lib/auth";
 import { env } from "~/lib/env";
 import { toErrorMessage } from "~/lib/errors";
+import type { Lang } from "~/lib/language";
+import { setLanguage } from "~/lib/language";
 import { uploadGroupCover } from "~/lib/group-cover";
 import { gqlClient } from "~/lib/graphql";
 import { getInitials } from "~/lib/initials";
@@ -32,6 +39,8 @@ import { ClassroomInfoCard } from "./classrooms_.create/_components/classroom-in
 import { ClassroomPreviewCard } from "./classrooms_.create/_components/classroom-preview-card";
 import { CollectionSelect } from "./classrooms_.create/_components/collection-select";
 import { CourseMultiSelect } from "./classrooms_.create/_components/course-multi-select";
+import { LanguageSelect } from "./classrooms_.create/_components/language-select";
+import type { loader as rootLoader } from "~/root";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const token = await requireSessionToken(request);
@@ -177,7 +186,14 @@ export default function ClassroomCreateRoute() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
 
+  // Seed the step-2 language selector from the app-wide language cookie exposed
+  // by the root loader (falls back to English). Persisted globally on submit.
+  const { lang } = useRouteLoaderData<typeof rootLoader>("root") ?? {
+    lang: "en" as const,
+  };
+
   const [step, setStep] = useState<1 | 2>(1);
+  const [selectedLanguage, setSelectedLanguage] = useState<Lang>(lang);
   const [selectedCollectionId, setSelectedCollectionId] = useState<
     string | null
   >(collections[0]?._id ?? null);
@@ -263,6 +279,11 @@ export default function ClassroomCreateRoute() {
       toast.error("Missing user context");
       return;
     }
+
+    // Persist the chosen language as the teacher's GLOBAL preference (the
+    // app-wide `ie-lang` cookie) before creating, so the new classroom and
+    // every subsequent loader open in the selected language.
+    setLanguage(selectedLanguage);
 
     setSubmitting(true);
     try {
@@ -431,6 +452,15 @@ export default function ClassroomCreateRoute() {
           </div>
         ) : (
           <div className="space-y-6">
+            <div className="space-y-3">
+              <p className="text-[14px] text-foreground font-medium">
+                Select your language
+              </p>
+              <LanguageSelect
+                value={selectedLanguage}
+                onChange={setSelectedLanguage}
+              />
+            </div>
             {error ? (
               <div className="rounded-[14px] border border-dashed border-red-300 bg-red-50 p-3 text-sm text-red-600">
                 Couldn't load your district's experiences. Try again later.
