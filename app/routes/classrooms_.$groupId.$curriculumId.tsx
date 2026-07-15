@@ -33,6 +33,7 @@ import {
 } from "./classrooms_.$groupId.$curriculumId/_components/card-media";
 import { CurriculumBackground } from "./classrooms_.$groupId.$curriculumId/_components/curriculum-background";
 import { CurriculumSlider } from "./classrooms_.$groupId.$curriculumId/_components/curriculum-slider";
+import { currentPracticeIndex } from "./classrooms_.$groupId.$curriculumId/_components/current-practice";
 import { ClassroomHeader } from "./classrooms_.$groupId.$curriculumId/_components/classroom-header";
 import {
   CurriculumSidebar,
@@ -405,17 +406,18 @@ export default function ClassroomCurriculumRoute() {
   }, [groupId, curriculumId]);
 
   // Track the carousel's centered card so the hero background follows it. The
-  // slider reports its index via `onIndexChange`; we seed the same initial
-  // index it uses (the current practice / `nextClass`) so the first paint's
-  // background already matches the centered card — no Day-1 flash before the
-  // slider's mount callback lands. Background = that card's cover, falling back
-  // to the curriculum's static image when a cover is missing or index is stale.
-  const [currentLessonIndex, setCurrentLessonIndex] = useState(() => {
-    const nc = groupProgress?.nextClass;
-    if (!nc) return 0;
-    const idx = classes.findIndex((c) => c._id === nc);
-    return idx >= 0 ? idx : 0;
-  });
+  // slider reports its index via `onIndexChange`; we seed the SAME initial index
+  // it uses (the current practice — first not-yet-finished class, via
+  // `currentPracticeIndex`) so the first paint's background already matches the
+  // centered card — no Day-1 flash before the slider's mount callback lands.
+  // Background = that card's cover, falling back to the curriculum's static
+  // image when a cover is missing or index is stale.
+  const [currentLessonIndex, setCurrentLessonIndex] = useState(() =>
+    currentPracticeIndex(
+      classes.map((c) => c._id),
+      groupProgress?.finishedClasses,
+    ),
+  );
   const curriculumFallbackImage =
     curriculum?.bgImage?.url ?? curriculum?.cover?.url;
   const backgroundImage =
