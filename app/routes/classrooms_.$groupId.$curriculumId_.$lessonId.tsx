@@ -502,6 +502,13 @@ export default function LessonPlayerRoute() {
           mediaUrl={mediaUrlForTap(current.tap)}
           {...(current.tap._id ? { contentId: current.tap._id } : {})}
           {...(() => {
+            // Still-background for the audio path: prefer the class's own
+            // `background`, fall back to its `cover`, and let PlayerStage use
+            // the bundled `glass-background.webp` when neither is set.
+            const bg = classItem?.background?.url ?? classItem?.cover?.url;
+            return bg ? { backgroundImageUrl: bg } : {};
+          })()}
+          {...(() => {
             const t = resolveTapType(current.tap, resolver);
             return t ? { tapType: t } : {};
           })()}
