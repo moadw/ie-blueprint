@@ -27,7 +27,7 @@ import { CurriculumCollectionFindManyDocument } from "~/queries/curriculum-colle
 import { CurriculumsFindManyDocument } from "~/queries/curriculums";
 import { UserDistrictFindOneDocument } from "~/queries/districts";
 import { UsersFindOneDocument } from "~/queries/users";
-import { GroupCreateOneDocument } from "~/queries/groups";
+import { GroupCreateOneDocument, GroupFindManyDocument } from "~/queries/groups";
 import { OnboardingLayout } from "./classrooms_.create/_components/onboarding-layout";
 import { ClassroomIconUpload } from "./classrooms_.create/_components/classroom-icon-upload";
 import { ClassroomInfoCard } from "./classrooms_.create/_components/classroom-info-card";
@@ -48,7 +48,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw redirect(homePathForIdentifier(user?.typeObj?.identifier));
   }
 
-  const [districtRes, collectionsRes, curriculaRes] = await Promise.all([
+  const [districtRes, collectionsRes, curriculaRes, groupsRes] =
+    await Promise.all([
     safe(
       gqlClient.request(
         UserDistrictFindOneDocument,
@@ -67,6 +68,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
       gqlClient.request(
         CurriculumsFindManyDocument,
         { filter: { platform: env.PLATFORM }, limit: 500 },
+        { "access-token": token },
+      ),
+    ),
+    safe(
+      // The teacher's existing classrooms. Used to gate the onboarding-welcome
+      // animation to a TRUE first-timer: onboarding plays only when the teacher
+      // has no classrooms yet (and no seen-cookie). A returning teacher creating
+      // a 2nd+ classroom skips it regardless of the per-browser cookie.
+      gqlClient.request(
+        GroupFindManyDocument,
+        { filter: { manager: user._id }, limit: 1 },
         { "access-token": token },
       ),
     ),
@@ -145,6 +157,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     request.headers.get("Cookie"),
   );
 
+  // True when the teacher already owns at least one classroom → not a first-time
+  // user, so the onboarding-welcome animation should be skipped even if this
+  // browser lacks the seen-cookie. On a failed fetch we degrade to `false`,
+  // falling back to the cookie-only gate (i.e. prior behaviour).
+  const hasExistingClassrooms = groupsRes.ok
+    ? (groupsRes.data.GroupFindMany ?? []).some((g) => g != null)
+    : false;
+
   return {
     token,
     user,
@@ -153,6 +173,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     fallbackCourses,
     error,
     hasSeenWelcome,
+    hasExistingClassrooms,
   };
 }
 
@@ -176,6 +197,7 @@ export default function ClassroomCreateRoute() {
     fallbackCourses,
     error,
     hasSeenWelcome,
+    hasExistingClassrooms,
   } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
@@ -312,10 +334,13 @@ export default function ClassroomCreateRoute() {
       }
 
       const seriesPath = `/classrooms/${created._id}/${first}`;
-      // First-time creators (no seen-cookie) go through the welcome slider,
-      // which sets the cookie and lands them on the series view; everyone else
-      // goes straight to the series.
-      if (hasSeenWelcome) {
+      // Onboarding is a genuine first-timer experience: play it only when the
+      // teacher had NO existing classrooms AND this browser hasn't seen it. A
+      // returning teacher creating a 2nd+ classroom (or one who already saw the
+      // welcome) goes straight to the series. `hasExistingClassrooms` reflects
+      // classrooms owned BEFORE this create, so it's still false for a true
+      // first classroom.
+      if (hasSeenWelcome || hasExistingClassrooms) {
         navigate(seriesPath);
       } else {
         navigate(
