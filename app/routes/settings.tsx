@@ -7,6 +7,7 @@ import { requireSessionToken } from "~/lib/session.server";
 import { UsersFindOneDocument } from "~/queries/users";
 import { SettingsSidebar } from "~/routes/settings/_components/settings-sidebar";
 import { BottomFade } from "~/routes/settings/_components/bottom-fade";
+import { getLastLocation } from "~/lib/last-curriculum";
 import glassBackground from "~/assets/glass-background.webp";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -25,7 +26,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function SettingsLayoutRoute() {
   const { isDistrictAdmin } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
-  const close = () => navigate(isDistrictAdmin ? "/district" : "/classrooms");
+  // District admins return to the portal. Teachers return to the last classroom
+  // curriculum they were on (recorded in localStorage by the series route),
+  // falling back to the classrooms index when there's no saved location.
+  const close = () => {
+    if (isDistrictAdmin) {
+      navigate("/district");
+      return;
+    }
+    const last = getLastLocation();
+    navigate(
+      last ? `/classrooms/${last.groupId}/${last.curriculumId}` : "/classrooms",
+    );
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
