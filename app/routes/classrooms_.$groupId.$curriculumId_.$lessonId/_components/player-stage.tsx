@@ -38,6 +38,10 @@ interface PlayerStageProps {
   backgroundImageUrl?: string;
   /** Whether the feedback overlay is showing — the player stays mounted but its chrome hides. */
   showFeedback?: boolean;
+  /** Whether the current user has liked this practice (fills the player heart). */
+  liked?: boolean;
+  /** Toggle the like from the player. When omitted, the heart button is hidden. */
+  onToggleLike?: () => void;
   /** Close (X) → curriculum page. */
   onExit: () => void;
   /** Playback finished → parent advances `stage` to `after`. */
@@ -68,6 +72,8 @@ export function PlayerStage({
   tapType,
   backgroundImageUrl,
   showFeedback = false,
+  liked = false,
+  onToggleLike,
   onExit,
   onEnded,
 }: PlayerStageProps) {
@@ -265,11 +271,13 @@ export function PlayerStage({
           duration={duration}
           volume={volume}
           progress={progress}
+          liked={liked}
           onTogglePlayPause={togglePlayPause}
           onSkip={skip}
           onVolumeChange={setVolume}
           onProgressClick={handleProgressClick}
           formatTime={formatTime}
+          {...(onToggleLike ? { onToggleLike } : {})}
         />
 
         {/* Series name. */}

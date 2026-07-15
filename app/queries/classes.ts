@@ -8,6 +8,7 @@ export const ClassesAdminFindManyDocument = graphql(/* GraphQL */ `
       description
       order
       free
+      feedback
       deleted
       curriculum
       cover { type url }
@@ -69,6 +70,7 @@ export const ClassesFindOneDocument = graphql(/* GraphQL */ `
       description
       order
       free
+      feedback
       deleted
       curriculum
       cover { type url }
