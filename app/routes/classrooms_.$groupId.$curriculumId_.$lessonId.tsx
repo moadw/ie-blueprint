@@ -318,10 +318,10 @@ export default function LessonPlayerRoute() {
   const revalidator = useRevalidator();
 
   // Per-curriculum audio-length preference (step-3). SSR-gated: server + first
-  // client render resolve to the default `"full-audio"`, then the persisted
+  // client render resolve to the default (`5min-audio`), then the persisted
   // choice applies post-mount. Called unconditionally before any early return
   // so hook order stays stable. Drives `selectAudioTaps` below — no router
-  // state is consumed; a fresh first visit defaults to `full-audio`.
+  // state is consumed; a fresh first visit defaults to `5min-audio`.
   const [audioPref] = useAudioPreference(curriculumId);
 
   const [stepIndex, setStepIndex] = useState(0);
