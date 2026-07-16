@@ -150,7 +150,7 @@ function sleep(ms: number): Promise<void> {
  * the concurrency gate and retries HTTP 429 / network errors with linear
  * backoff (up to 4 attempts).
  */
-async function amplitudeGet<T = unknown>(
+export async function amplitudeGet<T = unknown>(
   endpoint: string,
   params: Record<string, string>,
   segment: SegmentClause[] = [],
@@ -222,7 +222,7 @@ async function amplitudeGet<T = unknown>(
  * matching entry in `seriesLabels`. Defensive: any shape mismatch yields an
  * empty series.
  */
-interface DashboardChartResponse {
+export interface DashboardChartResponse {
   data?: {
     series?: number[][];
     seriesLabels?: unknown[];
@@ -234,7 +234,7 @@ interface DashboardChartResponse {
   };
 }
 
-function firstSeries(resp: DashboardChartResponse): number[] {
+export function firstSeries(resp: DashboardChartResponse): number[] {
   const series = resp.data?.series;
   if (!Array.isArray(series) || series.length === 0) return [];
   const first = series[0];
@@ -248,7 +248,7 @@ function firstSeries(resp: DashboardChartResponse): number[] {
  * (the right denominator for a funnel stage), unlike summing the daily series.
  * Defensive: 0 on any shape mismatch.
  */
-function collapsedValue(resp: DashboardChartResponse): number {
+export function collapsedValue(resp: DashboardChartResponse): number {
   const v = resp.data?.seriesCollapsed?.[0]?.[0]?.value;
   return typeof v === "number" && isFinite(v) ? v : 0;
 }
@@ -258,7 +258,7 @@ function collapsedValue(resp: DashboardChartResponse): number {
  * finite numbers. `series[i]` is the daily array for the group named by
  * `seriesLabels[i]`. Returns `[]` on any shape mismatch.
  */
-function allSeries(resp: DashboardChartResponse): number[][] {
+export function allSeries(resp: DashboardChartResponse): number[][] {
   const series = resp.data?.series;
   if (!Array.isArray(series)) return [];
   return series
@@ -314,7 +314,7 @@ const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 const cache = new Map<string, { at: number; value: unknown }>();
 
-async function cached<T>(key: string, compute: () => Promise<T>): Promise<T> {
+export async function cached<T>(key: string, compute: () => Promise<T>): Promise<T> {
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
     return hit.value as T;
@@ -803,7 +803,7 @@ export function windowFromISO(startISO: string, endISO: string): AnalyticsWindow
  * by user/group properties. `userType` is stamped on every event by
  * `analytics.ts`, so it is available as an event-property filter here.
  */
-interface EventPropFilter {
+export interface EventPropFilter {
   subprop_type: "event";
   subprop_key: string;
   subprop_op: "is" | "is not";

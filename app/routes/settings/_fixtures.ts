@@ -77,36 +77,5 @@ export const journalsFixture: JournalEntry[] = [
   },
 ];
 
-export interface Stats {
-  /** Total minutes practiced (all-time). */
-  minutesPracticed: number;
-  /** Current consecutive-day streak. */
-  dayStreak: number;
-  /** Best-ever consecutive-day streak. */
-  longestStreak: number;
-  /** Practices completed so far (numerator of course completion). */
-  practicesCompleted: number;
-  /** Total practices in the course (denominator of course completion). */
-  totalPractices: number;
-  /**
-   * Mon–Sun completion flags (length 7). Only the first 5 (Mon–Fri) are
-   * shown in the WeeklyChain.
-   */
-  completedDays: boolean[];
-  /** Index (0 = Mon … 6 = Sun) of the current day, for the chain's "?" node. */
-  currentDayIndex: number;
-  /** Average practice days per week (0–5), for the RoutineCard ring. */
-  averageDaysPerWeek: number;
-}
-
-export const statsFixture: Stats = {
-  minutesPracticed: 428,
-  dayStreak: 6,
-  longestStreak: 14,
-  practicesCompleted: 72,
-  totalPractices: 180,
-  // Mon ✓, Tue ✓, Wed ✓ (current "?"), Thu/Fri idle; weekend off.
-  completedDays: [true, true, false, false, false, false, false],
-  currentDayIndex: 2,
-  averageDaysPerWeek: 4,
-};
+// `Stats` / `statsFixture` were removed once `/settings/stats` moved to a real
+// Amplitude-backed loader (see `settings.stats.tsx` + `app/lib/stats.server.ts`).

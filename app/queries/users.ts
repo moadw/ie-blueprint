@@ -8,6 +8,7 @@ export const UsersFindOneDocument = graphql(`
       lastName
       email
       userName
+      createdAt
       type
       typeObj {
         identifier
