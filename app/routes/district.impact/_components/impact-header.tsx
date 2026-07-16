@@ -7,9 +7,15 @@ interface ImpactHeaderProps {
   districtName: string | null;
   /** Identidad del admin logeado para autofill del autor (null si no cargó). */
   currentUser?: { name: string | null; role: string | null } | null;
+  /** Master-admin preview is read-only: hide the "Share a Story" create action. */
+  readOnly?: boolean;
 }
 
-export function ImpactHeader({ districtName, currentUser }: ImpactHeaderProps) {
+export function ImpactHeader({
+  districtName,
+  currentUser,
+  readOnly = false,
+}: ImpactHeaderProps) {
   const name = districtName ?? "your district";
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -29,7 +35,7 @@ export function ImpactHeader({ districtName, currentUser }: ImpactHeaderProps) {
       </div>
 
       <div className="flex items-center gap-2 self-start sm:self-auto print:hidden">
-        {currentUser ? (
+        {currentUser && !readOnly ? (
           <Button
             variant="primary"
             onClick={() => setDialogOpen(true)}

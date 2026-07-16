@@ -27,6 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       schools: [] as SchoolOption[],
       invite: null as InviteOption | null,
       loadError: result.loadError ?? "Could not resolve district.",
+      preview: result.preview,
     };
   }
 
@@ -70,11 +71,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     schools,
     invite,
     loadError: schoolsResult.error,
+    preview: result.preview,
   };
 }
 
 export default function DistrictAdminSchoolsRoute() {
-  const { district, schools, invite, loadError } =
+  const { district, schools, invite, loadError, preview } =
     useLoaderData<typeof loader>();
   const navigation = useNavigation();
 
@@ -104,6 +106,7 @@ export default function DistrictAdminSchoolsRoute() {
               districtId={district._id}
               districtName={district.name}
               invite={invite}
+              readOnly={preview}
             />
           ) : null}
           <DistrictSchoolsGrid schools={schools} />
