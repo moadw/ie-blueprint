@@ -12,6 +12,11 @@
 // `typeof window`. Key prefix mirrors the `ie:audio-pref:` convention.
 
 const KEY_PREFIX = "ie:last-curriculum:";
+// Single global key for the last classroom curriculum viewed across ALL groups.
+// Unlike the per-group `KEY_PREFIX` store (which the card selector uses to
+// reopen a specific group), this remembers the one place the user was last so a
+// context-free surface (the settings modal's Done button) can return them there.
+const LAST_LOCATION_KEY = "ie:last-location";
 
 function storageKey(groupId: string): string {
   return `${KEY_PREFIX}${groupId}`;
@@ -31,4 +36,41 @@ export function getLastCurriculum(groupId: string): string | null {
 export function setLastCurriculum(groupId: string, curriculumId: string): void {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(storageKey(groupId), curriculumId);
+}
+
+/**
+ * The last classroom curriculum the user viewed (group + curriculum), or `null`
+ * when nothing is saved (or on the server). Used by the settings modal's Done
+ * button to return the user to where they were rather than the classrooms index.
+ */
+export function getLastLocation(): {
+  groupId: string;
+  curriculumId: string;
+} | null {
+  if (typeof window === "undefined") return null;
+  const raw = window.localStorage.getItem(LAST_LOCATION_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      typeof (parsed as { groupId?: unknown }).groupId === "string" &&
+      typeof (parsed as { curriculumId?: unknown }).curriculumId === "string"
+    ) {
+      return parsed as { groupId: string; curriculumId: string };
+    }
+  } catch {
+    // Corrupt/legacy value — treat as absent.
+  }
+  return null;
+}
+
+/** Persist the last classroom curriculum the user viewed, globally (client only). */
+export function setLastLocation(groupId: string, curriculumId: string): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(
+    LAST_LOCATION_KEY,
+    JSON.stringify({ groupId, curriculumId }),
+  );
 }

@@ -1,5 +1,5 @@
 import type { MouseEvent } from "react";
-import { Loader2, Pause, Play, SkipBack, SkipForward, Volume2 } from "lucide-react";
+import { Heart, Loader2, Pause, Play, SkipBack, SkipForward, Volume2 } from "lucide-react";
 
 // Glass transport controls for the fullscreen lesson player. Rebuilt from
 // scratch against the prototype's `PracticeControls` (visual reference only):
@@ -18,10 +18,14 @@ interface PlayerControlsProps {
   volume: number;
   /** 0–100. */
   progress: number;
+  /** Whether the current user has liked this practice — fills the heart. */
+  liked?: boolean;
   onTogglePlayPause: () => void;
   onSkip: (seconds: number) => void;
   onVolumeChange: (volume: number) => void;
   onProgressClick: (e: MouseEvent<HTMLDivElement>) => void;
+  /** Toggle the like. When omitted, the heart button is not rendered. */
+  onToggleLike?: () => void;
   formatTime: (seconds: number) => string;
 }
 
@@ -33,10 +37,12 @@ export function PlayerControls({
   duration,
   volume,
   progress,
+  liked = false,
   onTogglePlayPause,
   onSkip,
   onVolumeChange,
   onProgressClick,
+  onToggleLike,
   formatTime,
 }: PlayerControlsProps) {
   return (
@@ -180,6 +186,25 @@ export function PlayerControls({
             background: `linear-gradient(to right, rgba(134, 239, 172, 0.8) ${volume}%, rgba(255,255,255,0.15) ${volume}%)`,
           }}
         />
+        {onToggleLike ? (
+          <button
+            type="button"
+            onClick={onToggleLike}
+            aria-label={liked ? "Unlike practice" : "Like practice"}
+            aria-pressed={liked}
+            className="ml-1 flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200 hover:scale-110 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+            style={{
+              background: "rgba(255, 255, 255, 0.1)",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+            }}
+          >
+            <Heart
+              className={`h-4 w-4 transition-colors duration-200 ${
+                liked ? "text-rose-400 fill-rose-400" : "text-white/50"
+              }`}
+            />
+          </button>
+        ) : null}
       </div>
     </div>
   );
