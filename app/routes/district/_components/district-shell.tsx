@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { Bell } from "lucide-react";
+import { ArrowLeft, Bell } from "lucide-react";
+import { Button } from "~/components/ui/button";
 import { Logo } from "~/components/ui/logo";
 import { AnnouncementBar } from "~/components/ui/announcement-bar";
 import type { UserDistrictFindOneQuery } from "~/gql/graphql";
@@ -13,10 +14,17 @@ export interface DistrictShellProps {
   district: UserDistrictFindOneQuery["UserDistrictFindOne"] | null;
   user?: DistrictAccountMenuUser | null;
   announcement?: { _id: string; message?: string | null } | null;
+  /** Master-admin preview: when `active`, show the "Back to CMS" exit control. */
+  preview?: { active: boolean; districtName?: string | null };
   children: ReactNode;
 }
 
-export function DistrictShell({ user, announcement, children }: DistrictShellProps) {
+export function DistrictShell({
+  user,
+  announcement,
+  preview,
+  children,
+}: DistrictShellProps) {
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-white print:h-auto print:overflow-visible">
       {announcement ? (
@@ -33,6 +41,17 @@ export function DistrictShell({ user, announcement, children }: DistrictShellPro
           <DistrictNav />
         </div>
         <div className="flex items-center gap-3 shrink-0">
+          {preview?.active ? (
+            <Button
+              size="sm"
+              className="gap-1.5 rounded-full"
+              aria-label="Back to CMS"
+              onClick={() => window.location.assign("/preview/exit")}
+            >
+              <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
+              <span className="hidden md:inline">Back to CMS</span>
+            </Button>
+          ) : null}
           <button
             type="button"
             className="p-2 rounded-full hover:bg-muted transition-colors"

@@ -33,6 +33,8 @@ interface DistrictInviteCardProps {
   districtId: string;
   districtName: string | null;
   invite: { _id: string; code: string } | null;
+  /** Master-admin preview is read-only: hide the mutating Generate/Regenerate controls. */
+  readOnly?: boolean;
 }
 
 type CreatePayload = {
@@ -46,6 +48,7 @@ export function DistrictInviteCard({
   districtId,
   districtName,
   invite,
+  readOnly = false,
 }: DistrictInviteCardProps) {
   const revalidator = useRevalidator();
   const [creating, setCreating] = useState(false);
@@ -120,6 +123,9 @@ export function DistrictInviteCard({
   }
 
   const districtLabel = districtName ?? "this district";
+  // Hide the Generate/Regenerate controls when a prior mutation self-disabled
+  // them OR when this is a read-only master-admin preview.
+  const hideMutations = mutationsDisabled || readOnly;
 
   return (
     <div className="bg-card rounded-xl border border-border p-4 space-y-3">
@@ -155,7 +161,7 @@ export function DistrictInviteCard({
             >
               <Copy className="w-4 h-4" aria-hidden="true" />
             </Button>
-            {!mutationsDisabled ? (
+            {!hideMutations ? (
               <ConfirmDialog
                 open={confirmOpen}
                 onOpenChange={setConfirmOpen}
@@ -178,7 +184,7 @@ export function DistrictInviteCard({
               />
             ) : null}
           </div>
-        ) : mutationsDisabled ? null : (
+        ) : hideMutations ? null : (
           <Button
             variant="outline"
             onClick={handleGenerate}

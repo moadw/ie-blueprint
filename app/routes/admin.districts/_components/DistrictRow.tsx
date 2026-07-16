@@ -137,8 +137,15 @@ export function DistrictRow({
             >
               <School className="w-3 h-3" aria-hidden="true" /> Schools
             </Button>
-            {/* TODO(portal): wire to district portal navigation plan */}
-            <Button variant="outline" size="sm" disabled>
+            {/* Full-document navigation (not client navigate) so the enter
+                route's Set-Cookie applies before /district loaders run. */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                window.location.assign(`/preview/district/${district._id}`)
+              }
+            >
               <ExternalLink className="w-3 h-3" aria-hidden="true" /> Portal
             </Button>
           </div>
