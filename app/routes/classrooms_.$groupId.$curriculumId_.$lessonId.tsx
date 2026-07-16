@@ -485,7 +485,8 @@ export default function LessonPlayerRoute() {
   };
 
   // Persist the post-practice feedback via `FeedbackCreateOne`, then advance
-  // (last step → `exitToCurriculum`). Mirrors `handleJournalSubmit`: client-side
+  // (to the achievement step if the class has a pin, otherwise
+  // `exitToCurriculum`). Mirrors `handleJournalSubmit`: client-side
   // `gqlClient` injects `access-token` (no header). `state` is the raw
   // `MoodValue` string; `class`/`curriculum` come from route params; `user` is
   // the logged-in teacher (spread conditionally to satisfy
@@ -503,7 +504,7 @@ export default function LessonPlayerRoute() {
           ...(teacherId ? { user: teacherId } : {}),
         },
       });
-      advance(); // last step → exitToCurriculum()
+      advance(); // → achievement step if the class has a pin, else exit
     } catch (err) {
       toast.error(
         toErrorMessage(err, "Couldn't submit your feedback. Please try again."),
