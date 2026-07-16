@@ -37,6 +37,8 @@ export function PracticeDialog({
   const [spanishDescription, setSpanishDescription] = useState("");
   const [locale, setLocale] = useState<"en" | "es">("en");
   const [day, setDay] = useState<number>(defaultOrder ?? 1);
+  // Persisted to the record's `feedback` flag.
+  const [feedback, setFeedback] = useState<boolean>(true);
 
   // Visual-only fields
   const [active, setActive] = useState<boolean>(true);
@@ -65,6 +67,7 @@ export function PracticeDialog({
     setSpanishDescription("");
     setLocale("en");
     setDay(defaultOrder ?? 1);
+    setFeedback(true);
     setActive(true);
     setCoverFile(null);
     setError(null);
@@ -115,6 +118,7 @@ export function PracticeDialog({
           title: title.trim(),
           description: description.trim() || null,
           order: dayValue,
+          feedback,
           curriculum: curriculumId,
           platform: env.PLATFORM,
           // Access is no longer a form field; new practices default to free
@@ -226,23 +230,6 @@ export function PracticeDialog({
             )}
           </div>
 
-          <div>
-            <label className={labelClass} htmlFor="practice-day">
-              Day
-            </label>
-            <input
-              id="practice-day"
-              type="number"
-              min={1}
-              step={1}
-              value={day}
-              onChange={(e) =>
-                setDay(Math.max(1, Number(e.target.value) || 1))
-              }
-              className="w-full h-[44px] px-3 bg-card border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
-
           <div className="col-span-2">
             <label className={labelClass}>Cover Image</label>
             {coverFile && coverPreview ? (
@@ -288,9 +275,47 @@ export function PracticeDialog({
             )}
           </div>
 
-          <div className="col-span-2 flex items-center justify-between rounded-md border border-stone-200 bg-stone-50/40 px-3 py-2">
-            <span className="text-sm text-stone-600">Active</span>
-            <Switch checked={active} onCheckedChange={setActive} />
+          <div className="col-span-2 grid grid-cols-3 gap-3">
+            <div>
+              <label className={labelClass} htmlFor="practice-day">
+                Day
+              </label>
+              <input
+                id="practice-day"
+                type="number"
+                min={1}
+                step={1}
+                value={day}
+                onChange={(e) =>
+                  setDay(Math.max(1, Number(e.target.value) || 1))
+                }
+                className="w-full h-[44px] px-3 bg-card border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+            <div>
+              <label className={labelClass} htmlFor="practice-feedback">
+                Feedback
+              </label>
+              <div className="flex h-[44px] items-center rounded-lg border border-border bg-card px-3">
+                <Switch
+                  id="practice-feedback"
+                  checked={feedback}
+                  onCheckedChange={setFeedback}
+                />
+              </div>
+            </div>
+            <div>
+              <label className={labelClass} htmlFor="practice-active">
+                Active
+              </label>
+              <div className="flex h-[44px] items-center rounded-lg border border-border bg-card px-3">
+                <Switch
+                  id="practice-active"
+                  checked={active}
+                  onCheckedChange={setActive}
+                />
+              </div>
+            </div>
           </div>
         </div>
 

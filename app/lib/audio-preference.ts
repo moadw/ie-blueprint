@@ -4,7 +4,7 @@
 // consumers (sibling cards + the player) re-render immediately with no reload.
 //
 // The persisted value is the tap TYPE (`"full-audio"` | `"5min-audio"`), not a
-// duration label; the default is `"full-audio"`. It is stored in localStorage
+// duration label; the default is `"5min-audio"`. It is stored in localStorage
 // under `ie:audio-pref:<curriculumId>` so a choice survives reloads and is read
 // back by the player (step-4).
 //
@@ -15,7 +15,10 @@
 
 export type AudioPref = "full-audio" | "5min-audio";
 
-const DEFAULT_PREF: AudioPref = "full-audio";
+// Default audio length for a first-time user (no stored preference). Exported
+// so the hook's SSR / first-client-render fallback stays in sync — one source
+// of truth for the default.
+export const DEFAULT_PREF: AudioPref = "5min-audio";
 const KEY_PREFIX = "ie:audio-pref:";
 
 type Listener = () => void;
@@ -38,7 +41,7 @@ function isAudioPref(value: string | null): value is AudioPref {
 /**
  * Current preference for a curriculum. Returns the in-memory mirror if present,
  * else lazily seeds it from localStorage (client only), else the default
- * (`"full-audio"`). Referentially stable: repeated calls with no intervening
+ * ({@link DEFAULT_PREF}). Referentially stable: repeated calls with no intervening
  * {@link setPreference} return the same primitive, which keeps
  * `useSyncExternalStore` from looping.
  */

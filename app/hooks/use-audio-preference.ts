@@ -1,6 +1,7 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { useHydrated } from "~/hooks/use-hydrated";
 import {
+  DEFAULT_PREF,
   getSnapshot,
   setPreference,
   subscribe,
@@ -14,7 +15,7 @@ import {
  * consumer of the same curriculum (sibling cards + the player).
  *
  * The client snapshot is gated behind `useHydrated()`: the server and the first
- * client render both resolve to the default (`"full-audio"`), so hydration
+ * client render both resolve to the default (`DEFAULT_PREF`), so hydration
  * stays stable; the persisted value (from localStorage) is applied on the
  * post-mount re-render — mirroring the SSR-guarded volume pref in
  * `use-media-player.ts`.
@@ -25,8 +26,8 @@ export function useAudioPreference(
   const hydrated = useHydrated();
   const value = useSyncExternalStore(
     subscribe,
-    (): AudioPref => (hydrated ? getSnapshot(curriculumId) : "full-audio"),
-    (): AudioPref => "full-audio",
+    (): AudioPref => (hydrated ? getSnapshot(curriculumId) : DEFAULT_PREF),
+    (): AudioPref => DEFAULT_PREF,
   );
   const set = useCallback(
     (pref: AudioPref) => setPreference(curriculumId, pref),
