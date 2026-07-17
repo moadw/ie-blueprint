@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { ResultOf } from "@graphql-typed-document-node/core";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { setToken } from "~/lib/auth";
@@ -41,7 +42,19 @@ import {
 } from "./classrooms_.$groupId.$curriculumId/_components/curriculum-sidebar";
 import type { SidebarCurriculum } from "./classrooms_.$groupId.$curriculumId/_components/curriculum-sidebar";
 import { LessonGrid } from "./classrooms_.$groupId.$curriculumId/_components/lesson-grid";
+import { SeriesUnavailable } from "./classrooms_.$groupId.$curriculumId/_components/series-unavailable";
 import { SettingsButton } from "./classrooms_.$groupId.$curriculumId/_components/settings-button";
+
+// Element type of the teacher-safe classes array, needed as an explicit
+// annotation on the hoisted `let classes` below (an empty `[]` would infer
+// `never[]` under noUncheckedIndexedAccess and reject the fetched rows).
+type CurriculumClass = NonNullable<
+  NonNullable<
+    ResultOf<
+      typeof ClassesByCurriculumFindOneDocument
+    >["ClassesByCurriculumFindOne"]
+  >[number]
+>;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { groupId, curriculumId } = params;
@@ -76,7 +89,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [
     groupResult,
     curriculumResult,
-    classesResult,
     userResult,
     progressResult,
     tapTypesResult,
@@ -94,16 +106,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         gqlClient.request(
           CurriculumsFindOneDocument,
           { filter: { _id: curriculumId, platform: env.PLATFORM } },
-          headers,
-        ),
-      ),
-      safe(
-        // Teacher-safe endpoint (the admin `ClassesAdminFindMany` is role-gated).
-        // Returns the curriculum's classes as an array; takes only `curriculum`,
-        // so deleted-filtering and order-sorting happen client-side below.
-        gqlClient.request(
-          ClassesByCurriculumFindOneDocument,
-          { curriculum: curriculumId },
           headers,
         ),
       ),
@@ -155,11 +157,32 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const curriculum = curriculumResult.ok
     ? curriculumResult.data.CurriculumsFindOne
     : null;
-  const classes = classesResult.ok
-    ? (classesResult.data.ClassesByCurriculumFindOne ?? [])
-        .filter((c): c is NonNullable<typeof c> => c != null && !c.deleted)
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    : [];
+
+  // Gate the classes fetch on the curriculum being Live. An inactive
+  // (`active === false`) or failed-to-load curriculum skips the request
+  // entirely — no `ClassesByCurriculumFindOne` (and, downstream, no
+  // `TapFindMany`) fires — and the page renders the unavailable state instead.
+  const isActive = curriculum?.active === true;
+  let classes: CurriculumClass[] = [];
+  let classesError: string | null = null;
+  if (isActive) {
+    const classesResult = await safe(
+      // Teacher-safe endpoint (the admin `ClassesAdminFindMany` is role-gated).
+      // Returns the curriculum's classes as an array; takes only `curriculum`,
+      // so deleted-filtering and order-sorting happen client-side below.
+      gqlClient.request(
+        ClassesByCurriculumFindOneDocument,
+        { curriculum: curriculumId },
+        headers,
+      ),
+    );
+    classes = classesResult.ok
+      ? (classesResult.data.ClassesByCurriculumFindOne ?? [])
+          .filter((c): c is NonNullable<typeof c> => c != null && !c.deleted)
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      : [];
+    classesError = classesResult.error;
+  }
   // The header user is non-critical chrome — a failed fetch degrades the menu
   // to a generic "Account" label rather than surfacing an error card.
   const user = userResult.ok ? userResult.data.UsersFindOne : null;
@@ -316,7 +339,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     likedClassIds,
     groupError: groupResult.error,
     curriculumError: curriculumResult.error,
-    classesError: classesResult.error,
+    classesError,
     groupProgressError: progressResult.error,
     announcementError: announcementResult.error,
     likedError: likedResult.error,
@@ -427,6 +450,10 @@ export default function ClassroomCurriculumRoute() {
   // copy is enough, no red banner above the header). Only the page-level
   // group/curriculum failures warrant a card.
   const hasErrors = Boolean(groupError || curriculumError);
+  // An inactive (`active === false`) curriculum that loaded successfully shows
+  // the "unavailable" state in place of the slider/grid. A null (failed-to-load)
+  // curriculum is NOT inactive — it falls through to the `hasErrors` card above.
+  const isInactive = curriculum != null && curriculum.active === false;
   const sidebarCurriculums: SidebarCurriculum[] = (
     group?.curriculumsObj ?? []
   ).filter((c): c is SidebarCurriculum => Boolean(c?._id));
@@ -466,7 +493,9 @@ export default function ClassroomCurriculumRoute() {
         />
 
         <main className="relative z-10 flex flex-1 flex-col items-center pt-[clamp(0.5rem,2vh,1.5rem)]">
-          {classes.length > 0 ? (
+          {isInactive ? (
+            <SeriesUnavailable variant="hero" />
+          ) : classes.length > 0 ? (
             <CurriculumSlider
               key={curriculum?._id}
               lessons={lessonsWithMedia}
@@ -512,12 +541,16 @@ export default function ClassroomCurriculumRoute() {
               <h2 className="mb-2 font-serif text-2xl text-white lg:text-4xl">
                 {curriculum?.title ?? "All Lessons"}
               </h2>
-              <p className="font-sans text-sm text-zinc-400 lg:text-base">
-                Explore every lesson in this curriculum.
-              </p>
+              {!isInactive ? (
+                <p className="font-sans text-sm text-zinc-400 lg:text-base">
+                  Explore every lesson in this curriculum.
+                </p>
+              ) : null}
             </div>
 
-            {classes.length > 0 ? (
+            {isInactive ? (
+              <SeriesUnavailable variant="section" />
+            ) : classes.length > 0 ? (
               <LessonGrid
                 lessons={lessonsWithMedia}
                 groupId={groupId}

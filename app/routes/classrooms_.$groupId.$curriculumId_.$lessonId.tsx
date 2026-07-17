@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { useLoaderData, useNavigate, useRevalidator } from "react-router";
+import { redirect, useLoaderData, useNavigate, useRevalidator } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { toast } from "sonner";
 import { env } from "~/lib/env";
@@ -172,6 +172,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ),
     ]);
 
+  // Resolve the parent curriculum first so the whole player can be gated on its
+  // active state. A `null` result is a load failure (resilient-loader
+  // convention) — do NOT redirect; fall through to the existing soft-error path
+  // below. An explicitly inactive (`active === false`) curriculum redirects to
+  // the curriculum page so its lessons never play; throwing the redirect
+  // Response short-circuits the remaining post-processing and the second
+  // `Promise.all`.
+  const curriculumForTitle = curriculumResult.ok
+    ? curriculumResult.data.CurriculumsFindOne
+    : null;
+  if (curriculumForTitle && curriculumForTitle.active === false) {
+    throw redirect(`/classrooms/${groupId}/${curriculumId}`);
+  }
+
   const rawClassItem = classResult.ok ? classResult.data.ClassesFindOne : null;
   // Localize the class title/description shown in the player (header + milestone
   // labels) from the global language cookie, per-field ES→EN fallback.
@@ -215,9 +229,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Curriculum title drives the player's `seriesName`. Non-critical chrome —
   // a failed fetch falls back to the class title, no error card. Localized from
   // the global language cookie (ES→EN fallback) so the series name matches.
-  const curriculumForTitle = curriculumResult.ok
-    ? curriculumResult.data.CurriculumsFindOne
-    : null;
+  // (`curriculumForTitle` is resolved right after the first `Promise.all` above,
+  // where it also gates the inactive-curriculum redirect.)
   const curriculumTitle = curriculumForTitle
     ? (pickLocalized(
         curriculumForTitle,
