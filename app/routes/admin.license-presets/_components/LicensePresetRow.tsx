@@ -355,7 +355,10 @@ export function LicensePresetRow({
               Experiences
             </span>
             <ExperiencesSelector
-              value={coursesCollectionState}
+              value={{
+                coursesCollection: coursesCollectionState,
+                courses: coursesState,
+              }}
               onChange={({ coursesCollection, courses }) => {
                 setCoursesCollectionState(coursesCollection);
                 setCoursesState(courses);
