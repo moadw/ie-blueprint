@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Select } from "~/components/ui/select";
+import { isSelectableRole } from "~/lib/user";
 
 type FilterKey = "district" | "role" | "school" | "query";
 
@@ -84,6 +85,20 @@ export function UsersFilterBar({
       </form>
 
       <Select
+        aria-label="Filter by role"
+        className="w-auto min-w-[140px]"
+        value={filters.role ?? ""}
+        onChange={(e) => update({ role: e.target.value })}
+      >
+        <option value="">All Roles</option>
+        {userTypes.filter(isSelectableRole).map((t) => (
+          <option key={t._id} value={t._id}>
+            {t.label ?? "Unnamed Role"}
+          </option>
+        ))}
+      </Select>
+
+      <Select
         aria-label="Filter by district"
         className="w-auto min-w-[160px]"
         value={filters.district ?? ""}
@@ -96,20 +111,6 @@ export function UsersFilterBar({
         {districts.map((d) => (
           <option key={d._id} value={d._id}>
             {d.name ?? "Unnamed District"}
-          </option>
-        ))}
-      </Select>
-
-      <Select
-        aria-label="Filter by role"
-        className="w-auto min-w-[140px]"
-        value={filters.role ?? ""}
-        onChange={(e) => update({ role: e.target.value })}
-      >
-        <option value="">All Roles</option>
-        {userTypes.map((t) => (
-          <option key={t._id} value={t._id}>
-            {t.label ?? "Unnamed Role"}
           </option>
         ))}
       </Select>

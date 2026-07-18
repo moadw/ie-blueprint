@@ -22,6 +22,26 @@ export function homePathForIdentifier(
   return "/home";
 }
 
+/**
+ * Role labels hidden from every role picker/filter across the app (admin +
+ * district user forms). Matched case-insensitively against the role label.
+ * District forms additionally hide "Administrator" (see DistrictUsersFilterBar);
+ * platform-admin forms keep that one selectable.
+ */
+export const HIDDEN_ROLE_LABELS = new Set([
+  "school manager",
+  "district manager",
+  "tutor",
+]);
+
+/** True unless the role is one of the globally hidden roles. */
+export function isSelectableRole(
+  role: { label?: string | null } | null | undefined,
+): boolean {
+  const label = role?.label?.trim().toLowerCase();
+  return !(label != null && HIDDEN_ROLE_LABELS.has(label));
+}
+
 export interface UserNameFields {
   firstName?: string | null;
   lastName?: string | null;

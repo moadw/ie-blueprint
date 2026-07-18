@@ -488,7 +488,10 @@ export function TapDialog({
         if (config.subform === "journal") setExtraQuestions(nextExtraQuestions);
         toast.success("Content updated");
         onSaved();
-        // Stay open; the user closes via Cancel/X.
+        // Journal is a single-question form — save-and-close returns the admin
+        // to the content list. Media taps stay open (the user keeps adding
+        // videos/captions and closes via Cancel/X).
+        if (config.subform === "journal") onOpenChange(false);
       } else {
         // Create with auto-assigned values from the config. `class` (parent
         // practice) and `platform` are auto-assigned; `slug` is omitted (the
