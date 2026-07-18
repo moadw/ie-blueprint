@@ -60,6 +60,50 @@ export function payloadErrorMessage(payload: unknown): string | null {
   return err?.message ?? null;
 }
 
+/**
+ * Detect a MongoDB duplicate-key error (E11000). These surface as a raw driver
+ * string, e.g.:
+ *   "E11000 duplicate key error collection: main.users index: email_1 dup key: { email: \"x\" }"
+ * Returns the offending field name when it can be parsed (e.g. "email"), an
+ * empty string for an unparseable duplicate-key error, or `null` when the error
+ * is not a duplicate-key error at all.
+ */
+export function duplicateKeyField(err: unknown): string | null {
+  const text = rawErrorText(err);
+  if (!text || !/E11000|duplicate key/i.test(text)) return null;
+  // "index: email_1" → email
+  const byIndex = text.match(/index:\s*([A-Za-z0-9]+?)_\d+/);
+  if (byIndex?.[1]) return byIndex[1];
+  // "dup key: { email: ... }" → email
+  const byDupKey = text.match(/dup key:\s*\{\s*([A-Za-z0-9_]+)\s*:/);
+  if (byDupKey?.[1]) return byDupKey[1];
+  return "";
+}
+
+/** Concatenate every message a thrown value might carry, untruncated. */
+function rawErrorText(err: unknown): string {
+  const parts: string[] = [];
+  const gqlErrors = (
+    err as {
+      response?: { errors?: ReadonlyArray<{ message?: string | null }> | null };
+    }
+  )?.response?.errors;
+  if (Array.isArray(gqlErrors)) {
+    for (const e of gqlErrors) if (e?.message) parts.push(e.message);
+  }
+  if (err instanceof ApiError) {
+    const body = err.body as
+      | { error?: { message?: string | null } | null; message?: string | null }
+      | null
+      | undefined;
+    if (body?.error?.message) parts.push(body.error.message);
+    if (body?.message) parts.push(body.message);
+  }
+  if (err instanceof Error && err.message) parts.push(err.message);
+  if (typeof err === "string") parts.push(err);
+  return parts.join(" ");
+}
+
 /** Pull the first GraphQL error message out of a graphql-request ClientError. */
 function graphqlErrorMessage(err: unknown): string | null {
   const errors = (

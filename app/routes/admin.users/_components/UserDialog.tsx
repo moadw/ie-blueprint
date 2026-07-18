@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Button } from "~/components/ui/button";
 import {
@@ -13,7 +13,7 @@ import { Label } from "~/components/ui/label";
 import { Select } from "~/components/ui/select";
 import { toast } from "~/components/ui/toast";
 import { env } from "~/lib/env";
-import { toErrorMessage } from "~/lib/errors";
+import { duplicateKeyField, toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { isSelectableRole } from "~/lib/user";
 import { SchoolFindManyDocument } from "~/queries/schools";
@@ -66,6 +66,8 @@ export function UserDialog({
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
   const [password, setPassword] = useState("");
   const [type, setType] = useState("");
   // Holds the selected district's _id. The user's `organization` field is
@@ -85,6 +87,7 @@ export function UserDialog({
     setFirstName(target?.firstName ?? "");
     setLastName(target?.lastName ?? "");
     setEmail(target?.email ?? "");
+    setEmailError(null);
     setPassword("");
     setType(target?.type_id ?? "");
     setDistrictId("");
@@ -158,6 +161,7 @@ export function UserDialog({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (saving) return;
+    setEmailError(null);
     const normalizedEmail = email.trim().toLowerCase();
     if (!EMAIL_RE.test(normalizedEmail)) {
       toast.error("Please enter a valid email address.");
@@ -223,21 +227,33 @@ export function UserDialog({
       onSaved();
       onOpenChange(false);
     } catch (err) {
-      const message = toErrorMessage(err, "Failed to save user");
-      toast.error(message);
+      // A duplicate-key error on the users collection is always the unique
+      // email index — surface it on the email field so the admin can fix it
+      // without losing the rest of the form.
+      if (duplicateKeyField(err) !== null) {
+        const message =
+          "This email address is already in use. Enter a different email.";
+        setEmailError(message);
+        toast.error(message);
+        emailInputRef.current?.focus();
+      } else {
+        toast.error(toErrorMessage(err, "Failed to save user"));
+      }
     } finally {
       setSaving(false);
     }
   }
 
+  // Password is optional on create — the backend accepts users with no
+  // password (they self-reset / sign in via SSO), and CreateUser's `password`
+  // arg is nullable.
   const submitDisabled =
     saving ||
     !firstName.trim() ||
     !lastName.trim() ||
     !email.trim() ||
     !type ||
-    !districtId ||
-    (!isEdit && !password.trim());
+    !districtId;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -267,21 +283,26 @@ export function UserDialog({
           </div>
 
           <Input
+            ref={emailInputRef}
             label="Email"
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (emailError) setEmailError(null);
+            }}
+            error={emailError ?? ""}
             required
             className="h-10 text-sm"
           />
 
           {!isEdit ? (
             <Input
-              label="Password"
+              label="Password (optional)"
               type="text"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
+              placeholder="Leave blank for SSO / self-reset"
               className="h-10 text-sm"
             />
           ) : null}
