@@ -20,7 +20,10 @@ import { gqlClient } from "~/lib/graphql";
 import { readPageFromRequest } from "~/lib/pagination";
 import { safe } from "~/lib/safe-loader";
 import { requireSessionToken } from "~/lib/session.server";
-import { DistrictFindManyDocument } from "~/queries/districts";
+import {
+  DistrictFindManyDocument,
+  DistrictFindOneDocument,
+} from "~/queries/districts";
 import { SchoolFindManyDocument } from "~/queries/schools";
 import { DeleteUsersManyDocument } from "~/mutations/users";
 import {
@@ -30,9 +33,11 @@ import {
 import { DownloadUsersButton } from "./admin.users/_components/DownloadUsersButton";
 import { ImportUsersDialog } from "./admin.users/_components/ImportUsersDialog";
 import { SetPasswordDialog } from "./admin.users/_components/SetPasswordDialog";
-import { UserCoursesDialog } from "./admin.users/_components/UserCoursesDialog";
 import { UserDialog } from "./admin.users/_components/UserDialog";
-import { UserRow } from "./admin.users/_components/UserRow";
+import {
+  UserRow,
+  UsersTableHeader,
+} from "./admin.users/_components/UserRow";
 import type { AdminUserRow } from "./admin.users/_components/UserRow";
 import { UserSchoolsDialog } from "./admin.users/_components/UserSchoolsDialog";
 import { UsersFilterBar } from "./admin.users/_components/UsersFilterBar";
@@ -42,7 +47,14 @@ type DistrictOption = {
   name?: string | null;
   organization?: string | null;
 };
-type UserTypeOption = { _id: string; label?: string | null };
+type UserTypeOption = {
+  _id: string;
+  label?: string | null;
+  identifier?: string | null;
+};
+
+// Roles not scoped to schools — their rows hide the manage-schools control.
+const SCHOOL_LESS_ROLE_IDENTIFIERS = new Set(["admin", "district-admin"]);
 type SchoolOption = { _id: string; name?: string | null };
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -73,6 +85,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
   const page = readPageFromRequest(request);
   const skip = (page - 1) * ADMIN_LIST_PAGE_SIZE;
+
+  // Users carry `organization`, not `district` — resolve the selected district
+  // to its organization and scope UserSearch by that. Only runs when a district
+  // filter is active, so the unfiltered default view stays fully parallel.
+  let organizationId: string | undefined;
+  if (districtId) {
+    const orgResult = await safe(
+      gqlClient.request(
+        DistrictFindOneDocument,
+        { filter: { _id: districtId } },
+        { "access-token": token },
+      ),
+    );
+    organizationId = orgResult.ok
+      ? (orgResult.data.DistrictFindOne?.organization ?? undefined)
+      : undefined;
+  }
+
   const [searchResult, userTypesResult, districtsResult, schoolsResult] =
     await Promise.all([
       safe(
@@ -80,7 +110,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           UserSearchDocument,
           {
             platformId: env.PLATFORM,
-            ...(districtId ? { districtId } : {}),
+            ...(organizationId ? { organizationId } : {}),
             ...(schoolId ? { schoolId } : {}),
             ...(type ? { type } : {}),
             ...(search ? { search } : {}),
@@ -184,7 +214,6 @@ export default function AdminUsersRoute() {
     null,
   );
   const [schoolsTarget, setSchoolsTarget] = useState<AdminUserRow | null>(null);
-  const [coursesTarget, setCoursesTarget] = useState<AdminUserRow | null>(null);
   const [importOpen, setImportOpen] = useState<boolean>(false);
   const [deleting, setDeleting] = useState<boolean>(false);
 
@@ -200,6 +229,14 @@ export default function AdminUsersRoute() {
   const schoolsRefreshed = schoolsTarget
     ? (users.find((u) => u.userId === schoolsTarget.userId) ?? schoolsTarget)
     : null;
+
+  // usertype ids whose role isn't school-scoped (admin / district-admin) — used
+  // to hide the per-row manage-schools control for those users.
+  const schoolLessTypeIds = new Set(
+    userTypes
+      .filter((t) => SCHOOL_LESS_ROLE_IDENTIFIERS.has(t.identifier ?? ""))
+      .map((t) => t._id),
+  );
 
   async function handleConfirmDelete() {
     if (!deleteTarget) return;
@@ -277,7 +314,8 @@ export default function AdminUsersRoute() {
           <p className="text-muted-foreground">No users yet</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
+          <UsersTableHeader />
           {users.map((u) => (
             <UserRow
               key={u.userId ?? `${u.email}-${u.createdAt}`}
@@ -286,7 +324,7 @@ export default function AdminUsersRoute() {
               onDelete={setDeleteTarget}
               onSetPassword={setPasswordTarget}
               onManageSchools={setSchoolsTarget}
-              onViewCourses={setCoursesTarget}
+              canManageSchools={!schoolLessTypeIds.has(u.type_id ?? "")}
             />
           ))}
         </div>
@@ -349,12 +387,6 @@ export default function AdminUsersRoute() {
           if (!open) setSchoolsTarget(null);
         }}
         onChanged={() => revalidator.revalidate()}
-      />
-      <UserCoursesDialog
-        target={coursesTarget}
-        onOpenChange={(open) => {
-          if (!open) setCoursesTarget(null);
-        }}
       />
 
       <ImportUsersDialog

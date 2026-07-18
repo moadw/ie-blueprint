@@ -15,6 +15,7 @@ import { toast } from "~/components/ui/toast";
 import { env } from "~/lib/env";
 import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
+import { isSelectableRole } from "~/lib/user";
 import { SchoolFindManyDocument } from "~/queries/schools";
 import {
   UserTypesFindManyDocument,
@@ -112,9 +113,9 @@ export function UserDialog({
       try {
         const result = await gqlClient.request(UserTypesFindManyDocument, {});
         if (cancelled) return;
-        const items = (result.UserTypesFindMany ?? []).filter(
-          (t): t is NonNullable<typeof t> => t != null,
-        );
+        const items = (result.UserTypesFindMany ?? [])
+          .filter((t): t is NonNullable<typeof t> => t != null)
+          .filter(isSelectableRole);
         setUserTypes(items);
       } catch {
         if (!cancelled) setUserTypes([]);
