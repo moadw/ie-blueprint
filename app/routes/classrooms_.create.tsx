@@ -107,12 +107,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .map((record) => [record._id, record] as const),
   );
 
+  // Series explicitly granted by the license. When present, each experience is
+  // restricted to this subset (granular per-experience selection); when empty
+  // (legacy / backend-set licenses that only stored collections) the whole
+  // experience is granted, preserving prior behavior.
+  const grantedCourses = new Set(
+    (district?.courses ?? []).filter(
+      (id): id is string => typeof id === "string",
+    ),
+  );
   const collections = (district?.coursesCollections ?? [])
     .filter((id): id is string => typeof id === "string")
     .flatMap((id) => {
       const record = collectionById.get(id);
       if (!record) return []; // stale id — drop silently
-      const curriculumIds = deriveCourses([record._id], curriculaLite);
+      const allInCollection = deriveCourses([record._id], curriculaLite);
+      const curriculumIds =
+        grantedCourses.size > 0
+          ? allInCollection.filter((cid) => grantedCourses.has(cid))
+          : allInCollection;
+      if (curriculumIds.length === 0) return []; // no granted series — hide the empty experience
       return [
         {
           _id: record._id,

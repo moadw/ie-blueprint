@@ -24,9 +24,18 @@ export interface CurriculumLite {
 }
 
 export interface ExperiencesSelectorProps {
-  /** Selected collection ids (controlled). */
-  value: string[];
-  /** Emits selected collection ids + the derived deduped union of course ids. */
+  /**
+   * Controlled selection. `courses` is the explicit set of selected series
+   * (curriculum) ids — the source of truth; `coursesCollection` is the set of
+   * experiences that have at least one selected series.
+   */
+  value: { coursesCollection: string[]; courses: string[] };
+  /**
+   * Emits the current selection. `courses` is the explicit set of selected
+   * series ids; `coursesCollection` is derived — the experiences with at least
+   * one selected series (kept in sync so callers can persist it and downstream
+   * can still group content by experience).
+   */
   onChange: (next: { coursesCollection: string[]; courses: string[] }) => void;
   /** Disable interaction (e.g. while a parent save is in flight). */
   disabled?: boolean;
@@ -138,16 +147,47 @@ export function ExperiencesSelector({
     return map;
   }, [curricula]);
 
-  const selected = useMemo(() => new Set(value), [value]);
+  const selectedCourses = useMemo(
+    () => new Set(value.courses),
+    [value.courses],
+  );
 
-  function toggleCollection(collectionId: string, isSelected: boolean) {
-    const nextSelected = isSelected
-      ? value.filter((id) => id !== collectionId)
-      : [...value, collectionId];
-    onChange({
-      coursesCollection: nextSelected,
-      courses: deriveCourses(nextSelected, curricula),
-    });
+  // Emit a selection from an updated set of selected series ids. The experience
+  // list is derived: an experience is "on" when at least one of its series is
+  // selected, so a partial (granular) selection still keeps the experience
+  // visible to callers and to downstream per-experience grouping.
+  function emitCourses(nextCourses: Set<string>) {
+    const courses = Array.from(nextCourses);
+    const coursesCollection = collections
+      .filter((collection) =>
+        (byCollection.get(collection._id) ?? []).some((c) =>
+          nextCourses.has(c._id),
+        ),
+      )
+      .map((collection) => collection._id);
+    onChange({ coursesCollection, courses });
+  }
+
+  // Experience checkbox is a bulk toggle over its series: when every series is
+  // already selected, clear them all; otherwise (none or some) select them all.
+  function toggleCollection(collectionId: string) {
+    const childIds = (byCollection.get(collectionId) ?? []).map((c) => c._id);
+    if (childIds.length === 0) return;
+    const nextCourses = new Set(selectedCourses);
+    const allSelected = childIds.every((id) => nextCourses.has(id));
+    for (const id of childIds) {
+      if (allSelected) nextCourses.delete(id);
+      else nextCourses.add(id);
+    }
+    emitCourses(nextCourses);
+  }
+
+  // Series checkbox toggles a single series in/out of the granted set.
+  function toggleCourse(courseId: string) {
+    const nextCourses = new Set(selectedCourses);
+    if (nextCourses.has(courseId)) nextCourses.delete(courseId);
+    else nextCourses.add(courseId);
+    emitCourses(nextCourses);
   }
 
   function toggleExpanded(collectionId: string) {
@@ -204,32 +244,44 @@ export function ExperiencesSelector({
   return (
     <div className={cn("space-y-2", className)}>
       {collections.map((collection) => {
-        const isSelected = selected.has(collection._id);
         const isExpanded = expanded.has(collection._id);
         const children = byCollection.get(collection._id) ?? [];
+        const selectedChildCount = children.filter((c) =>
+          selectedCourses.has(c._id),
+        ).length;
+        const allSelected =
+          children.length > 0 && selectedChildCount === children.length;
+        const someSelected = selectedChildCount > 0 && !allSelected;
         return (
           <div
             key={collection._id}
             className={cn(
               "rounded-[14px] border bg-card shadow-xs transition-colors",
-              isSelected ? "border-foreground/40" : "border-border",
+              selectedChildCount > 0 ? "border-foreground/40" : "border-border",
             )}
           >
             <div className="flex items-center gap-3 p-3">
               <label className="flex flex-1 cursor-pointer items-center gap-3 min-w-0">
                 <input
                   type="checkbox"
-                  checked={isSelected}
-                  disabled={disabled}
-                  onChange={() => toggleCollection(collection._id, isSelected)}
+                  checked={allSelected}
+                  ref={(el) => {
+                    // Indeterminate isn't a React prop — reflect the partial
+                    // state onto the DOM node directly.
+                    if (el) el.indeterminate = someSelected;
+                  }}
+                  disabled={disabled || children.length === 0}
+                  onChange={() => toggleCollection(collection._id)}
                   className="h-4 w-4 rounded border-border accent-foreground cursor-pointer disabled:cursor-not-allowed"
-                  aria-label={`Select ${collection.name}`}
+                  aria-label={`Select all series in ${collection.name}`}
                 />
                 <span className="flex-1 truncate text-sm font-medium text-foreground">
                   {collection.name}
                 </span>
                 <span className="flex-shrink-0 text-xs text-muted-foreground">
-                  {children.length} series
+                  {someSelected
+                    ? `${selectedChildCount}/${children.length} series`
+                    : `${children.length} series`}
                 </span>
               </label>
               <Button
@@ -253,10 +305,18 @@ export function ExperiencesSelector({
                   <p className="text-sm text-muted-foreground">No series</p>
                 ) : (
                   children.map((curriculum) => (
-                    <div
+                    <label
                       key={curriculum._id}
-                      className="flex items-center gap-2.5"
+                      className="flex cursor-pointer items-center gap-2.5"
                     >
+                      <input
+                        type="checkbox"
+                        checked={selectedCourses.has(curriculum._id)}
+                        disabled={disabled}
+                        onChange={() => toggleCourse(curriculum._id)}
+                        className="h-4 w-4 flex-shrink-0 rounded border-border accent-foreground cursor-pointer disabled:cursor-not-allowed"
+                        aria-label={`Select ${curriculum.title}`}
+                      />
                       {curriculum.coverUrl ? (
                         <img
                           src={curriculum.coverUrl}
@@ -271,7 +331,7 @@ export function ExperiencesSelector({
                       <span className="truncate text-sm text-muted-foreground">
                         {curriculum.title}
                       </span>
-                    </div>
+                    </label>
                   ))
                 )}
               </div>

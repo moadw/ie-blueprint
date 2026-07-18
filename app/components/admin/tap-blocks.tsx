@@ -330,7 +330,10 @@ export function TapBlocks({ classId }: TapBlocksProps) {
     // A create dialog isn't an existing tap — clear any stale ?tap=.
     const next = new URLSearchParams(params);
     next.delete("tap");
-    setSearchParams(next, { replace: true });
+    // preventScrollReset: a replace nav mints a fresh location.key that the
+    // global keyless <ScrollRestoration> has no saved position for, so it would
+    // otherwise reset scroll to the top and lose the admin's place in the list.
+    setSearchParams(next, { replace: true, preventScrollReset: true });
   }
 
   function openEdit(tap: TapItem) {
@@ -340,7 +343,7 @@ export function TapBlocks({ classId }: TapBlocksProps) {
     const next = new URLSearchParams(params);
     if (tap._id) next.set("tap", tap._id);
     else next.delete("tap");
-    setSearchParams(next, { replace: true });
+    setSearchParams(next, { replace: true, preventScrollReset: true });
   }
 
   function handleDialogOpenChange(open: boolean) {
@@ -348,7 +351,7 @@ export function TapBlocks({ classId }: TapBlocksProps) {
     if (!open) {
       const next = new URLSearchParams(params);
       next.delete("tap");
-      setSearchParams(next, { replace: true });
+      setSearchParams(next, { replace: true, preventScrollReset: true });
     }
   }
 

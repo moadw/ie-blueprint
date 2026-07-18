@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Select } from "~/components/ui/select";
+import { isSelectableRole } from "~/lib/user";
 
 type FilterKey = "role" | "school" | "query";
 
@@ -20,13 +21,6 @@ interface DistrictUsersFilterBarProps {
     query?: string | undefined;
   };
 }
-
-const EXCLUDED_ROLE_LABELS = new Set([
-  "Administrator",
-  "Tutor",
-  "District Manager",
-  "School Manager",
-]);
 
 export function DistrictUsersFilterBar({
   userTypes,
@@ -54,8 +48,12 @@ export function DistrictUsersFilterBar({
     update({ query: queryInput.trim() });
   }
 
+  // Globally hidden roles, plus "Administrator" (district admins don't manage
+  // platform admins).
   const filteredTypes = userTypes.filter(
-    (t) => !EXCLUDED_ROLE_LABELS.has(t.label ?? ""),
+    (t) =>
+      isSelectableRole(t) &&
+      (t.label ?? "").trim().toLowerCase() !== "administrator",
   );
 
   const sortedSchools = [...schools].sort((a, b) =>

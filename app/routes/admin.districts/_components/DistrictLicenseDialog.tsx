@@ -63,33 +63,17 @@ export function DistrictLicenseDialog({
   onSubmit,
   onUnassign,
 }: DistrictLicenseDialogProps) {
-  const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
+  const [selection, setSelection] = useState<{
+    coursesCollection: string[];
+    courses: string[];
+  }>({ coursesCollection: [], courses: [] });
   const [selectedPresetId, setSelectedPresetId] = useState<string>("");
   const [customLabel, setCustomLabel] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [confirmUnassignOpen, setConfirmUnassignOpen] = useState(false);
 
-  // Hydrate from district + presets on every open flip.
-  useEffect(() => {
-    if (!open || !district) return;
-    setSelectedCollections(
-      (district.coursesCollections ?? []).filter((id): id is string => !!id),
-    );
-
-    const matchPreset = district.licenseLabel
-      ? presets.find((p) => p.label === district.licenseLabel)
-      : undefined;
-    if (matchPreset) {
-      setSelectedPresetId(matchPreset._id);
-      setCustomLabel("");
-    } else {
-      setSelectedPresetId("");
-      setCustomLabel(district.licenseLabel ?? "");
-    }
-  }, [open, district, presets]);
-
-  // Map loader curricula to the selector's lite shape for save-time
-  // deriveCourses (mirrors classrooms_.create.tsx).
+  // Map loader curricula to the selector's lite shape for save-time /
+  // hydration-time deriveCourses (mirrors classrooms_.create.tsx).
   const curriculaLite = useMemo<CurriculumLite[]>(
     () =>
       curriculums.map((c) => ({
@@ -103,6 +87,36 @@ export function DistrictLicenseDialog({
     [curriculums],
   );
 
+  // Hydrate from district + presets on every open flip.
+  useEffect(() => {
+    if (!open || !district) return;
+    const collections = (district.coursesCollections ?? []).filter(
+      (id): id is string => !!id,
+    );
+    const storedCourses = (district.courses ?? []).filter(
+      (id): id is string => !!id,
+    );
+    // Legacy districts (collections assigned but no explicit series list) grant
+    // the whole collection — expand to the full union so the granular UI
+    // hydrates with those experiences fully checked.
+    const courses =
+      storedCourses.length > 0
+        ? storedCourses
+        : deriveCourses(collections, curriculaLite);
+    setSelection({ coursesCollection: collections, courses });
+
+    const matchPreset = district.licenseLabel
+      ? presets.find((p) => p.label === district.licenseLabel)
+      : undefined;
+    if (matchPreset) {
+      setSelectedPresetId(matchPreset._id);
+      setCustomLabel("");
+    } else {
+      setSelectedPresetId("");
+      setCustomLabel(district.licenseLabel ?? "");
+    }
+  }, [open, district, presets, curriculaLite]);
+
   function togglePresetSelect(nextPresetId: string) {
     if (nextPresetId === "") {
       setSelectedPresetId("");
@@ -114,11 +128,20 @@ export function DistrictLicenseDialog({
       return;
     }
     // Replace semantics: a modern preset sets the selection to exactly its
-    // collections; a legacy preset (no coursesCollection) clears it — its
-    // courses apply at save time.
-    setSelectedCollections(
-      (preset.coursesCollection ?? []).filter((id): id is string => !!id),
+    // collections + series; a legacy preset (no coursesCollection) applies its
+    // hand-picked courses (its collections are empty, so nothing is checked at
+    // the experience level).
+    const collections = (preset.coursesCollection ?? []).filter(
+      (id): id is string => !!id,
     );
+    const storedCourses = (preset.courses ?? []).filter(
+      (id): id is string => !!id,
+    );
+    const courses =
+      storedCourses.length > 0
+        ? storedCourses
+        : deriveCourses(collections, curriculaLite);
+    setSelection({ coursesCollection: collections, courses });
     setSelectedPresetId(preset._id);
     setCustomLabel("");
   }
@@ -127,8 +150,9 @@ export function DistrictLicenseDialog({
     coursesCollection: string[];
     courses: string[];
   }) {
-    // Ignore next.courses — derivation happens at save time.
-    setSelectedCollections(next.coursesCollection);
+    // Persist the exact selection (including a granular per-experience series
+    // subset) — no longer re-derived at save time.
+    setSelection(next);
     if (selectedPresetId === "") return;
     const preset = presets.find((p) => p._id === selectedPresetId);
     const presetCollections = new Set(
@@ -162,10 +186,10 @@ export function DistrictLicenseDialog({
       (preset.coursesCollection ?? []).filter((id) => !!id).length === 0
         ? preset
         : undefined;
-    const coursesCollections = legacyPreset ? [] : selectedCollections;
+    const coursesCollections = legacyPreset ? [] : selection.coursesCollection;
     const courses = legacyPreset
       ? (legacyPreset.courses ?? []).filter((id): id is string => !!id)
-      : deriveCourses(selectedCollections, curriculaLite);
+      : selection.courses;
 
     setSubmitting(true);
     try {
@@ -249,7 +273,7 @@ export function DistrictLicenseDialog({
               Experiences
             </span>
             <ExperiencesSelector
-              value={selectedCollections}
+              value={selection}
               onChange={handleSelectorChange}
               disabled={submitting}
             />

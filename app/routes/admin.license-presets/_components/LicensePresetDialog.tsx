@@ -204,7 +204,10 @@ export function LicensePresetDialog({
               Experiences
             </span>
             <ExperiencesSelector
-              value={form.coursesCollection}
+              value={{
+                coursesCollection: form.coursesCollection,
+                courses: form.courses,
+              }}
               onChange={({ coursesCollection, courses }) =>
                 setForm((f) => ({ ...f, coursesCollection, courses }))
               }
