@@ -1157,3 +1157,131 @@ export function getRetentionCurve(
     return { peakPct: peak, series };
   });
 }
+
+// ===========================================================================
+// Per-school stat cards (school-detail page — /district/school/:schoolId)
+//
+// The district-home KPIs scope by org via the `s` param (`gp:organization`);
+// per-school scoping instead filters the event stream by the `schools` EVENT
+// property — the array of school `_id`s `analytics.ts` stamps on every event
+// (`analytics.ts:37-89`) — via an `e.filters` clause, mirroring the proven
+// per-teacher `userId` filter in `stats.server.ts` (`userEventFilter`). There is
+// no `s` segment: the school scope lives entirely in `e.filters`.
+//
+// Window: callers pass `dailyWindow(365)`. The prototype metric is "all-time";
+// the Dashboard REST daily API needs a bounded window, so a trailing 365-day
+// window is the pragmatic all-time stand-in (the same choice as
+// `stats.server.ts`). No `group_by` here (collapsed / `totals`), so no
+// `limit:"1000"` top-N cap is needed.
+//
+// SCOPE CAVEAT — array-`is` (verify against live Amplitude): `schools` is an
+// *array* event property. These fns rely on Amplitude's `is` operator matching
+// events whose `schools` array contains `schoolId` (narrowing to ONE school),
+// NOT matching the whole array / all schools. The orchestrator's Global QA must
+// confirm this: a school's Total Plays must be ≤ the district-wide total, and
+// two different schools in the same district must return different numbers. If
+// the numbers are identical across schools or equal the district total, array-
+// `is` is NOT narrowing — fall back to the `gp:school` SEGMENT clause instead
+// (`{ prop: "gp:school", op: "is", values: [schoolId] }` via the `s` param;
+// `school` is a group key, see `analytics.ts:84`) and re-verify.
+// ===========================================================================
+
+/**
+ * The event-property filter that scopes an `events/segmentation` query to a
+ * single school: `schools is [<schoolId>]`. `schools` is the array-of-school-ids
+ * event property stamped on every event by the enrichment plugin
+ * (`analytics.ts:37-59`). Mirrors `userEventFilter` in `stats.server.ts`.
+ */
+export function schoolEventFilter(schoolId: string): EventPropFilter[] {
+  return [
+    {
+      subprop_type: "event",
+      subprop_key: "schools",
+      subprop_op: "is",
+      subprop_value: [schoolId],
+    },
+  ];
+}
+
+/**
+ * Total Plays for one school over the window: the count of `practice_completed`
+ * events whose `schools` event property includes `schoolId`.
+ * `events/segmentation`, `m = "totals"`, reduced via `total(firstSeries(resp))`
+ * — the summed daily completion count for the window.
+ *
+ * Mapping note: the prototype's "Total Plays" = count of practice COMPLETIONS →
+ * `practice_completed`. If product instead wants "plays STARTED", switch the
+ * event to `content_played` (call this out in the PR).
+ *
+ * Cached per (metric + school + window), run through the shared `amplitudeGet`
+ * concurrency gate, soft-empty → `null` (unconfigured / soft-fail) so the card
+ * shows "—" rather than a misleading 0.
+ */
+export async function getSchoolTotalPlays(
+  schoolId: string,
+  window: { start: string; end: string },
+): Promise<number | null> {
+  if (!isAmplitudeConfigured()) return null;
+  const key = `school-total-plays:${schoolId}:${window.start}-${window.end}`;
+  return cached(key, async () => {
+    const e = {
+      event_type: "practice_completed",
+      filters: schoolEventFilter(schoolId),
+    };
+    const resp = await amplitudeGet<DashboardChartResponse>(
+      "events/segmentation",
+      {
+        e: JSON.stringify(e),
+        start: window.start,
+        end: window.end,
+        m: "totals",
+      },
+      [],
+    );
+    if (!resp.ok) return null;
+    return total(firstSeries(resp.data));
+  });
+}
+
+/**
+ * Educators Active at one school over the window: distinct `userType = teacher`
+ * users who fired any event (`_active`) whose `schools` includes `schoolId`.
+ * `events/segmentation`, `m = "uniques"`, read the period-COLLAPSED distinct
+ * count via `collapsedValue(resp)` (mirrors `getActiveTeacherTotal` plus the
+ * school filter) — the correct total, unlike summing the daily-uniques series
+ * which counts a teacher once per active day.
+ *
+ * Cached per (metric + school + window), run through the shared `amplitudeGet`
+ * concurrency gate, soft-empty → `null` (unconfigured / soft-fail) → card "—".
+ */
+export async function getSchoolActiveEducators(
+  schoolId: string,
+  window: { start: string; end: string },
+): Promise<number | null> {
+  if (!isAmplitudeConfigured()) return null;
+  const key = `school-active-educators:${schoolId}:${window.start}-${window.end}`;
+  return cached(key, async () => {
+    const filters: EventPropFilter[] = [
+      ...schoolEventFilter(schoolId),
+      {
+        subprop_type: "event",
+        subprop_key: "userType",
+        subprop_op: "is",
+        subprop_value: ["teacher"],
+      },
+    ];
+    const e = { event_type: "_active", filters };
+    const resp = await amplitudeGet<DashboardChartResponse>(
+      "events/segmentation",
+      {
+        e: JSON.stringify(e),
+        start: window.start,
+        end: window.end,
+        m: "uniques",
+      },
+      [],
+    );
+    if (!resp.ok) return null;
+    return collapsedValue(resp.data);
+  });
+}
