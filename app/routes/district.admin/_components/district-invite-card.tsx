@@ -76,7 +76,7 @@ export function DistrictInviteCard({
               onClick={() => setRevealed(true)}
               className="h-9 px-4 text-sm"
             >
-              Reveal invite code
+              Generate invite code
             </Button>
           )
         ) : (
