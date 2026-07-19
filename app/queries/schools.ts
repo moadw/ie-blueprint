@@ -17,6 +17,22 @@ export const SchoolFindManyDocument = graphql(`
   }
 `);
 
+export const SchoolFindOneDocument = graphql(`
+  query SchoolFindOne($filter: schoolsDataInput) {
+    SchoolFindOne(filter: $filter) {
+      _id
+      name
+      district
+      city
+      state
+      country
+      platform
+      createdAt
+      deletedAt
+    }
+  }
+`);
+
 export const SchoolByUsersFindManyDocument = graphql(`
   query SchoolByUsersFindMany($user: String) {
     SchoolByUsersFindMany(user: $user) {

@@ -5,7 +5,7 @@ import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
 import { resolveDistrictAdmin } from "~/lib/district-admin.server";
 import { safe } from "~/lib/safe-loader";
-import { SchoolCodeFindManyDocument } from "~/queries/school-codes";
+import { MyOrganizationFindOneDocument } from "~/queries/organization";
 import { SchoolFindManyDocument } from "~/queries/schools";
 import { DistrictInviteCard } from "~/routes/district.admin/_components/district-invite-card";
 import { DistrictSchoolsGrid } from "~/routes/district.admin/_components/district-schools-grid";
@@ -17,7 +17,7 @@ type SchoolOption = {
   state?: string | null;
   deletedAt?: string | null;
 };
-type InviteOption = { _id: string; code: string };
+type OrganizationInvite = { code: string | null; name: string | null };
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const result = await resolveDistrictAdmin(request);
@@ -25,58 +25,67 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return {
       district: null,
       schools: [] as SchoolOption[],
-      invite: null as InviteOption | null,
+      organization: null as OrganizationInvite | null,
+      organizationError: null as string | null,
+      previewHidden: result.preview,
       loadError: result.loadError ?? "Could not resolve district.",
       preview: result.preview,
     };
   }
 
-  const { token, district } = result;
+  const { token, district, preview } = result;
 
-  const [schoolsResult, schoolCodesResult] = await Promise.all([
-    safe(
-      gqlClient.request(
-        SchoolFindManyDocument,
-        { filter: { district: district._id, platform: env.PLATFORM }, limit: 500 },
-        { "access-token": token },
-      ),
+  const schoolsResult = await safe(
+    gqlClient.request(
+      SchoolFindManyDocument,
+      { filter: { district: district._id, platform: env.PLATFORM }, limit: 500 },
+      { "access-token": token },
     ),
-    safe(
-      gqlClient.request(
-        SchoolCodeFindManyDocument,
-        { filter: { district: district._id }, limit: 1 },
-        { "access-token": token },
-      ),
-    ),
-  ]);
+  );
 
   const schools: SchoolOption[] = schoolsResult.ok
     ? (schoolsResult.data.SchoolFindMany ?? []).filter(
         (s): s is NonNullable<typeof s> => s != null,
       )
     : [];
-  const schoolCodes = schoolCodesResult.ok
-    ? (schoolCodesResult.data.SchoolCodeFindMany ?? []).filter(
-        (c): c is NonNullable<typeof c> => c != null,
-      )
-    : [];
-  const firstCode = schoolCodes[0];
-  const invite: InviteOption | null =
-    firstCode && firstCode._id && firstCode.code
-      ? { _id: firstCode._id, code: firstCode.code }
-      : null;
+
+  // Master-admin district preview: `MyOrganizationFindOne` takes no arguments and
+  // scopes to the *session user's* organization (the master admin), NOT the
+  // previewed district. So skip the query and hide the invite section entirely
+  // in preview — a foreign/own org code would be misleading here.
+  if (preview) {
+    return {
+      district,
+      schools,
+      organization: null as OrganizationInvite | null,
+      organizationError: null as string | null,
+      previewHidden: true,
+      loadError: schoolsResult.error,
+      preview,
+    };
+  }
+
+  const orgResult = await safe(
+    gqlClient.request(MyOrganizationFindOneDocument, {}, { "access-token": token }),
+  );
+  const org = orgResult.ok ? orgResult.data.MyOrganizationFindOne : null;
+  const organization: OrganizationInvite | null = org
+    ? { code: org.code ?? null, name: org.name ?? null }
+    : null;
 
   return {
     district,
     schools,
-    invite,
+    organization,
+    organizationError: orgResult.ok ? null : orgResult.error,
+    previewHidden: false,
     loadError: schoolsResult.error,
-    preview: result.preview,
+    preview,
   };
 }
 
 export default function DistrictAdminSchoolsRoute() {
-  const { district, schools, invite, loadError, preview } =
+  const { district, schools, organization, organizationError, loadError, preview } =
     useLoaderData<typeof loader>();
   const navigation = useNavigation();
 
@@ -103,9 +112,8 @@ export default function DistrictAdminSchoolsRoute() {
         <>
           {district ? (
             <DistrictInviteCard
-              districtId={district._id}
-              districtName={district.name}
-              invite={invite}
+              organization={organization}
+              error={organizationError}
               readOnly={preview}
             />
           ) : null}
