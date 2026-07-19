@@ -7,7 +7,13 @@ import { isbot } from "isbot";
 import type { RenderToPipeableStreamOptions } from "react-dom/server";
 import { renderToPipeableStream } from "react-dom/server";
 
-export const streamTimeout = 5_000;
+// Bounds how long the SSR stream waits for pending Suspense boundaries before
+// aborting (abort fires at `streamTimeout + 1000`). Sized for a cold, width-2
+// Amplitude fan-out on `/district/analytics` (its deferred cards can take a few
+// seconds each behind the concurrency gate). Safe globally: non-deferred routes
+// fire `onShellReady` with no pending boundaries, so the longer timeout never
+// delays them — it only bounds routes that actually stream (analytics).
+export const streamTimeout = 20_000;
 
 export default function handleRequest(
   request: Request,

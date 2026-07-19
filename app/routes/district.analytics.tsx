@@ -1,4 +1,5 @@
-import { useLoaderData, useNavigation } from "react-router";
+import { Suspense } from "react";
+import { Await, useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { AnalyticsHeader } from "~/routes/district.analytics/_components/analytics-header";
 import { AdoptionFunnelCard } from "~/routes/district.analytics/_components/adoption-funnel-card";
@@ -7,6 +8,7 @@ import { RetentionCard } from "~/routes/district.analytics/_components/retention
 import { SessionsCard } from "~/routes/district.analytics/_components/sessions-card";
 import { ActiveEducatorsCard } from "~/routes/district.analytics/_components/active-educators-card";
 import { InsightCard } from "~/routes/district.analytics/_components/insight-card";
+import { ChartSkeleton, ChartError } from "~/routes/district.analytics/_components/chart-skeleton";
 import { getDistrictAnalytics, type AnalyticsParams } from "~/lib/district-analytics.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -17,6 +19,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const granularity = url.searchParams.get("granularity");
   const compareStart = url.searchParams.get("compareStart");
   const compareEnd = url.searchParams.get("compareEnd");
+  const school = url.searchParams.get("school");
 
   const today = new Date();
   const defaultStart = new Date(today);
@@ -27,7 +30,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const validatedGranularity =
     granularity === "daily" || granularity === "weekly" || granularity === "monthly"
       ? granularity
-      : "daily";
+      : "weekly";
 
   const startDate = start ?? formatDate(defaultStart);
   const endDate = end ?? formatDate(today);
@@ -49,6 +52,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     granularity: validatedGranularity,
     compareStart: compareStart ?? formatDate(defaultCompareStart),
     compareEnd: compareEnd ?? formatDate(defaultCompareEnd),
+    // Omit `schoolId` entirely when absent (exactOptionalPropertyTypes).
+    ...(school ? { schoolId: school } : {}),
   };
 
   const analyticsResult = await getDistrictAnalytics(request, params);
@@ -56,9 +61,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function DistrictAnalyticsRoute() {
-  const { district, data, loadError, params } = useLoaderData<typeof loader>();
-  const navigation = useNavigation();
-  const isLoading = navigation.state === "loading";
+  const { district, schools, schoolId, deferred, loadError, params } =
+    useLoaderData<typeof loader>();
 
   return (
     <div className="h-full overflow-auto">
@@ -67,8 +71,10 @@ export default function DistrictAnalyticsRoute() {
           startDate={params.startDate}
           endDate={params.endDate}
           granularity={params.granularity}
+          schools={schools}
           {...(params.compareStart ? { compareStart: params.compareStart } : {})}
           {...(params.compareEnd ? { compareEnd: params.compareEnd } : {})}
+          {...(schoolId ? { schoolId } : {})}
         />
 
         {loadError ? (
@@ -77,26 +83,75 @@ export default function DistrictAnalyticsRoute() {
           </div>
         ) : null}
 
-        {!district || !data ? (
+        {!district || !deferred ? (
           <div className="rounded-xl border-2 border-dashed border-border bg-muted/30 py-12 text-center">
             <p className="text-sm text-muted-foreground">Could not load analytics data.</p>
           </div>
         ) : (
-          <div
-            className={`space-y-6 transition-opacity duration-200 ${
-              isLoading ? "opacity-60" : "opacity-100"
-            }`}
-          >
+          <div className="space-y-6">
+            {/* Each card streams in behind a skeleton as its (school-filtered)
+                Amplitude data resolves. `deferCard` resolves application throws to
+                empty shapes, but an SSR stream-timeout abort rejects a still-pending
+                promise client-side — `errorElement` degrades that one card to a soft
+                error instead of white-screening the whole route. */}
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
-              <AdoptionFunnelCard adoptionFunnel={data.adoptionFunnel} />
-              <MindfulMinutesCard mindfulMinutes={data.mindfulMinutes} />
+              <Suspense fallback={<ChartSkeleton className="min-h-[360px]" />}>
+                <Await
+                  resolve={deferred.adoptionFunnel}
+                  errorElement={<ChartError className="min-h-[360px]" />}
+                >
+                  {(adoptionFunnel) => (
+                    <AdoptionFunnelCard adoptionFunnel={adoptionFunnel} />
+                  )}
+                </Await>
+              </Suspense>
+              <Suspense fallback={<ChartSkeleton className="min-h-[360px]" />}>
+                <Await
+                  resolve={deferred.mindfulMinutes}
+                  errorElement={<ChartError className="min-h-[360px]" />}
+                >
+                  {(mindfulMinutes) => (
+                    <MindfulMinutesCard mindfulMinutes={mindfulMinutes} />
+                  )}
+                </Await>
+              </Suspense>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <RetentionCard retention={data.retention} />
-              <SessionsCard sessions={data.sessions} />
-              <ActiveEducatorsCard activeEducators={data.activeEducators} />
-              <InsightCard insights={data.insights} />
+              <Suspense fallback={<ChartSkeleton className="min-h-[260px]" />}>
+                <Await
+                  resolve={deferred.retention}
+                  errorElement={<ChartError className="min-h-[260px]" />}
+                >
+                  {(retention) => <RetentionCard retention={retention} />}
+                </Await>
+              </Suspense>
+              <Suspense fallback={<ChartSkeleton className="min-h-[260px]" />}>
+                <Await
+                  resolve={deferred.sessions}
+                  errorElement={<ChartError className="min-h-[260px]" />}
+                >
+                  {(sessions) => <SessionsCard sessions={sessions} />}
+                </Await>
+              </Suspense>
+              <Suspense fallback={<ChartSkeleton className="min-h-[260px]" />}>
+                <Await
+                  resolve={deferred.activeEducators}
+                  errorElement={<ChartError className="min-h-[260px]" />}
+                >
+                  {(activeEducators) => (
+                    <ActiveEducatorsCard activeEducators={activeEducators} />
+                  )}
+                </Await>
+              </Suspense>
+              <Suspense fallback={<ChartSkeleton className="min-h-[260px]" />}>
+                <Await
+                  resolve={deferred.insights}
+                  errorElement={<ChartError className="min-h-[260px]" />}
+                >
+                  {(insights) => <InsightCard insights={insights} />}
+                </Await>
+              </Suspense>
             </div>
           </div>
         )}

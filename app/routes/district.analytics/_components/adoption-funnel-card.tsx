@@ -59,7 +59,10 @@ function formatTick(t: number): string {
   return t.toLocaleString();
 }
 
-export function AdoptionFunnelCard({ adoptionFunnel }: AdoptionFunnelCardProps) {
+// Inner chart — carries the hooks. Only rendered with a non-empty
+// `adoptionFunnel`, so `adoptionFunnel.length - 1` and the derived geometry are
+// always valid (no `-1` index / `Infinity` bar width).
+function AdoptionFunnelChart({ adoptionFunnel }: AdoptionFunnelCardProps) {
   const [selected, setSelected] = useState(Math.min(2, adoptionFunnel.length - 1));
   const [hover, setHover] = useState<number | null>(null);
   const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(null);
@@ -426,6 +429,25 @@ export function AdoptionFunnelCard({ adoptionFunnel }: AdoptionFunnelCardProps) 
       </div>
     </div>
   );
+}
+
+// Minimal empty state, matching the other analytics cards' empty chrome.
+function EmptyCard() {
+  return (
+    <div className="bg-white rounded-[24px] border border-border shadow-xs p-5 flex flex-col h-full">
+      <p className="text-sm text-muted-foreground">
+        No adoption data for this period yet.
+      </p>
+    </div>
+  );
+}
+
+// Hook-free wrapper: guards the empty case BEFORE any hooks run, so the same
+// instance can safely re-render `[]` → non-`[]` (and vice versa) without
+// violating rules-of-hooks.
+export function AdoptionFunnelCard({ adoptionFunnel }: AdoptionFunnelCardProps) {
+  if (adoptionFunnel.length === 0) return <EmptyCard />;
+  return <AdoptionFunnelChart adoptionFunnel={adoptionFunnel} />;
 }
 
 export default AdoptionFunnelCard;

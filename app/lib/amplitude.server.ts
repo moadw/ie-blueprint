@@ -104,6 +104,19 @@ export function orgSegmentFilter(org: string | null | undefined): SegmentClause[
   return [{ prop: "gp:organization", op: "is", values: [org] }];
 }
 
+/**
+ * Build a segment-filter clause scoping a query to a single school via the
+ * `gp:school` group property `analytics.ts` stamps on every event. `schools` is
+ * an ARRAY property (a user can belong to several schools), so `op: "is"` here
+ * means "the school set CONTAINS this id" — a multi-school user's events match
+ * under any of their schools, not exclusively this one. An empty/falsy id yields
+ * no filter (district-wide baseline).
+ */
+export function schoolSegmentFilter(schoolId?: string | null): SegmentClause[] {
+  if (!schoolId) return [];
+  return [{ prop: "gp:school", op: "is", values: [schoolId] }];
+}
+
 // ---------------------------------------------------------------------------
 // Low-level fetch — concurrency gate + 429 retry
 //
@@ -882,14 +895,15 @@ async function fetchSegmentationCollapsed(
 export function getSessionCountSeries(
   org: string | null | undefined,
   window: AnalyticsWindow,
+  schoolId?: string | null,
 ): Promise<number[] | null> {
-  const key = `tab-sessions:${org ?? "all"}:${window.start}-${window.end}`;
+  const key = `tab-sessions:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
   return cached(key, () =>
     fetchSegmentationSeries({
       eventType: "session_start",
       window,
       metric: "totals",
-      segment: orgSegmentFilter(org),
+      segment: [...orgSegmentFilter(org), ...schoolSegmentFilter(schoolId)],
     }),
   );
 }
@@ -902,14 +916,15 @@ export function getSessionCountSeries(
 export function getActiveTeacherSeries(
   org: string | null | undefined,
   window: AnalyticsWindow,
+  schoolId?: string | null,
 ): Promise<number[] | null> {
-  const key = `tab-teachers:${org ?? "all"}:${window.start}-${window.end}`;
+  const key = `tab-teachers:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
   return cached(key, () =>
     fetchSegmentationSeries({
       eventType: "_active",
       window,
       metric: "uniques",
-      segment: orgSegmentFilter(org),
+      segment: [...orgSegmentFilter(org), ...schoolSegmentFilter(schoolId)],
       filters: [
         {
           subprop_type: "event",
@@ -931,14 +946,15 @@ export function getActiveTeacherSeries(
 export function getActiveTeacherTotal(
   org: string | null | undefined,
   window: AnalyticsWindow,
+  schoolId?: string | null,
 ): Promise<number | null> {
-  const key = `tab-teachers-total:${org ?? "all"}:${window.start}-${window.end}`;
+  const key = `tab-teachers-total:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
   return cached(key, () =>
     fetchSegmentationCollapsed({
       eventType: "_active",
       window,
       metric: "uniques",
-      segment: orgSegmentFilter(org),
+      segment: [...orgSegmentFilter(org), ...schoolSegmentFilter(schoolId)],
       filters: [
         {
           subprop_type: "event",
@@ -980,16 +996,17 @@ export function getMindfulSecondsSeries(
   org: string | null | undefined,
   window: AnalyticsWindow,
   userType?: string,
+  schoolId?: string | null,
 ): Promise<number[] | null> {
   const scope = userType ?? "all";
-  const key = `tab-mindful:${org ?? "all"}:${scope}:${window.start}-${window.end}`;
+  const key = `tab-mindful:${org ?? "all"}:${schoolId ?? "all"}:${scope}:${window.start}-${window.end}`;
   return cached(key, () =>
     fetchSegmentationSeries({
       eventType: "content_played",
       window,
       metric: "sums",
       sumProp: DURATION_PROPERTY,
-      segment: orgSegmentFilter(org),
+      segment: [...orgSegmentFilter(org), ...schoolSegmentFilter(schoolId)],
       ...(userType
         ? {
             filters: [
@@ -1020,14 +1037,15 @@ export function getMindfulSecondsSeries(
 export function getActiveUsersTotal(
   org: string | null | undefined,
   window: AnalyticsWindow,
+  schoolId?: string | null,
 ): Promise<number | null> {
-  const key = `tab-active-total:${org ?? "all"}:${window.start}-${window.end}`;
+  const key = `tab-active-total:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
   return cached(key, () =>
     fetchSegmentationCollapsed({
       eventType: "_active",
       window,
       metric: "uniques",
-      segment: orgSegmentFilter(org),
+      segment: [...orgSegmentFilter(org), ...schoolSegmentFilter(schoolId)],
     }),
   );
 }
@@ -1040,14 +1058,15 @@ export function getActiveUsersTotal(
 export function getEngagedUsersTotal(
   org: string | null | undefined,
   window: AnalyticsWindow,
+  schoolId?: string | null,
 ): Promise<number | null> {
-  const key = `tab-engaged-total:${org ?? "all"}:${window.start}-${window.end}`;
+  const key = `tab-engaged-total:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
   return cached(key, () =>
     fetchSegmentationCollapsed({
       eventType: "content_played",
       window,
       metric: "uniques",
-      segment: orgSegmentFilter(org),
+      segment: [...orgSegmentFilter(org), ...schoolSegmentFilter(schoolId)],
     }),
   );
 }
@@ -1119,10 +1138,14 @@ export function getRetentionCurve(
   org: string | null | undefined,
   window: AnalyticsWindow,
   granularity: "daily" | "weekly" | "monthly",
+  schoolId?: string | null,
 ): Promise<RetentionResult | null> {
   const interval = granularity === "monthly" ? 30 : granularity === "weekly" ? 7 : 1;
   const prefix = interval === 30 ? "M" : interval === 7 ? "W" : "D";
-  const key = `tab-retention:${org ?? "all"}:${granularity}:${window.start}-${window.end}`;
+  // The chart is small — cap the cohort buckets shown per granularity
+  // (daily 7, weekly 4, monthly 5). Applied after the trailing-empty trim below.
+  const cap = interval === 30 ? 5 : interval === 7 ? 4 : 7;
+  const key = `tab-retention:${org ?? "all"}:${schoolId ?? "all"}:${granularity}:${window.start}-${window.end}`;
   return cached(key, async () => {
     if (!isAmplitudeConfigured()) return null;
     const resp = await amplitudeGet<RetentionResponse>(
@@ -1135,7 +1158,7 @@ export function getRetentionCurve(
         rm: "nday",
         i: String(interval),
       },
-      orgSegmentFilter(org),
+      [...orgSegmentFilter(org), ...schoolSegmentFilter(schoolId)],
     );
     if (!resp.ok) return null;
 
@@ -1145,14 +1168,16 @@ export function getRetentionCurve(
       if ((c?.outof ?? 0) > 0) lastWithData = n;
     });
 
+    // Emit at most `cap` buckets (past the trailing-empty trim), 1-indexed so the
+    // first cohort reads `W1`/`M1`/`D1`. `peak` is over the capped set only.
     const series: RetentionPoint[] = [];
     let peak = 0;
-    for (let n = 0; n <= lastWithData; n++) {
+    for (let n = 0; n <= lastWithData && n < cap; n++) {
       const cell = combined[n];
       const outof = cell?.outof ?? 0;
       const rate = outof > 0 ? Math.round((100 * (cell?.count ?? 0)) / outof) : 0;
       peak = Math.max(peak, rate);
-      series.push({ label: `${prefix}${n}`, rate });
+      series.push({ label: `${prefix}${n + 1}`, rate });
     }
     return { peakPct: peak, series };
   });
