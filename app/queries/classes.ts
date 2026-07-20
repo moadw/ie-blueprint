@@ -21,6 +21,20 @@ export const ClassesAdminFindManyDocument = graphql(/* GraphQL */ `
   }
 `);
 
+// Slim projection used ONLY to count practices per series on the admin content
+// index. Selects just the fields needed to bucket + filter (`_id`, `curriculum`,
+// `deleted`) so one platform-wide request can drive every card's count without
+// the heavy cover/background/language payload of `ClassesAdminFindMany`.
+export const ClassesAdminCountFindManyDocument = graphql(/* GraphQL */ `
+  query ClassesAdminCountFindMany($filter: FilterFindManyclassesInput, $limit: Int) {
+    ClassesAdminFindMany(filter: $filter, limit: $limit) {
+      _id
+      curriculum
+      deleted
+    }
+  }
+`);
+
 export const ClassesAdminFindOneDocument = graphql(/* GraphQL */ `
   query ClassesAdminFindOne($filter: FilterFindOneclassesInput) {
     ClassesAdminFindOne(filter: $filter) {
