@@ -1310,3 +1310,71 @@ export async function getSchoolActiveEducators(
     return collapsedValue(resp.data);
   });
 }
+
+// ===========================================================================
+// District-home cluster helpers (School Registration + Practice Sessions)
+//
+// The home's "School Registration" and "Practice Sessions" cards each need a
+// single window figure. These two wrappers reuse the existing private fetchers
+// and collapse to one number, returning `null` on soft error / unconfigured so
+// the cards can tell "no data source" (→ empty shape) apart from "real source,
+// zero activity" (→ honest `0`). Cached per (metric + org + school + window)
+// like the other window helpers.
+// ===========================================================================
+
+/**
+ * Peak distinct **active schools** over the window for the org — the home's
+ * "School Registration" registered count (schools with ≥1 user firing any event
+ * this period). Reuses {@link fetchActiveSchoolsPerDay}'s per-day distinct-
+ * active-school series and collapses it with `Math.max`.
+ *
+ * NOTE — `Math.max(...series)` (the peak single-day distinct-active-school
+ * count) is a documented APPROXIMATION of "distinct schools active at least
+ * once this period". A true period-collapsed distinct-group count isn't
+ * available from the Dashboard REST response here (`collapsedValue` collapses
+ * distinct USERS, not distinct group-by values), so the busiest day is the
+ * closest single figure; it undercounts when different schools are active on
+ * different days.
+ *
+ * An empty series (`[]` = soft error / unconfigured) ⇒ `null`; a real
+ * zero-activity window returns per-day zeros ⇒ `0`.
+ */
+export async function getActiveSchoolsCount(
+  org: string | null | undefined,
+  window: AnalyticsWindow,
+  schoolId?: string | null,
+): Promise<number | null> {
+  if (!isAmplitudeConfigured()) return null;
+  const key = `home-active-schools:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
+  return cached(key, async () => {
+    const series = await fetchActiveSchoolsPerDay(window, [
+      ...orgSegmentFilter(org),
+      ...schoolSegmentFilter(schoolId),
+    ]);
+    if (series.length === 0) return null;
+    return Math.max(...series);
+  });
+}
+
+/**
+ * Total **content plays** (`content_played` event count) over the window for the
+ * org — the home's "Practice Sessions" figure. Mirrors {@link getSessionCountSeries}
+ * but collapses to a single window total (`metric: "totals"` via
+ * {@link fetchSegmentationCollapsed}) instead of returning the daily series.
+ * `null` on soft error / unconfigured.
+ */
+export function getContentPlayedTotal(
+  org: string | null | undefined,
+  window: AnalyticsWindow,
+  schoolId?: string | null,
+): Promise<number | null> {
+  const key = `home-plays-total:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
+  return cached(key, () =>
+    fetchSegmentationCollapsed({
+      eventType: "content_played",
+      window,
+      metric: "totals",
+      segment: [...orgSegmentFilter(org), ...schoolSegmentFilter(schoolId)],
+    }),
+  );
+}
