@@ -7,10 +7,7 @@ import {
 } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { Building2, Loader2, Plus, Search } from "lucide-react";
-import {
-  ADMIN_LIST_PAGE_SIZE,
-  AdminListPagination,
-} from "~/components/admin/admin-list-pagination";
+import { AdminListPagination } from "~/components/admin/admin-list-pagination";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { env } from "~/lib/env";
@@ -89,6 +86,11 @@ type Curriculum = {
   bgImage?: { type?: string | null; url?: string | null } | null;
 };
 
+// Districts fan out one lazy per-row `district-admin` lookup each (see
+// `<DistrictAdminLine />`), so this list uses a smaller page than the shared
+// `ADMIN_LIST_PAGE_SIZE` (100) to keep that burst bounded.
+const DISTRICTS_PAGE_SIZE = 30;
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const token = await requireSessionToken(request);
   if (!env.PLATFORM) {
@@ -103,13 +105,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     };
   }
   const page = readPageFromRequest(request);
-  const skip = (page - 1) * ADMIN_LIST_PAGE_SIZE;
+  const skip = (page - 1) * DISTRICTS_PAGE_SIZE;
   const result = await safe(
     gqlClient.request(
       DistrictFindManyDocument,
       {
         filter: { platform: env.PLATFORM },
-        limit: ADMIN_LIST_PAGE_SIZE,
+        limit: DISTRICTS_PAGE_SIZE,
         skip,
         sort: SortFindManydistrictInput._ID_DESC,
       },
@@ -189,7 +191,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     districts,
     loadError: result.error,
     page,
-    hasMore: districts.length === ADMIN_LIST_PAGE_SIZE,
+    hasMore: districts.length === DISTRICTS_PAGE_SIZE,
     presets,
     curriculums,
   };

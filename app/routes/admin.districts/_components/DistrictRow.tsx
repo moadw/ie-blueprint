@@ -5,15 +5,16 @@ import {
   Pencil,
   School,
   ShieldCheck,
-  User,
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { DistrictAdminLine } from "./DistrictAdminLine";
 
 export interface DistrictRowDistrict {
   _id: string;
   name?: string | null;
   state?: string | null;
+  organization?: string | null;
   courses?: Array<string | null> | null;
   coursesCollections?: Array<string | null> | null;
   licenseLabel?: string | null;
@@ -92,10 +93,7 @@ export function DistrictRow({
             <span>{district.state ?? "—"}</span>
           </div>
 
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <User className="w-3 h-3" aria-hidden="true" />
-            <span>No admin assigned</span>
-          </div>
+          <DistrictAdminLine organizationId={district.organization} />
         </div>
 
         {/* Right: license + actions */}
