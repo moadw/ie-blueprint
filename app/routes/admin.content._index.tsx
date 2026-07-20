@@ -17,11 +17,19 @@ import { readPageFromRequest } from "~/lib/pagination";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
 import { CurriculumsFindManyDocument } from "~/queries/curriculums";
-import { ClassesAdminFindManyDocument } from "~/queries/classes";
+import { ClassesAdminCountFindManyDocument } from "~/queries/classes";
+import { PRACTICE_COUNT_CAP } from "~/lib/curriculum";
 import { curriculumsSortEnum } from "~/gql/graphql";
 import { Button } from "~/components/ui/button";
 import { SeriesCard } from "~/components/admin/series-card";
 import { SeriesDialog } from "~/components/admin/series-dialog";
+
+// No real series should exceed PRACTICE_COUNT_CAP (200) practices, so we only
+// need to count up to the cap + 1: fetch that many rows and let a single
+// over-cap practice surface as "200+" (the card's display cap). Fetching more
+// has no product value — a series that legitimately hits this is a data/
+// migration error we warn about rather than count precisely.
+const PRACTICE_COUNT_FETCH_LIMIT = PRACTICE_COUNT_CAP + 1;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const token = await requireSessionToken(request);
@@ -62,23 +70,38 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // The curriculum doc's `totalLesson` aggregate is stale/inaccurate, so derive
   // each series' practice count the same way the detail route does: the number
-  // of non-deleted `classes` for that curriculum (`ClassesAdminFindMany`
-  // filtered by `curriculum` + `!deleted`). One safe() request per series keeps
-  // a flaky downstream from white-screening the list — a failed fetch just
+  // of non-deleted `classes` for that curriculum. One slim request per series
+  // (id + curriculum + deleted only) counts the non-deleted classes, fetching
+  // just `PRACTICE_COUNT_CAP + 1` rows — enough to show an exact count up to the
+  // cap and surface anything beyond as "200+". `deleted` is treated as "not
+  // deleted unless literally true" (matches the detail route + migration —
+  // non-deleted docs may carry `deleted: null`/absent, so a server-side
+  // `deleted: false` filter would undercount). One safe() request per series
+  // keeps a flaky downstream from white-screening the list — a failed fetch just
   // omits that series from the map and the card falls back to `totalLesson`.
   const countEntries = await Promise.all(
     curriculums.map(async (c) => {
       const r = await safe(
         gqlClient.request(
-          ClassesAdminFindManyDocument,
-          { filter: { curriculum: c._id, platform: env.PLATFORM }, limit: 100 },
+          ClassesAdminCountFindManyDocument,
+          {
+            filter: { curriculum: c._id, platform: env.PLATFORM },
+            limit: PRACTICE_COUNT_FETCH_LIMIT,
+          },
           { "access-token": token },
         ),
       );
       if (!r.ok) return null;
-      const count = (r.data.ClassesAdminFindMany ?? []).filter(
-        (x) => !x.deleted,
-      ).length;
+      const rows = r.data.ClassesAdminFindMany ?? [];
+      const count = rows.filter((x) => x && x.deleted !== true).length;
+      // Over the cap → almost certainly a data/migration error (no real series
+      // should have this many). The card renders it as "200+"; flag it here too.
+      if (count > PRACTICE_COUNT_CAP) {
+        console.warn(
+          `[admin/content] series ${c._id} has more than ${PRACTICE_COUNT_CAP} ` +
+            `practices — likely a data/migration error.`,
+        );
+      }
       return [c._id, count] as const;
     }),
   );

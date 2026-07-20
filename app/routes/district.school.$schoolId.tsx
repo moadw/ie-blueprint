@@ -36,6 +36,18 @@ type SchoolDetail = {
 
 const BACK_TO_SCHOOLS = "/district/admin/schools";
 
+/**
+ * Fire a per-school Amplitude stat as a deferred promise that ALWAYS resolves
+ * (never rejects): `safe()` covers any throw, and the helpers already soft-fail
+ * to `null`. A rejected promise reaching an `<Await>` without an `errorElement`
+ * would white-screen the route via the root ErrorBoundary — the resilient-loader
+ * convention forbids that. On any throw / soft-fail this resolves to `null` → "—".
+ */
+async function deferStat(p: Promise<number | null>): Promise<number | null> {
+  const r = await safe(p);
+  return r.ok ? r.data : null;
+}
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const schoolId = params.schoolId;
 
@@ -45,8 +57,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       school: null as SchoolDetail | null,
       educators: [] as SchoolEducatorRow[],
       teacherTotal: 0,
-      totalPlays: null as number | null,
-      activeEducators: null as number | null,
+      totalPlays: Promise.resolve<number | null>(null),
+      activeEducators: Promise.resolve<number | null>(null),
       error: result.loadError ?? "Could not resolve district.",
       notFound: false,
       preview: result.preview,
@@ -62,8 +74,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       school: null as SchoolDetail | null,
       educators: [] as SchoolEducatorRow[],
       teacherTotal: 0,
-      totalPlays: null as number | null,
-      activeEducators: null as number | null,
+      totalPlays: Promise.resolve<number | null>(null),
+      activeEducators: Promise.resolve<number | null>(null),
       error: null,
       notFound: true,
       preview,
@@ -82,8 +94,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       school: null as SchoolDetail | null,
       educators: [] as SchoolEducatorRow[],
       teacherTotal: 0,
-      totalPlays: null as number | null,
-      activeEducators: null as number | null,
+      totalPlays: Promise.resolve<number | null>(null),
+      activeEducators: Promise.resolve<number | null>(null),
       error: schoolResult.error,
       notFound: false,
       preview,
@@ -98,8 +110,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       school: null as SchoolDetail | null,
       educators: [] as SchoolEducatorRow[],
       teacherTotal: 0,
-      totalPlays: null as number | null,
-      activeEducators: null as number | null,
+      totalPlays: Promise.resolve<number | null>(null),
+      activeEducators: Promise.resolve<number | null>(null),
       error: null,
       notFound: true,
       preview,
@@ -113,6 +125,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     state: rawSchool.state ?? null,
     deletedAt: rawSchool.deletedAt ?? null,
   };
+
+  // Per-school engagement stats from Amplitude, fired UN-awaited so they stream
+  // in behind skeletons instead of blocking the page on the (slow) Amplitude
+  // calls — they now run concurrently with the educators search below.
+  // `dailyWindow(365)` is the bounded-window all-time stand-in (Dashboard REST
+  // needs a bounded range; the prototype metric is "all-time" — same choice as
+  // `stats.server.ts`). `deferStat` normalizes each to `number | null` and never
+  // rejects in normal operation; the route's `<Await errorElement>` covers an SSR
+  // stream-timeout abort. An Amplitude outage just leaves the tiles showing "—".
+  const statsWindow = dailyWindow(365);
+  const totalPlays = deferStat(getSchoolTotalPlays(school._id, statsWindow));
+  const activeEducators = deferStat(
+    getSchoolActiveEducators(school._id, statsWindow),
+  );
 
   // Resolve the teacher usertype id so the roster is narrowed to teachers. If
   // it can't be resolved, the search runs unnarrowed rather than crashing.
@@ -157,28 +183,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ? (searchResult.data.UserSearch?.total ?? educators.length)
     : educators.length;
 
-  // Per-school engagement stats from Amplitude. `dailyWindow(365)` is the
-  // bounded-window all-time stand-in (Dashboard REST needs a bounded range; the
-  // prototype metric is "all-time" — same choice as `stats.server.ts`). Both
-  // are `safe()`-wrapped AND already soft-fail to `null` internally, so an
-  // Amplitude outage leaves the school/educators rendering untouched; the cards
-  // just show "—".
-  const window = dailyWindow(365);
-  const [totalPlaysResult, activeEducatorsResult] = await Promise.all([
-    safe(getSchoolTotalPlays(schoolId, window)),
-    safe(getSchoolActiveEducators(schoolId, window)),
-  ]);
-  const totalPlays: number | null = totalPlaysResult.ok
-    ? totalPlaysResult.data
-    : null;
-  const activeEducators: number | null = activeEducatorsResult.ok
-    ? activeEducatorsResult.data
-    : null;
-
   return {
     school,
     educators,
     teacherTotal,
+    // Deferred (fired above) — the route streams these two tiles behind skeletons.
     totalPlays,
     activeEducators,
     error: searchResult.error,

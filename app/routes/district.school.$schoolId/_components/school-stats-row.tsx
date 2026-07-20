@@ -1,20 +1,24 @@
+import { Suspense } from "react";
+import { Await } from "react-router";
 import { Clock, Play, Users } from "lucide-react";
 import { SchoolStatCard } from "./school-stat-card";
 
 interface SchoolStatsRowProps {
-  /** Real teacher-roster count for this school (all-time). */
+  /** Real teacher-roster count for this school (all-time). Resolved synchronously
+   *  from GraphQL, so this tile renders immediately (no skeleton). */
   teacherTotal: number;
   /**
    * Per-school Total Plays from Amplitude (`practice_completed` count over the
-   * window), or `null` when Amplitude is unconfigured / soft-failed — rendered
-   * as a muted "—" rather than a misleading 0.
+   * window), deferred so it streams in behind a skeleton instead of blocking the
+   * page. Resolves to `null` when Amplitude is unconfigured / soft-failed —
+   * rendered as a muted "—" rather than a misleading 0.
    */
-  totalPlays: number | null;
+  totalPlays: Promise<number | null>;
   /**
-   * Per-school distinct active educators from Amplitude, or `null` when
-   * unconfigured / soft-failed (→ "—").
+   * Per-school distinct active educators from Amplitude, deferred the same way;
+   * resolves to `null` when unconfigured / soft-failed (→ "—").
    */
-  activeEducators: number | null;
+  activeEducators: Promise<number | null>;
 }
 
 /**
@@ -28,10 +32,12 @@ function statValue(n: number | null): string | number {
 
 /**
  * The 3-up stat row on the school-detail page: Teachers (real, from the roster
- * count), Total Plays, and Educators Active. The latter two come from per-school
- * Amplitude (`getSchoolTotalPlays` / `getSchoolActiveEducators`); when Amplitude
- * is unconfigured or a call soft-fails they arrive as `null` and render a muted
- * "—". Collapses to a single column on mobile.
+ * count, rendered immediately), Total Plays, and Educators Active. The latter two
+ * come from per-school Amplitude (`getSchoolTotalPlays` / `getSchoolActiveEducators`)
+ * and stream in behind a skeleton so the page doesn't wait on the (slow) Amplitude
+ * calls. `deferStat` normalizes them to never reject; the `<Await errorElement>`
+ * degrades an SSR stream-timeout abort to a muted "—" instead of white-screening
+ * the route (CLAUDE.md "Resilient loaders"). Collapses to a single column on mobile.
  */
 export function SchoolStatsRow({
   teacherTotal,
@@ -41,16 +47,40 @@ export function SchoolStatsRow({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <SchoolStatCard label="Teachers" value={teacherTotal} icon={Users} />
-      <SchoolStatCard
-        label="Total Plays"
-        value={statValue(totalPlays)}
-        icon={Play}
-      />
-      <SchoolStatCard
-        label="Educators Active"
-        value={statValue(activeEducators)}
-        icon={Clock}
-      />
+
+      <Suspense fallback={<SchoolStatCard label="Total Plays" icon={Play} loading />}>
+        <Await
+          resolve={totalPlays}
+          errorElement={<SchoolStatCard label="Total Plays" value="—" icon={Play} />}
+        >
+          {(plays) => (
+            <SchoolStatCard
+              label="Total Plays"
+              value={statValue(plays)}
+              icon={Play}
+            />
+          )}
+        </Await>
+      </Suspense>
+
+      <Suspense
+        fallback={<SchoolStatCard label="Educators Active" icon={Clock} loading />}
+      >
+        <Await
+          resolve={activeEducators}
+          errorElement={
+            <SchoolStatCard label="Educators Active" value="—" icon={Clock} />
+          }
+        >
+          {(educators) => (
+            <SchoolStatCard
+              label="Educators Active"
+              value={statValue(educators)}
+              icon={Clock}
+            />
+          )}
+        </Await>
+      </Suspense>
     </div>
   );
 }
