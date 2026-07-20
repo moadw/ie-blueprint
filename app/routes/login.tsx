@@ -79,7 +79,7 @@ export async function action({ request }: ActionFunctionArgs) {
             {
               title: "Not allowed",
               error:
-                "This account isn't available on this site. Contact support@innerexplorer.com to request access.",
+                "This account isn't available on this site. Contact info@innerexplorer.com to request access.",
             },
             { status: 403 },
           );
@@ -135,7 +135,7 @@ export async function action({ request }: ActionFunctionArgs) {
           {
             title: "Not allowed",
             error:
-              "This account isn't available on this site. Contact support@innerexplorer.com to request access.",
+              "This account isn't available on this site. Contact info@innerexplorer.com to request access.",
           },
           { status: 403 },
         );

@@ -1,17 +1,20 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router";
-import { Calendar, ChevronDown, Plus } from "lucide-react";
+import { Calendar, ChevronDown } from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import { Select } from "~/components/ui/select";
 import { DateRangePopover } from "./date-range-popover";
 
 export interface AnalyticsHeaderProps {
   startDate: string;
   endDate: string;
   granularity: "daily" | "weekly" | "monthly";
+  schools: { _id: string; name: string | null }[];
+  schoolId?: string;
   compareStart?: string;
   compareEnd?: string;
 }
@@ -45,6 +48,8 @@ export function AnalyticsHeader({
   startDate,
   endDate,
   granularity,
+  schools,
+  schoolId,
   compareStart,
   compareEnd,
 }: AnalyticsHeaderProps) {
@@ -70,6 +75,13 @@ export function AnalyticsHeader({
     next.set("granularity", value);
     setSearchParams(next, { replace: true });
     setGranularityOpen(false);
+  }
+
+  function applySchool(value: string) {
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set("school", value);
+    else next.delete("school");
+    setSearchParams(next, { replace: true });
   }
 
   return (
@@ -131,16 +143,20 @@ export function AnalyticsHeader({
           </PopoverContent>
         </Popover>
 
-        {/* Add widget (deferred) */}
-        <button
-          type="button"
-          disabled
-          title="Add widget — coming soon"
-          className={`${pillClass} disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-card`}
+        {/* School filter — scopes the Amplitude-driven charts (default all schools) */}
+        <Select
+          aria-label="Filter by school"
+          value={schoolId ?? ""}
+          onChange={(e) => applySchool(e.target.value)}
+          className="w-auto cursor-pointer rounded-full border-border bg-card px-4 py-2 pr-8 text-muted-foreground transition-colors hover:bg-muted"
         >
-          <Plus size={14} />
-          Add widget
-        </button>
+          <option value="">All schools</option>
+          {schools.map((s) => (
+            <option key={s._id} value={s._id}>
+              {s.name ?? "Untitled school"}
+            </option>
+          ))}
+        </Select>
       </div>
     </div>
   );

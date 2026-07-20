@@ -12,21 +12,25 @@ const NOISE_FINE = `url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='
 
 export function InsightCard({ insights }: InsightCardProps) {
   const [active, setActive] = useState(0);
-  const slide = insights[active];
+  // `insights` is now variable-length (0–3); clamp the stored index so a shrinking
+  // list (e.g. after a filter change) never points past the end and wrongly shows
+  // the empty state. Derived, so there's no stale-render flash.
+  const clampedActive = Math.min(active, Math.max(insights.length - 1, 0));
+  const slide = insights[clampedActive];
 
   const handleSwipe = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     const startX = e.clientX;
     const el = e.currentTarget;
     const onUp = (ev: PointerEvent) => {
       const dx = ev.clientX - startX;
-      if (dx < -40) setActive((i) => Math.min(i + 1, insights.length - 1));
-      if (dx > 40) setActive((i) => Math.max(i - 1, 0));
+      if (dx < -40) setActive(Math.min(clampedActive + 1, insights.length - 1));
+      if (dx > 40) setActive(Math.max(clampedActive - 1, 0));
       el.releasePointerCapture(ev.pointerId);
       el.removeEventListener("pointerup", onUp);
     };
     el.setPointerCapture(e.pointerId);
     el.addEventListener("pointerup", onUp);
-  }, [insights.length]);
+  }, [clampedActive, insights.length]);
 
   if (!slide) {
     return (
@@ -104,7 +108,7 @@ export function InsightCard({ insights }: InsightCardProps) {
                 className="flex-1 h-[4px] rounded-full transition-all duration-500 ease-out"
                 style={{
                   backgroundColor:
-                    i === active ? "hsl(0 0% 100% / 0.9)" : "hsl(0 0% 0% / 0.25)",
+                    i === clampedActive ? "hsl(0 0% 100% / 0.9)" : "hsl(0 0% 0% / 0.25)",
                 }}
                 aria-label={`Go to insight ${i + 1}`}
               />

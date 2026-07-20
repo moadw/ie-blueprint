@@ -144,6 +144,11 @@ export function PracticeRow({ practice, content = null, onChange }: PracticeRowP
   const [accessLevel, setAccessLevel] = useState<string>(
     practice.free ? "free" : "premium",
   );
+  // Persisted to the record's `feedback` flag. Read-back reflects the stored
+  // value: pre-existing records have `feedback = null` (field is new, never
+  // written), which is "not enabled" → show off. Only an explicit `true` shows
+  // on. (Create defaults to on; that's a new-record choice, not a read-back.)
+  const [feedback, setFeedback] = useState<boolean>(practice.feedback ?? false);
 
   // Visual-only state (not persisted)
   const [category, setCategory] = useState<string>("");
@@ -174,6 +179,7 @@ export function PracticeRow({ practice, content = null, onChange }: PracticeRowP
     setTitle(practice.title ?? "");
     setDescription(practice.description ?? "");
     setDay(Math.max(1, Math.round(practice.order ?? 1)));
+    setFeedback(practice.feedback ?? false);
     setSpanishTitle(practice.language?.spanish?.title ?? "");
     setSpanishDescription(practice.language?.spanish?.description ?? "");
   }, [
@@ -181,6 +187,7 @@ export function PracticeRow({ practice, content = null, onChange }: PracticeRowP
     practice.title,
     practice.description,
     practice.order,
+    practice.feedback,
     practice.language?.spanish?.title,
     practice.language?.spanish?.description,
   ]);
@@ -266,6 +273,7 @@ export function PracticeRow({ practice, content = null, onChange }: PracticeRowP
           description: description.trim() || null,
           order: dayValue,
           free: accessLevel === "free",
+          feedback,
           // Category, Grade, Active are visual-only (I2/I3).
           // `deleted` is not written here — soft delete is the Delete button's job (I3).
           ...(language ? { language } : {}),
@@ -619,25 +627,38 @@ export function PracticeRow({ practice, content = null, onChange }: PracticeRowP
             )}
           </div>
 
-          <div className="w-32">
-            <label className="mb-1 block text-xs font-medium text-stone-600">
-              Day
-            </label>
-            <input
-              type="number"
-              min={1}
-              step={1}
-              value={day}
-              onChange={(e) =>
-                setDay(Math.max(1, Number(e.target.value) || 1))
-              }
-              className="w-full rounded-md border border-stone-200 bg-card px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
-
-          <div className="flex items-center justify-between rounded-md border border-stone-200 bg-stone-50/40 px-3 py-2">
-            <span className="text-sm text-stone-600">Active</span>
-            <Switch checked={active} onCheckedChange={setActive} />
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-600">
+                Day
+              </label>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                value={day}
+                onChange={(e) =>
+                  setDay(Math.max(1, Number(e.target.value) || 1))
+                }
+                className="h-9 w-full rounded-md border border-stone-200 bg-card px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-600">
+                Feedback
+              </label>
+              <div className="flex h-9 items-center rounded-md border border-stone-200 bg-stone-50/40 px-3">
+                <Switch checked={feedback} onCheckedChange={setFeedback} />
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-stone-600">
+                Active
+              </label>
+              <div className="flex h-9 items-center rounded-md border border-stone-200 bg-stone-50/40 px-3">
+                <Switch checked={active} onCheckedChange={setActive} />
+              </div>
+            </div>
           </div>
 
           {/* Taps persist via their own mutations — independent of the

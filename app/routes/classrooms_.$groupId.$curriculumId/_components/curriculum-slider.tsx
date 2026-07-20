@@ -11,6 +11,7 @@ import { useAudioPreference } from "~/hooks/use-audio-preference";
 import { LessonGlassCard } from "./lesson-glass-card";
 import type { LessonCardStatus } from "./lesson-glass-card";
 import type { CardMediaDescriptor } from "./card-media";
+import { currentPracticeIndex } from "./current-practice";
 import type { GroupProgress } from "./profile-menu";
 
 export interface SliderLesson {
@@ -131,19 +132,22 @@ export function CurriculumSlider({
   const finishedClasses = (groupProgress?.finishedClasses ?? []).filter(
     (id): id is string => Boolean(id),
   );
-  const nextClass = groupProgress?.nextClass ?? null;
-  // Open centered on the CURRENT practice (`nextClass`) rather than Day 1. Lazy
-  // initial state so the very first paint snaps straight to it — transitions
-  // are disabled until the first RAF (`isReady`), matching the prototype, which
-  // seeds the carousel at the current index instead of animating in from 0. SSR
-  // and the first client render derive the same index from the same props, so
-  // hydration stays stable. Falls back to 0 when there's no progress yet or
-  // `nextClass` isn't part of this curriculum's class list.
-  const [currentIndex, setCurrentIndex] = useState(() => {
-    if (!nextClass) return 0;
-    const idx = lessons.findIndex((l) => l._id === nextClass);
-    return idx >= 0 ? idx : 0;
-  });
+  // The current practice = first not-yet-finished class (see `current-practice`).
+  // Stable across navigation (derived from progress, not the centered card), so
+  // it also drives the "Current" badge below. Derived from `finishedClasses`
+  // rather than the backend's `nextClass`, which points at Day 2 on a fresh
+  // classroom.
+  const resumeIndex = currentPracticeIndex(
+    lessons.map((l) => l._id),
+    finishedClasses,
+  );
+  // Open centered on the current practice rather than Day 1. Lazy initial state
+  // so the very first paint snaps straight to it — transitions are disabled
+  // until the first RAF (`isReady`), matching the prototype, which seeds the
+  // carousel at the current index instead of animating in from 0. SSR and the
+  // first client render derive the same index from the same props, so hydration
+  // stays stable.
+  const [currentIndex, setCurrentIndex] = useState(resumeIndex);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [params, setParams] = useState({
@@ -307,7 +311,7 @@ export function CurriculumSlider({
             const watched = lessonId
               ? finishedClasses.includes(lessonId)
               : false;
-            const current = lessonId != null && nextClass === lessonId;
+            const current = index === resumeIndex;
             const status: LessonCardStatus = watched
               ? "watched"
               : current

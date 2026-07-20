@@ -23,7 +23,7 @@ export type LoginFormValues = z.infer<typeof loginSchema>;
 const SSO_ERROR_MESSAGES: Record<string, string> = {
   "auth-failed": "We couldn't sign you in. Please try again.",
   "not-allowed":
-    "This account isn't available on this site. Contact support@innerexplorer.com to request access.",
+    "This account isn't available on this site. Contact info@innerexplorer.com to request access.",
   "bad-state": "Your sign-in link expired. Please try again.",
   "no-token": "We couldn't sign you in. Please try again.",
   "missing-code": "We couldn't sign you in. Please try again.",

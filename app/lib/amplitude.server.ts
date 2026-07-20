@@ -104,6 +104,19 @@ export function orgSegmentFilter(org: string | null | undefined): SegmentClause[
   return [{ prop: "gp:organization", op: "is", values: [org] }];
 }
 
+/**
+ * Build a segment-filter clause scoping a query to a single school via the
+ * `gp:school` group property `analytics.ts` stamps on every event. `schools` is
+ * an ARRAY property (a user can belong to several schools), so `op: "is"` here
+ * means "the school set CONTAINS this id" — a multi-school user's events match
+ * under any of their schools, not exclusively this one. An empty/falsy id yields
+ * no filter (district-wide baseline).
+ */
+export function schoolSegmentFilter(schoolId?: string | null): SegmentClause[] {
+  if (!schoolId) return [];
+  return [{ prop: "gp:school", op: "is", values: [schoolId] }];
+}
+
 // ---------------------------------------------------------------------------
 // Low-level fetch — concurrency gate + 429 retry
 //
@@ -150,7 +163,7 @@ function sleep(ms: number): Promise<void> {
  * the concurrency gate and retries HTTP 429 / network errors with linear
  * backoff (up to 4 attempts).
  */
-async function amplitudeGet<T = unknown>(
+export async function amplitudeGet<T = unknown>(
   endpoint: string,
   params: Record<string, string>,
   segment: SegmentClause[] = [],
@@ -222,7 +235,7 @@ async function amplitudeGet<T = unknown>(
  * matching entry in `seriesLabels`. Defensive: any shape mismatch yields an
  * empty series.
  */
-interface DashboardChartResponse {
+export interface DashboardChartResponse {
   data?: {
     series?: number[][];
     seriesLabels?: unknown[];
@@ -234,7 +247,7 @@ interface DashboardChartResponse {
   };
 }
 
-function firstSeries(resp: DashboardChartResponse): number[] {
+export function firstSeries(resp: DashboardChartResponse): number[] {
   const series = resp.data?.series;
   if (!Array.isArray(series) || series.length === 0) return [];
   const first = series[0];
@@ -248,7 +261,7 @@ function firstSeries(resp: DashboardChartResponse): number[] {
  * (the right denominator for a funnel stage), unlike summing the daily series.
  * Defensive: 0 on any shape mismatch.
  */
-function collapsedValue(resp: DashboardChartResponse): number {
+export function collapsedValue(resp: DashboardChartResponse): number {
   const v = resp.data?.seriesCollapsed?.[0]?.[0]?.value;
   return typeof v === "number" && isFinite(v) ? v : 0;
 }
@@ -258,7 +271,7 @@ function collapsedValue(resp: DashboardChartResponse): number {
  * finite numbers. `series[i]` is the daily array for the group named by
  * `seriesLabels[i]`. Returns `[]` on any shape mismatch.
  */
-function allSeries(resp: DashboardChartResponse): number[][] {
+export function allSeries(resp: DashboardChartResponse): number[][] {
   const series = resp.data?.series;
   if (!Array.isArray(series)) return [];
   return series
@@ -314,7 +327,7 @@ const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
 const cache = new Map<string, { at: number; value: unknown }>();
 
-async function cached<T>(key: string, compute: () => Promise<T>): Promise<T> {
+export async function cached<T>(key: string, compute: () => Promise<T>): Promise<T> {
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
     return hit.value as T;
@@ -803,7 +816,7 @@ export function windowFromISO(startISO: string, endISO: string): AnalyticsWindow
  * by user/group properties. `userType` is stamped on every event by
  * `analytics.ts`, so it is available as an event-property filter here.
  */
-interface EventPropFilter {
+export interface EventPropFilter {
   subprop_type: "event";
   subprop_key: string;
   subprop_op: "is" | "is not";
@@ -882,14 +895,15 @@ async function fetchSegmentationCollapsed(
 export function getSessionCountSeries(
   org: string | null | undefined,
   window: AnalyticsWindow,
+  schoolId?: string | null,
 ): Promise<number[] | null> {
-  const key = `tab-sessions:${org ?? "all"}:${window.start}-${window.end}`;
+  const key = `tab-sessions:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
   return cached(key, () =>
     fetchSegmentationSeries({
       eventType: "session_start",
       window,
       metric: "totals",
-      segment: orgSegmentFilter(org),
+      segment: [...orgSegmentFilter(org), ...schoolSegmentFilter(schoolId)],
     }),
   );
 }
@@ -902,14 +916,15 @@ export function getSessionCountSeries(
 export function getActiveTeacherSeries(
   org: string | null | undefined,
   window: AnalyticsWindow,
+  schoolId?: string | null,
 ): Promise<number[] | null> {
-  const key = `tab-teachers:${org ?? "all"}:${window.start}-${window.end}`;
+  const key = `tab-teachers:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
   return cached(key, () =>
     fetchSegmentationSeries({
       eventType: "_active",
       window,
       metric: "uniques",
-      segment: orgSegmentFilter(org),
+      segment: [...orgSegmentFilter(org), ...schoolSegmentFilter(schoolId)],
       filters: [
         {
           subprop_type: "event",
@@ -931,14 +946,15 @@ export function getActiveTeacherSeries(
 export function getActiveTeacherTotal(
   org: string | null | undefined,
   window: AnalyticsWindow,
+  schoolId?: string | null,
 ): Promise<number | null> {
-  const key = `tab-teachers-total:${org ?? "all"}:${window.start}-${window.end}`;
+  const key = `tab-teachers-total:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
   return cached(key, () =>
     fetchSegmentationCollapsed({
       eventType: "_active",
       window,
       metric: "uniques",
-      segment: orgSegmentFilter(org),
+      segment: [...orgSegmentFilter(org), ...schoolSegmentFilter(schoolId)],
       filters: [
         {
           subprop_type: "event",
@@ -980,16 +996,17 @@ export function getMindfulSecondsSeries(
   org: string | null | undefined,
   window: AnalyticsWindow,
   userType?: string,
+  schoolId?: string | null,
 ): Promise<number[] | null> {
   const scope = userType ?? "all";
-  const key = `tab-mindful:${org ?? "all"}:${scope}:${window.start}-${window.end}`;
+  const key = `tab-mindful:${org ?? "all"}:${schoolId ?? "all"}:${scope}:${window.start}-${window.end}`;
   return cached(key, () =>
     fetchSegmentationSeries({
       eventType: "content_played",
       window,
       metric: "sums",
       sumProp: DURATION_PROPERTY,
-      segment: orgSegmentFilter(org),
+      segment: [...orgSegmentFilter(org), ...schoolSegmentFilter(schoolId)],
       ...(userType
         ? {
             filters: [
@@ -1020,14 +1037,15 @@ export function getMindfulSecondsSeries(
 export function getActiveUsersTotal(
   org: string | null | undefined,
   window: AnalyticsWindow,
+  schoolId?: string | null,
 ): Promise<number | null> {
-  const key = `tab-active-total:${org ?? "all"}:${window.start}-${window.end}`;
+  const key = `tab-active-total:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
   return cached(key, () =>
     fetchSegmentationCollapsed({
       eventType: "_active",
       window,
       metric: "uniques",
-      segment: orgSegmentFilter(org),
+      segment: [...orgSegmentFilter(org), ...schoolSegmentFilter(schoolId)],
     }),
   );
 }
@@ -1040,14 +1058,15 @@ export function getActiveUsersTotal(
 export function getEngagedUsersTotal(
   org: string | null | undefined,
   window: AnalyticsWindow,
+  schoolId?: string | null,
 ): Promise<number | null> {
-  const key = `tab-engaged-total:${org ?? "all"}:${window.start}-${window.end}`;
+  const key = `tab-engaged-total:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
   return cached(key, () =>
     fetchSegmentationCollapsed({
       eventType: "content_played",
       window,
       metric: "uniques",
-      segment: orgSegmentFilter(org),
+      segment: [...orgSegmentFilter(org), ...schoolSegmentFilter(schoolId)],
     }),
   );
 }
@@ -1119,10 +1138,14 @@ export function getRetentionCurve(
   org: string | null | undefined,
   window: AnalyticsWindow,
   granularity: "daily" | "weekly" | "monthly",
+  schoolId?: string | null,
 ): Promise<RetentionResult | null> {
   const interval = granularity === "monthly" ? 30 : granularity === "weekly" ? 7 : 1;
   const prefix = interval === 30 ? "M" : interval === 7 ? "W" : "D";
-  const key = `tab-retention:${org ?? "all"}:${granularity}:${window.start}-${window.end}`;
+  // The chart is small — cap the cohort buckets shown per granularity
+  // (daily 7, weekly 4, monthly 5). Applied after the trailing-empty trim below.
+  const cap = interval === 30 ? 5 : interval === 7 ? 4 : 7;
+  const key = `tab-retention:${org ?? "all"}:${schoolId ?? "all"}:${granularity}:${window.start}-${window.end}`;
   return cached(key, async () => {
     if (!isAmplitudeConfigured()) return null;
     const resp = await amplitudeGet<RetentionResponse>(
@@ -1135,7 +1158,7 @@ export function getRetentionCurve(
         rm: "nday",
         i: String(interval),
       },
-      orgSegmentFilter(org),
+      [...orgSegmentFilter(org), ...schoolSegmentFilter(schoolId)],
     );
     if (!resp.ok) return null;
 
@@ -1145,15 +1168,213 @@ export function getRetentionCurve(
       if ((c?.outof ?? 0) > 0) lastWithData = n;
     });
 
+    // Emit at most `cap` buckets (past the trailing-empty trim), 1-indexed so the
+    // first cohort reads `W1`/`M1`/`D1`. `peak` is over the capped set only.
     const series: RetentionPoint[] = [];
     let peak = 0;
-    for (let n = 0; n <= lastWithData; n++) {
+    for (let n = 0; n <= lastWithData && n < cap; n++) {
       const cell = combined[n];
       const outof = cell?.outof ?? 0;
       const rate = outof > 0 ? Math.round((100 * (cell?.count ?? 0)) / outof) : 0;
       peak = Math.max(peak, rate);
-      series.push({ label: `${prefix}${n}`, rate });
+      series.push({ label: `${prefix}${n + 1}`, rate });
     }
     return { peakPct: peak, series };
   });
+}
+
+// ===========================================================================
+// Per-school stat cards (school-detail page — /district/school/:schoolId)
+//
+// The district-home KPIs scope by org via the `s` param (`gp:organization`);
+// per-school scoping instead filters the event stream by the `schools` EVENT
+// property — the array of school `_id`s `analytics.ts` stamps on every event
+// (`analytics.ts:37-89`) — via an `e.filters` clause, mirroring the proven
+// per-teacher `userId` filter in `stats.server.ts` (`userEventFilter`). There is
+// no `s` segment: the school scope lives entirely in `e.filters`.
+//
+// Window: callers pass `dailyWindow(365)`. The prototype metric is "all-time";
+// the Dashboard REST daily API needs a bounded window, so a trailing 365-day
+// window is the pragmatic all-time stand-in (the same choice as
+// `stats.server.ts`). No `group_by` here (collapsed / `totals`), so no
+// `limit:"1000"` top-N cap is needed.
+//
+// SCOPE CAVEAT — array-`is` (verify against live Amplitude): `schools` is an
+// *array* event property. These fns rely on Amplitude's `is` operator matching
+// events whose `schools` array contains `schoolId` (narrowing to ONE school),
+// NOT matching the whole array / all schools. The orchestrator's Global QA must
+// confirm this: a school's Total Plays must be ≤ the district-wide total, and
+// two different schools in the same district must return different numbers. If
+// the numbers are identical across schools or equal the district total, array-
+// `is` is NOT narrowing — fall back to the `gp:school` SEGMENT clause instead
+// (`{ prop: "gp:school", op: "is", values: [schoolId] }` via the `s` param;
+// `school` is a group key, see `analytics.ts:84`) and re-verify.
+// ===========================================================================
+
+/**
+ * The event-property filter that scopes an `events/segmentation` query to a
+ * single school: `schools is [<schoolId>]`. `schools` is the array-of-school-ids
+ * event property stamped on every event by the enrichment plugin
+ * (`analytics.ts:37-59`). Mirrors `userEventFilter` in `stats.server.ts`.
+ */
+export function schoolEventFilter(schoolId: string): EventPropFilter[] {
+  return [
+    {
+      subprop_type: "event",
+      subprop_key: "schools",
+      subprop_op: "is",
+      subprop_value: [schoolId],
+    },
+  ];
+}
+
+/**
+ * Total Plays for one school over the window: the count of `practice_completed`
+ * events whose `schools` event property includes `schoolId`.
+ * `events/segmentation`, `m = "totals"`, reduced via `total(firstSeries(resp))`
+ * — the summed daily completion count for the window.
+ *
+ * Mapping note: the prototype's "Total Plays" = count of practice COMPLETIONS →
+ * `practice_completed`. If product instead wants "plays STARTED", switch the
+ * event to `content_played` (call this out in the PR).
+ *
+ * Cached per (metric + school + window), run through the shared `amplitudeGet`
+ * concurrency gate, soft-empty → `null` (unconfigured / soft-fail) so the card
+ * shows "—" rather than a misleading 0.
+ */
+export async function getSchoolTotalPlays(
+  schoolId: string,
+  window: { start: string; end: string },
+): Promise<number | null> {
+  if (!isAmplitudeConfigured()) return null;
+  const key = `school-total-plays:${schoolId}:${window.start}-${window.end}`;
+  return cached(key, async () => {
+    const e = {
+      event_type: "practice_completed",
+      filters: schoolEventFilter(schoolId),
+    };
+    const resp = await amplitudeGet<DashboardChartResponse>(
+      "events/segmentation",
+      {
+        e: JSON.stringify(e),
+        start: window.start,
+        end: window.end,
+        m: "totals",
+      },
+      [],
+    );
+    if (!resp.ok) return null;
+    return total(firstSeries(resp.data));
+  });
+}
+
+/**
+ * Educators Active at one school over the window: distinct `userType = teacher`
+ * users who fired any event (`_active`) whose `schools` includes `schoolId`.
+ * `events/segmentation`, `m = "uniques"`, read the period-COLLAPSED distinct
+ * count via `collapsedValue(resp)` (mirrors `getActiveTeacherTotal` plus the
+ * school filter) — the correct total, unlike summing the daily-uniques series
+ * which counts a teacher once per active day.
+ *
+ * Cached per (metric + school + window), run through the shared `amplitudeGet`
+ * concurrency gate, soft-empty → `null` (unconfigured / soft-fail) → card "—".
+ */
+export async function getSchoolActiveEducators(
+  schoolId: string,
+  window: { start: string; end: string },
+): Promise<number | null> {
+  if (!isAmplitudeConfigured()) return null;
+  const key = `school-active-educators:${schoolId}:${window.start}-${window.end}`;
+  return cached(key, async () => {
+    const filters: EventPropFilter[] = [
+      ...schoolEventFilter(schoolId),
+      {
+        subprop_type: "event",
+        subprop_key: "userType",
+        subprop_op: "is",
+        subprop_value: ["teacher"],
+      },
+    ];
+    const e = { event_type: "_active", filters };
+    const resp = await amplitudeGet<DashboardChartResponse>(
+      "events/segmentation",
+      {
+        e: JSON.stringify(e),
+        start: window.start,
+        end: window.end,
+        m: "uniques",
+      },
+      [],
+    );
+    if (!resp.ok) return null;
+    return collapsedValue(resp.data);
+  });
+}
+
+// ===========================================================================
+// District-home cluster helpers (School Registration + Practice Sessions)
+//
+// The home's "School Registration" and "Practice Sessions" cards each need a
+// single window figure. These two wrappers reuse the existing private fetchers
+// and collapse to one number, returning `null` on soft error / unconfigured so
+// the cards can tell "no data source" (→ empty shape) apart from "real source,
+// zero activity" (→ honest `0`). Cached per (metric + org + school + window)
+// like the other window helpers.
+// ===========================================================================
+
+/**
+ * Peak distinct **active schools** over the window for the org — the home's
+ * "School Registration" registered count (schools with ≥1 user firing any event
+ * this period). Reuses {@link fetchActiveSchoolsPerDay}'s per-day distinct-
+ * active-school series and collapses it with `Math.max`.
+ *
+ * NOTE — `Math.max(...series)` (the peak single-day distinct-active-school
+ * count) is a documented APPROXIMATION of "distinct schools active at least
+ * once this period". A true period-collapsed distinct-group count isn't
+ * available from the Dashboard REST response here (`collapsedValue` collapses
+ * distinct USERS, not distinct group-by values), so the busiest day is the
+ * closest single figure; it undercounts when different schools are active on
+ * different days.
+ *
+ * An empty series (`[]` = soft error / unconfigured) ⇒ `null`; a real
+ * zero-activity window returns per-day zeros ⇒ `0`.
+ */
+export async function getActiveSchoolsCount(
+  org: string | null | undefined,
+  window: AnalyticsWindow,
+  schoolId?: string | null,
+): Promise<number | null> {
+  if (!isAmplitudeConfigured()) return null;
+  const key = `home-active-schools:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
+  return cached(key, async () => {
+    const series = await fetchActiveSchoolsPerDay(window, [
+      ...orgSegmentFilter(org),
+      ...schoolSegmentFilter(schoolId),
+    ]);
+    if (series.length === 0) return null;
+    return Math.max(...series);
+  });
+}
+
+/**
+ * Total **content plays** (`content_played` event count) over the window for the
+ * org — the home's "Practice Sessions" figure. Mirrors {@link getSessionCountSeries}
+ * but collapses to a single window total (`metric: "totals"` via
+ * {@link fetchSegmentationCollapsed}) instead of returning the daily series.
+ * `null` on soft error / unconfigured.
+ */
+export function getContentPlayedTotal(
+  org: string | null | undefined,
+  window: AnalyticsWindow,
+  schoolId?: string | null,
+): Promise<number | null> {
+  const key = `home-plays-total:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
+  return cached(key, () =>
+    fetchSegmentationCollapsed({
+      eventType: "content_played",
+      window,
+      metric: "totals",
+      segment: [...orgSegmentFilter(org), ...schoolSegmentFilter(schoolId)],
+    }),
+  );
 }

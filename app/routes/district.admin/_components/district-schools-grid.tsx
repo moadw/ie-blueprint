@@ -1,4 +1,5 @@
 import { School } from "lucide-react";
+import { Link } from "react-router";
 import { Badge } from "~/components/ui/badge";
 
 interface DistrictSchoolItem {
@@ -41,22 +42,25 @@ export function DistrictSchoolsGrid({ schools }: DistrictSchoolsGridProps) {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {schools.map((s) => (
-            <div
+            <Link
               key={s._id}
-              className="bg-card rounded-xl border border-border p-4 space-y-2"
+              to={`/district/school/${s._id}`}
+              className="block rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             >
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-medium truncate">
-                  {s.name ?? "Unnamed School"}
-                </span>
-                <Badge variant={s.deletedAt ? "neutral" : "active"}>
-                  {s.deletedAt ? "Inactive" : "Active"}
-                </Badge>
+              <div className="bg-card rounded-xl border border-border p-4 space-y-2 transition-colors hover:border-primary/40">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium truncate">
+                    {s.name ?? "Unnamed School"}
+                  </span>
+                  <Badge variant={s.deletedAt ? "neutral" : "active"}>
+                    {s.deletedAt ? "Inactive" : "Active"}
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {formatLocation(s.city, s.state)}
+                </p>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {formatLocation(s.city, s.state)}
-              </p>
-            </div>
+            </Link>
           ))}
         </div>
       )}

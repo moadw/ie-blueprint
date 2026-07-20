@@ -13,8 +13,26 @@ type AnalyticsUser = {
 };
 
 // Mutable context read by the enrichment plugin so every event is stamped.
-let context: { organization: string; userType: string; schools: string[] } | null = null;
+let context: {
+  organization: string;
+  userType: string;
+  schools: string[];
+  userId: string;
+} | null = null;
 let initialized = false;
+
+/**
+ * Format a Date as `YYYY-MM-DD` in the browser's LOCAL timezone. Deliberately
+ * uses the local getters (NOT `toISOString()`, which is UTC) so the calendar
+ * day reflects the user's own day — this is what step-2 groups `practice_completed`
+ * on to derive per-local-day streaks, and it must stay correct across midnight.
+ */
+function formatLocalYMD(d: Date): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 function organizationContextPlugin(): EnrichmentPlugin {
   return {
@@ -22,11 +40,17 @@ function organizationContextPlugin(): EnrichmentPlugin {
     type: "enrichment",
     async execute(event: Event): Promise<Event> {
       if (context) {
+        // Compute localDate per-event (never hoisted/cached) so it reflects the
+        // event's own day and stays correct across midnight.
+        const eventDate = new Date(event.time ?? Date.now());
         event.event_properties = {
           ...event.event_properties,
           organization: context.organization,
           userType: context.userType,
           schools: context.schools,
+          userId: context.userId,
+          localDate: formatLocalYMD(eventDate),
+          tzOffset: new Date().getTimezoneOffset(),
         };
       }
       return event;
@@ -50,6 +74,7 @@ export function initAnalytics(user: AnalyticsUser): void {
     organization: user.organization ?? "",
     userType: role || "unknown",
     schools: schoolIds,
+    userId: user._id,
   };
 
   // Register enrichment BEFORE init so it applies to all (incl. autocaptured) events.

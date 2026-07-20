@@ -357,20 +357,21 @@ export function buildSliderStep(
 }
 
 /**
- * Build the ordered step list for a class. Taps are mapped in their given
- * order (the caller is responsible for sorting by `order` first); an optional
- * non-deleted pin appends a final `achievement` step. Pass the tap-type
- * `resolver` so taps whose `type` is a `_id` resolve to their canonical slug
- * before branching (no-op when `tap.type` is already a slug or the map empty).
+ * Build the ordered step list for a class. Steps follow a FIXED canonical order
+ * by KIND, regardless of each tap's `order`:
+ *   media (player) → slider → journal → feedback → achievement (pin)
+ * Within the media and journal groups the taps keep their relative order (the
+ * caller pre-sorts by `order`). Pass the tap-type `resolver` so taps whose
+ * `type` is a `_id` resolve to their canonical slug before branching (no-op
+ * when `tap.type` is already a slug or the map empty).
  *
  * Slider taps are special-cased: ALL of a class's slider taps collapse into a
- * SINGLE `slider` step (ordered slides), inserted at the position of the FIRST
- * slider tap. Every other tap maps one-to-one as before (journal vs player), so
- * non-slider classes are unaffected.
+ * SINGLE `slider` step (ordered slides).
  *
- * When `includeFeedback` is true, a final `{ kind: "feedback" }` step is pushed
- * AFTER the optional achievement step, so feedback is always structurally last.
- * The caller gates this on "no existing feedback for this user + practice".
+ * The two closing steps are optional: `includeFeedback` (gated by the caller on
+ * "no existing feedback for this user + practice") pushes a `{ kind: "feedback" }`
+ * step, and a non-deleted `pin` pushes an `achievement` step after it — so when
+ * both exist feedback shows first and the pin is last.
  */
 export function buildPracticeSteps(
   taps: readonly PracticeTap[],
@@ -378,29 +379,33 @@ export function buildPracticeSteps(
   resolver?: ReadonlyMap<string, string>,
   includeFeedback = false,
 ): PracticeStep[] {
-  const sliderTaps = taps.filter((t) => isSliderTap(t, resolver));
-  let sliderInserted = false;
   const steps: PracticeStep[] = [];
+
+  // 1. Media (player) taps — anything that isn't a slider or journal. Relative
+  //    order preserved (taps arrive pre-sorted by `order`).
   for (const tap of taps) {
-    if (isSliderTap(tap, resolver)) {
-      if (!sliderInserted) {
-        const sliderStep = buildSliderStep(sliderTaps);
-        if (sliderStep) steps.push(sliderStep);
-        sliderInserted = true;
-      }
-      continue;
-    }
-    steps.push(
-      isJournalTap(tap, resolver)
-        ? { kind: "journal", tap }
-        : { kind: "player", media: mediaForTap(tap, resolver), tap },
-    );
+    if (isSliderTap(tap, resolver) || isJournalTap(tap, resolver)) continue;
+    steps.push({ kind: "player", media: mediaForTap(tap, resolver), tap });
+  }
+
+  // 2. Slider — ALL slider taps collapsed into a single ordered step.
+  const sliderStep = buildSliderStep(
+    taps.filter((t) => isSliderTap(t, resolver)),
+  );
+  if (sliderStep) steps.push(sliderStep);
+
+  // 3. Journal taps — relative order preserved.
+  for (const tap of taps) {
+    if (isJournalTap(tap, resolver)) steps.push({ kind: "journal", tap });
+  }
+
+  // 4. Closing steps: feedback first, then the achievement (pin) — so when both
+  //    exist the pin is the final celebratory beat after feedback.
+  if (includeFeedback) {
+    steps.push({ kind: "feedback" });
   }
   if (pin) {
     steps.push({ kind: "achievement", pin });
-  }
-  if (includeFeedback) {
-    steps.push({ kind: "feedback" });
   }
   return steps;
 }

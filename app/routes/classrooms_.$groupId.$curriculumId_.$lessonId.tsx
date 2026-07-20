@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { useLoaderData, useNavigate, useRevalidator } from "react-router";
+import { redirect, useLoaderData, useNavigate, useRevalidator } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { toast } from "sonner";
 import { env } from "~/lib/env";
@@ -16,9 +16,14 @@ import { CurriculumsFindOneDocument } from "~/queries/curriculums";
 import { GroupProgressFindOneDocument } from "~/queries/groups";
 import { FeedbackFindOneDocument } from "~/queries/feedback";
 import { UsersFindOneDocument } from "~/queries/users";
+import { MyLikedClassesDocument } from "~/queries/class-likes";
 import { GroupFinishedClassDocument } from "~/mutations/groups";
 import { TeacherGroupJournalCreateOneDocument } from "~/mutations/journals";
 import { FeedbackCreateOneDocument } from "~/mutations/feedback";
+import {
+  ClassLikeCreateOneDocument,
+  ClassLikeDeleteOneDocument,
+} from "~/mutations/class-likes";
 import { SortFindManytapInput } from "~/gql/graphql";
 import { JournalScreen } from "~/components/lesson/journal-screen";
 import { MilestoneScreen } from "~/components/lesson/milestone-screen";
@@ -80,6 +85,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       tapTypes: [],
       curriculumTitle: null,
       questionLabels: {} as Record<string, string>,
+      liked: false,
       classError:
         "Platform is not configured. Please contact your administrator.",
       tapsError: null,
@@ -94,6 +100,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     curriculumResult,
     progressResult,
     userResult,
+    likedResult,
   ] = await Promise.all([
       safe(
         // Teacher-safe single-class fetch (the admin `ClassesAdminFindOne` is
@@ -157,7 +164,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         // Scopes the existing-feedback pre-check and stamps the feedback entry.
         gqlClient.request(UsersFindOneDocument, {}, headers),
       ),
+      safe(
+        // The teacher's liked classes (session-scoped, no args) — seeds the
+        // player's heart fill for THIS class. Non-critical chrome: a failed
+        // fetch degrades to "not liked" (empty heart), never an error card.
+        gqlClient.request(MyLikedClassesDocument, {}, headers),
+      ),
     ]);
+
+  // Resolve the parent curriculum first so the whole player can be gated on its
+  // active state. A `null` result is a load failure (resilient-loader
+  // convention) — do NOT redirect; fall through to the existing soft-error path
+  // below. An explicitly inactive (`active === false`) curriculum redirects to
+  // the curriculum page so its lessons never play; throwing the redirect
+  // Response short-circuits the remaining post-processing and the second
+  // `Promise.all`.
+  const curriculumForTitle = curriculumResult.ok
+    ? curriculumResult.data.CurriculumsFindOne
+    : null;
+  if (curriculumForTitle && curriculumForTitle.active === false) {
+    throw redirect(`/classrooms/${groupId}/${curriculumId}`);
+  }
 
   const rawClassItem = classResult.ok ? classResult.data.ClassesFindOne : null;
   // Localize the class title/description shown in the player (header + milestone
@@ -202,9 +229,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Curriculum title drives the player's `seriesName`. Non-critical chrome —
   // a failed fetch falls back to the class title, no error card. Localized from
   // the global language cookie (ES→EN fallback) so the series name matches.
-  const curriculumForTitle = curriculumResult.ok
-    ? curriculumResult.data.CurriculumsFindOne
-    : null;
+  // (`curriculumForTitle` is resolved right after the first `Promise.all` above,
+  // where it also gates the inactive-curriculum redirect.)
   const curriculumTitle = curriculumForTitle
     ? (pickLocalized(
         curriculumForTitle,
@@ -257,6 +283,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ? (feedbackResult.data.FeedbackFindOne ?? null)
       : null;
 
+  // Whether THIS class is among the teacher's liked classes → seeds the player
+  // heart. Derived from the shared `MyLikedClasses` list (mirrors the curriculum
+  // route); a failed fetch degrades to `false` (empty heart).
+  const liked = likedResult.ok
+    ? (likedResult.data.MyLikedClasses ?? []).some((l) => l?.class === lessonId)
+    : false;
+
   return {
     groupId,
     curriculumId,
@@ -270,6 +303,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     questionLabels,
     teacherId,
     existingFeedback,
+    liked,
     classError: classResult.error,
     tapsError: tapsResult.error,
   };
@@ -289,6 +323,7 @@ export default function LessonPlayerRoute() {
     questionLabels,
     teacherId,
     existingFeedback,
+    liked: initialLiked,
     classError,
     tapsError,
   } = useLoaderData<typeof loader>();
@@ -296,10 +331,10 @@ export default function LessonPlayerRoute() {
   const revalidator = useRevalidator();
 
   // Per-curriculum audio-length preference (step-3). SSR-gated: server + first
-  // client render resolve to the default `"full-audio"`, then the persisted
+  // client render resolve to the default (`5min-audio`), then the persisted
   // choice applies post-mount. Called unconditionally before any early return
   // so hook order stays stable. Drives `selectAudioTaps` below — no router
-  // state is consumed; a fresh first visit defaults to `full-audio`.
+  // state is consumed; a fresh first visit defaults to `5min-audio`.
   const [audioPref] = useAudioPreference(curriculumId);
 
   const [stepIndex, setStepIndex] = useState(0);
@@ -307,6 +342,12 @@ export default function LessonPlayerRoute() {
   const [savingJournal, setSavingJournal] = useState(false);
   // Disables the feedback Submit button + shows "Submitting..." while in flight.
   const [savingFeedback, setSavingFeedback] = useState(false);
+
+  // Client-side like (heart) state, seeded from the loader. A single in-flight
+  // guard drops a second toggle while the create/delete is pending, preventing
+  // create/delete races (mirrors the curriculum route's favorite toggle).
+  const [liked, setLiked] = useState(() => Boolean(initialLiked));
+  const likePendingRef = useRef(false);
 
   // Fire `GroupFinishedClass` at most once per practice completion — a ref (not
   // state) so re-renders / replays of the final media step don't re-fire it.
@@ -333,7 +374,11 @@ export default function LessonPlayerRoute() {
   // first/only media step — `firstMediaStepIndex` + `handleMediaEnded` (and thus
   // completion + journal handoff) are unchanged.
   const filteredTaps = selectAudioTaps(taps, audioPref, resolver);
-  const steps = buildPracticeSteps(filteredTaps, pin, resolver, !existingFeedback);
+  // The post-practice feedback step shows only when the class has feedback
+  // turned on (the `feedback` boolean set in admin) AND this teacher hasn't
+  // already submitted feedback for the practice.
+  const showFeedback = Boolean(classItem?.feedback) && !existingFeedback;
+  const steps = buildPracticeSteps(filteredTaps, pin, resolver, showFeedback);
   const current = steps[stepIndex];
 
   // Index of the FIRST media (player) step. Completion fires when this first
@@ -453,7 +498,8 @@ export default function LessonPlayerRoute() {
   };
 
   // Persist the post-practice feedback via `FeedbackCreateOne`, then advance
-  // (last step → `exitToCurriculum`). Mirrors `handleJournalSubmit`: client-side
+  // (to the achievement step if the class has a pin, otherwise
+  // `exitToCurriculum`). Mirrors `handleJournalSubmit`: client-side
   // `gqlClient` injects `access-token` (no header). `state` is the raw
   // `MoodValue` string; `class`/`curriculum` come from route params; `user` is
   // the logged-in teacher (spread conditionally to satisfy
@@ -471,7 +517,7 @@ export default function LessonPlayerRoute() {
           ...(teacherId ? { user: teacherId } : {}),
         },
       });
-      advance(); // last step → exitToCurriculum()
+      advance(); // → achievement step if the class has a pin, else exit
     } catch (err) {
       toast.error(
         toErrorMessage(err, "Couldn't submit your feedback. Please try again."),
@@ -480,6 +526,32 @@ export default function LessonPlayerRoute() {
       setSavingFeedback(false);
     }
   };
+
+  // Toggle the like for THIS practice from the player. Optimistic flip guarded by
+  // `likePendingRef` (drop a second tap while in flight); `:lessonId` IS the
+  // class `_id`. Client-side `gqlClient` injects `access-token` (no header). On
+  // failure we revert and toast. Mirrors the curriculum route's favorite toggle.
+  const handleToggleLike = useCallback(() => {
+    if (likePendingRef.current) return;
+    likePendingRef.current = true;
+    let wasLiked = false;
+    setLiked((prev) => {
+      wasLiked = prev;
+      return !prev;
+    });
+    gqlClient
+      .request(
+        wasLiked ? ClassLikeDeleteOneDocument : ClassLikeCreateOneDocument,
+        { class: lessonId },
+      )
+      .catch((err) => {
+        setLiked(wasLiked); // revert the optimistic flip
+        toast.error(toErrorMessage(err, "Couldn't update favorite"));
+      })
+      .finally(() => {
+        likePendingRef.current = false;
+      });
+  }, [lessonId]);
 
   // Class-level chrome stays constant across a class's taps; only the media
   // changes per tap. `seriesName` = curriculum title, falling back to the class
@@ -502,9 +574,18 @@ export default function LessonPlayerRoute() {
           mediaUrl={mediaUrlForTap(current.tap)}
           {...(current.tap._id ? { contentId: current.tap._id } : {})}
           {...(() => {
+            // Still-background for the audio path: prefer the class's own
+            // `background`, fall back to its `cover`, and let PlayerStage use
+            // the bundled `glass-background.webp` when neither is set.
+            const bg = classItem?.background?.url ?? classItem?.cover?.url;
+            return bg ? { backgroundImageUrl: bg } : {};
+          })()}
+          {...(() => {
             const t = resolveTapType(current.tap, resolver);
             return t ? { tapType: t } : {};
           })()}
+          liked={liked}
+          onToggleLike={handleToggleLike}
           onExit={exitToCurriculum}
           onEnded={handleMediaEnded}
         />

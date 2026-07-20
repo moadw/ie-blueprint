@@ -161,6 +161,9 @@ const SAMPLE_STORIES: ImpactStory[] = [
 export async function getDistrictImpact(request: Request): Promise<{
   data: DistrictImpactData | null;
   loadError: string | null;
+  // Master-admin preview flag — surfaced so the Impact header can hide the
+  // "Share a Story" create action (read-only UI gate, not an impact-scoping change).
+  preview: boolean;
 }> {
   const result = await resolveDistrictAdmin(request);
 
@@ -168,6 +171,7 @@ export async function getDistrictImpact(request: Request): Promise<{
     return {
       data: null,
       loadError: result.loadError ?? "Could not resolve district.",
+      preview: result.preview,
     };
   }
 
@@ -215,5 +219,6 @@ export async function getDistrictImpact(request: Request): Promise<{
       currentUser,
     },
     loadError: null,
+    preview: result.preview,
   };
 }

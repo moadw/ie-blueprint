@@ -12,7 +12,7 @@ export default function SettingsGetHelpRoute() {
 
       <div className="space-y-3">
         <a
-          href="mailto:support@innerexplorer.com"
+          href="mailto:info@innerexplorer.com"
           className="flex items-center gap-4 p-4 rounded-xl border border-border transition-colors hover:bg-muted/50"
         >
           <div className="w-10 h-10 rounded-[16px] bg-muted flex items-center justify-center">
@@ -21,7 +21,7 @@ export default function SettingsGetHelpRoute() {
           <div className="flex-1">
             <p className="font-medium text-foreground">Email Support</p>
             <p className="text-sm text-muted-foreground">
-              support@innerexplorer.com
+              info@innerexplorer.com
             </p>
           </div>
           <ExternalLink className="h-4 w-4 text-muted-foreground" />

@@ -1,7 +1,7 @@
 import { NavLink } from "react-router";
 import { Folder } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { statusFromActiveHidden } from "~/lib/curriculum";
+import { PRACTICE_COUNT_CAP, statusFromActiveHidden } from "~/lib/curriculum";
 import type { CurriculumsFindManyQuery } from "~/gql/graphql";
 
 type Curriculum = NonNullable<
@@ -25,6 +25,10 @@ export function SeriesCard({ curriculum, practiceCount }: SeriesCardProps) {
   });
   const isLive = status === "live";
   const total = practiceCount ?? curriculum.totalLesson ?? 0;
+  // No real series should exceed 200 practices; cap the label at "200+" as a
+  // safety guard so an unexpectedly large (or stale-aggregate) count reads as an
+  // anomaly rather than a precise figure. Real counts (e.g. 180) show exactly.
+  const totalLabel = total > PRACTICE_COUNT_CAP ? `${PRACTICE_COUNT_CAP}+` : `${total}`;
   const description = curriculum.description?.trim()
     ? curriculum.description
     : "No description";
@@ -70,7 +74,7 @@ export function SeriesCard({ curriculum, practiceCount }: SeriesCardProps) {
         </p>
         <div className="mt-auto flex justify-end pt-2">
           <span className="text-xs text-stone-400">
-            {total} {total === 1 ? "practice" : "practices"}
+            {totalLabel} {total === 1 ? "practice" : "practices"}
           </span>
         </div>
       </div>
