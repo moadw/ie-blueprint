@@ -7,6 +7,13 @@ type TransitionPhase = "entering" | "playing" | "ending" | "content";
 interface ImmersiveVideoTransitionProps {
   /** Optional video URL. When absent, the component skips straight to `content`. */
   videoUrl?: string | undefined;
+  /**
+   * Play the transition video with audio (default muted). The journal intro
+   * has a soundtrack; the milestone transition stays silent. If the browser
+   * blocks unmuted autoplay, playback retries muted so the visual transition
+   * still runs — only the audio is lost.
+   */
+  withSound?: boolean;
   /** Ambient glow colors `[primary, secondary]`. */
   glowColors?: [string, string];
   /** Delay (ms) before the entrance → playing/content transition begins. */
@@ -35,6 +42,7 @@ const DEFAULT_GLOW: [string, string] = [
  */
 export function ImmersiveVideoTransition({
   videoUrl,
+  withSound = false,
   glowColors = DEFAULT_GLOW,
   entranceDelay = 300,
   endingDuration = 1200,
@@ -51,20 +59,31 @@ export function ImmersiveVideoTransition({
   // the screen is never stuck on an inert entrance frame.
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (hasVideo && hydrated && videoRef.current) {
+      const video = videoRef.current;
+      if (hasVideo && hydrated && video) {
         setPhase("playing");
-        videoRef.current.play().catch(() => {
-          // Autoplay blocked or playback rejected: there's no `ended` event
-          // coming, so reveal the content instead of stranding the viewer on
-          // the ambient background forever.
-          setPhase("content");
+        // Set `muted` on the element itself — React's `muted` attribute is not
+        // reliably reflected to the DOM property.
+        video.muted = !withSound;
+        video.play().catch(() => {
+          if (!video.muted) {
+            // Browser blocked unmuted autoplay. Retry muted so the transition
+            // still plays (losing only the audio) rather than skipping it.
+            video.muted = true;
+            video.play().catch(() => setPhase("content"));
+          } else {
+            // Playback rejected even while muted: there's no `ended` event
+            // coming, so reveal the content instead of stranding the viewer on
+            // the ambient background forever.
+            setPhase("content");
+          }
         });
       } else {
         setPhase("content");
       }
     }, entranceDelay);
     return () => clearTimeout(timer);
-  }, [hasVideo, hydrated, entranceDelay]);
+  }, [hasVideo, hydrated, entranceDelay, withSound]);
 
   const handleVideoEnded = () => {
     setPhase("ending");
@@ -107,7 +126,7 @@ export function ImmersiveVideoTransition({
         <video
           ref={videoRef}
           src={videoUrl}
-          muted
+          muted={!withSound}
           playsInline
           preload="auto"
           onLoadedData={() => setVideoLoaded(true)}
