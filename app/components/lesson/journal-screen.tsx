@@ -70,6 +70,7 @@ export function JournalScreen({
   return (
     <ImmersiveVideoTransition
       videoUrl={videoUrl}
+      withSound
       glowColors={["rgba(134, 239, 172, 0.15)", "rgba(96, 165, 250, 0.12)"]}
       entranceDelay={400}
       endingDuration={1000}
