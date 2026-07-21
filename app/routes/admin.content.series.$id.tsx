@@ -44,13 +44,14 @@ const SERIES_CLASSES_LIMIT = 500;
 // if it's ever hit so indicators don't silently go incomplete.
 const SERIES_TAPS_LIMIT = 2000;
 
-// tap.type identifier → which indicator box it feeds. Slider (and any other
-// type) is intentionally unmapped: it has no box (matches the prototype).
+// tap.type identifier → which indicator box it feeds. Any other type is
+// unmapped and contributes no box.
 const TAP_TYPE_TO_BOX: Record<string, keyof ClassContentSummary> = {
   "ie-journal": "journal",
   "full-audio": "full",
   "5min-audio": "fiveMin",
   video: "video",
+  slider: "slider",
 };
 
 // A tap's scalar language → box tag. Empty/null = shown in both languages.
@@ -78,6 +79,7 @@ function summarizeContentByClass(
       full: Set<string>;
       fiveMin: Set<string>;
       video: Set<string>;
+      slider: Set<string>;
     }
   >();
   for (const tap of taps) {
@@ -92,6 +94,7 @@ function summarizeContentByClass(
         full: new Set(),
         fiveMin: new Set(),
         video: new Set(),
+        slider: new Set(),
       };
       acc.set(classId, bucket);
     }
@@ -106,6 +109,7 @@ function summarizeContentByClass(
       full: sortLangs(b.full),
       fiveMin: sortLangs(b.fiveMin),
       video: sortLangs(b.video),
+      slider: sortLangs(b.slider),
     };
   }
   return out;
@@ -413,6 +417,7 @@ export default function AdminContentSeriesDetail() {
                       EMPTY_CONTENT_SUMMARY)
                     : null
                 }
+                currentSeriesTitle={curriculum.title ?? null}
                 onChange={() => revalidator.revalidate()}
               />
             ))}

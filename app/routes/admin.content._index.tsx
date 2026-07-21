@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import {
   useLoaderData,
@@ -17,12 +17,14 @@ import { readPageFromRequest } from "~/lib/pagination";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
 import { CurriculumsFindManyDocument } from "~/queries/curriculums";
+import { CurriculumCollectionFindManyDocument } from "~/queries/curriculum-collections";
 import { ClassesAdminCountFindManyDocument } from "~/queries/classes";
 import { PRACTICE_COUNT_CAP } from "~/lib/curriculum";
 import { curriculumsSortEnum } from "~/gql/graphql";
 import { Button } from "~/components/ui/button";
 import { SeriesCard } from "~/components/admin/series-card";
 import { SeriesDialog } from "~/components/admin/series-dialog";
+import { Divider } from "~/components/ui/divider";
 
 // No real series should exceed PRACTICE_COUNT_CAP (200) practices, so we only
 // need to count up to the cap + 1: fetch that many rows and let a single
@@ -36,8 +38,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!env.PLATFORM) {
     return {
       curriculums: [],
+      collections: [],
       practiceCounts: {} as Record<string, number>,
       error: "Platform is not configured. Please contact your administrator.",
+      collectionsError: null as string | null,
       page: 1,
       hasMore: false,
     };
@@ -64,6 +68,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
   const curriculums = result.ok
     ? (result.data.CurriculumsFindMany ?? []).filter(
+        (c): c is NonNullable<typeof c> => Boolean(c),
+      )
+    : [];
+
+  // Experiences (a.k.a. curriculum collections) let us group the flat series
+  // list under headings. Membership is stored on the curriculum side
+  // (`curriculum.curriculumCollection: curriculumcollection[]`, an array — a
+  // series can belong to several), so we only need the collections' names/colors
+  // here and invert client-side. safe()-wrapped: a failed fetch degrades to the
+  // ungrouped flat grid rather than white-screening the list.
+  const collectionsResult = await safe(
+    gqlClient.request(
+      CurriculumCollectionFindManyDocument,
+      { filter: { platform: env.PLATFORM }, limit: 500 },
+      { "access-token": token },
+    ),
+  );
+  const collections = collectionsResult.ok
+    ? (collectionsResult.data.curriculumCollectionFindMany ?? []).filter(
         (c): c is NonNullable<typeof c> => Boolean(c),
       )
     : [];
@@ -111,16 +134,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     curriculums,
+    collections,
     practiceCounts,
     error: result.error,
+    collectionsError: collectionsResult.error,
     page,
     hasMore: false,
   };
 }
 
 export default function AdminContentIndex() {
-  const { curriculums, practiceCounts, error, page, hasMore } =
-    useLoaderData<typeof loader>();
+  const {
+    curriculums,
+    collections,
+    practiceCounts,
+    error,
+    collectionsError,
+    page,
+    hasMore,
+  } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const navigation = useNavigation();
   const revalidator = useRevalidator();
@@ -131,6 +163,46 @@ export default function AdminContentIndex() {
     setDialogOpen(false);
     revalidator.revalidate();
   };
+
+  // Group the flat series list under experience (curriculum-collection) headings.
+  // A series appears under EVERY collection it belongs to (membership is a
+  // many-to-many array on the curriculum side), so the same card can show in
+  // more than one section. Collections are sorted A–Z by name; only collections
+  // with ≥1 assigned series get a section. Series whose collections don't
+  // resolve to any fetched collection (none set, or an orphaned/deleted id) fall
+  // into a trailing "No Experience" group. Within a group, the loader's
+  // ORDER_ASC order is preserved (we filter the already-ordered list).
+  const groups = useMemo(() => {
+    const collectionIds = new Set(collections.map((c) => c._id));
+    const sections = [...collections]
+      .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""))
+      .map((collection) => ({
+        collection,
+        items: curriculums.filter((c) =>
+          (c.curriculumCollection ?? []).some((cc) => cc?._id === collection._id),
+        ),
+      }))
+      .filter((section) => section.items.length > 0);
+    const noExperience = curriculums.filter(
+      (c) =>
+        !(c.curriculumCollection ?? []).some(
+          (cc) => cc?._id != null && collectionIds.has(cc._id),
+        ),
+    );
+    return { sections, noExperience };
+  }, [curriculums, collections]);
+
+  const renderGrid = (items: typeof curriculums) => (
+    <div className="grid gap-4 md:grid-cols-2">
+      {items.map((c) => (
+        <SeriesCard
+          key={c._id}
+          curriculum={c}
+          practiceCount={practiceCounts[c._id]}
+        />
+      ))}
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -166,15 +238,55 @@ export default function AdminContentIndex() {
             </Button>
           </div>
         </div>
+      ) : groups.sections.length === 0 ? (
+        // No experiences resolved (none exist, or the collections fetch failed)
+        // — fall back to the original ungrouped grid.
+        <div className="space-y-3">
+          {collectionsError ? (
+            <p className="text-xs text-muted-foreground">
+              Couldn't load experiences — showing series ungrouped.
+            </p>
+          ) : null}
+          {renderGrid(curriculums)}
+        </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {curriculums.map((c) => (
-            <SeriesCard
-              key={c._id}
-              curriculum={c}
-              practiceCount={practiceCounts[c._id]}
-            />
+        <div className="space-y-8">
+          {groups.sections.map((section) => (
+            <section key={section.collection._id} className="space-y-3">
+              <div className="flex items-center gap-2">
+                {section.collection.color ? (
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: section.collection.color }}
+                    aria-hidden="true"
+                  />
+                ) : null}
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  {section.collection.name ?? "Untitled experience"}
+                </h3>
+                <span className="text-xs text-muted-foreground/70">
+                  ({section.items.length})
+                </span>
+              </div>
+              <Divider />
+              {renderGrid(section.items)}
+            </section>
           ))}
+
+          {groups.noExperience.length > 0 ? (
+            <section className="space-y-3">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  No Experience
+                </h3>
+                <span className="text-xs text-muted-foreground/70">
+                  ({groups.noExperience.length})
+                </span>
+              </div>
+              <Divider />
+              {renderGrid(groups.noExperience)}
+            </section>
+          ) : null}
         </div>
       )}
 
