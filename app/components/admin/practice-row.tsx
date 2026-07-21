@@ -5,10 +5,13 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  EllipsisVertical,
   Film,
+  FolderInput,
   GripVertical,
   Image as ImageIcon,
   ImageIcon as ImageOverlay,
+  Images,
   Loader2,
   Music,
   NotebookPen,
@@ -19,11 +22,16 @@ import {
 import { toast } from "sonner";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuItem,
+} from "~/components/ui/dropdown-menu";
 import { Input } from "~/components/ui/input";
 import { SegmentedTabs } from "~/components/ui/segmented-tabs";
 import { Switch } from "~/components/ui/switch";
 import { TapBlocks } from "~/components/admin/tap-blocks";
 import { AchievementBlock } from "~/components/admin/achievement-block";
+import { ReassignPracticeDialog } from "~/components/admin/reassign-practice-dialog";
 import { api } from "~/lib/api";
 import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
@@ -47,6 +55,7 @@ export type ClassContentSummary = {
   full: string[];
   fiveMin: string[];
   video: string[];
+  slider: string[];
 };
 
 export const EMPTY_CONTENT_SUMMARY: ClassContentSummary = {
@@ -54,11 +63,13 @@ export const EMPTY_CONTENT_SUMMARY: ClassContentSummary = {
   full: [],
   fiveMin: [],
   video: [],
+  slider: [],
 };
 
-// The four content-block boxes, in display order. Active tint per type mirrors
-// the prototype (Full=blue, 5min=amber, Video=purple); Journal=teal is added
-// per request. Inactive types fall back to a dashed grey box.
+// The five content-block boxes, in display order. Active tint per type mirrors
+// the prototype (Full=blue, 5min=amber, Video=purple); Journal=teal and
+// Slider=rose are added per request. Inactive types fall back to a dashed grey
+// box.
 const CONTENT_BOXES: ReadonlyArray<{
   key: keyof ClassContentSummary;
   label: string;
@@ -69,6 +80,7 @@ const CONTENT_BOXES: ReadonlyArray<{
   { key: "full", label: "Full", Icon: Music, active: "border-blue-200 bg-blue-50 text-blue-600" },
   { key: "fiveMin", label: "5min", Icon: Clock, active: "border-amber-300 bg-amber-50 text-amber-700" },
   { key: "video", label: "Video", Icon: Film, active: "border-purple-200 bg-purple-50 text-purple-600" },
+  { key: "slider", label: "Slider", Icon: Images, active: "border-rose-200 bg-rose-50 text-rose-600" },
 ];
 
 // Collapsed-row content checklist. One box per block type; colored when the
@@ -108,6 +120,8 @@ export interface PracticeRowProps {
   practice: Practice;
   /** Content-block summary for the collapsed row; null hides the boxes. */
   content?: ClassContentSummary | null;
+  /** The current series' title, shown in the reassign confirm copy. */
+  currentSeriesTitle?: string | null;
   onChange: () => void;
 }
 
@@ -122,7 +136,12 @@ const GRADE_OPTIONS = [
 
 const labelClass = "block text-[14px] text-foreground mb-2 font-medium";
 
-export function PracticeRow({ practice, content = null, onChange }: PracticeRowProps) {
+export function PracticeRow({
+  practice,
+  content = null,
+  currentSeriesTitle = null,
+  onChange,
+}: PracticeRowProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const bgInputRef = useRef<HTMLInputElement | null>(null);
   const practiceId = practice._id ?? "";
@@ -159,6 +178,11 @@ export function PracticeRow({ practice, content = null, onChange }: PracticeRowP
   const [deleting, setDeleting] = useState(false);
   const [titleEditing, setTitleEditing] = useState(false);
   const [titleSaving, setTitleSaving] = useState(false);
+
+  // Kebab action menu + reassign dialog. `reassignOpen` is set here but
+  // consumed by the ReassignPracticeDialog wired in a later phase (no-op now).
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [reassignOpen, setReassignOpen] = useState(false);
 
   // The class background persists like the cover: `PUT /admin/class-background`
   // writes it, and the GraphQL `classes` type exposes `background { url type }`
@@ -545,20 +569,47 @@ export function PracticeRow({ practice, content = null, onChange }: PracticeRowP
               <ChevronDown className="h-4 w-4" />
             )}
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleDelete}
-            disabled={deleting}
-            aria-label="Delete practice"
-            className="text-red-500 hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
+          <DropdownMenu
+            open={menuOpen}
+            onOpenChange={setMenuOpen}
+            trigger={
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Practice actions"
+                className="text-stone-500 hover:bg-stone-100 hover:text-stone-700"
+              >
+                <EllipsisVertical className="h-4 w-4" />
+              </Button>
+            }
           >
-            {deleting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Trash2 className="h-4 w-4" />
-            )}
-          </Button>
+            <DropdownMenuItem
+              icon={<FolderInput className="h-4 w-4" />}
+              onClick={() => {
+                setMenuOpen(false);
+                setReassignOpen(true);
+              }}
+            >
+              Re-assign series
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              destructive
+              disabled={deleting}
+              icon={
+                deleting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )
+              }
+              onClick={() => {
+                setMenuOpen(false);
+                handleDelete();
+              }}
+            >
+              Delete Practice
+            </DropdownMenuItem>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -701,6 +752,18 @@ export function PracticeRow({ practice, content = null, onChange }: PracticeRowP
           </div>
         </div>
       ) : null}
+
+      <ReassignPracticeDialog
+        open={reassignOpen}
+        onClose={() => setReassignOpen(false)}
+        practice={{
+          _id: practiceId,
+          title: practice.title ?? null,
+          curriculum: practice.curriculum ?? null,
+        }}
+        currentSeriesTitle={currentSeriesTitle ?? null}
+        onReassigned={onChange}
+      />
     </div>
   );
 }
