@@ -70,3 +70,9 @@ export const SetUserSchoolDocument = graphql(`
     SetUserSchool(school: $school, user: $user)
   }
 `);
+
+export const UserJoinByCodeDocument = graphql(`
+  mutation UserJoinByCode($code: String!) {
+    UserJoinByCode(code: $code)
+  }
+`);

@@ -24,18 +24,23 @@ export class SsoAuthError extends Error {
  * Shared post-token session logic for email + every SSO flow.
  *
  * Single, unambiguous contract:
- * - On success it RETURNS a redirect `Response` (to the role home) with a
- *   `Set-Cookie` committing the session.
+ * - On success it RETURNS a redirect `Response` (to `redirectTo` when given,
+ *   else the role home) with a `Set-Cookie` committing the session.
  * - On failure it THROWS a typed {@link SsoAuthError} — never returns an error
  *   value, never emits a redirect/`Response.json` itself.
  *
  *   - `verify-failed` — the `UsersFindOne` lookup threw (couldn't verify the
  *     account).
  *   - `not-allowed` — the platform gate failed (`user.platform !== env.PLATFORM`).
+ *
+ * @param redirectTo Optional explicit redirect target. Callers that want the
+ *   default role-based home (login + every SSO flow) omit it; the join-code
+ *   signup flow passes `/onboarding/account` to continue onboarding instead.
  */
 export async function establishSessionFromToken(
   request: Request,
   token: string,
+  redirectTo?: string,
 ): Promise<Response> {
   let userResp;
   try {
@@ -55,7 +60,7 @@ export async function establishSessionFromToken(
 
   const session = await getSession(request);
   await setSessionToken(session, token);
-  const target = homePathForIdentifier(user.typeObj?.identifier);
+  const target = redirectTo ?? homePathForIdentifier(user.typeObj?.identifier);
   return redirect(target, {
     headers: { "Set-Cookie": await commitSession(session) },
   });

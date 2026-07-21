@@ -113,6 +113,7 @@ export default function DistrictAdminSchoolsRoute() {
           {district ? (
             <DistrictInviteCard
               organization={organization}
+              districtName={district?.name ?? null}
               error={organizationError}
               readOnly={preview}
             />
