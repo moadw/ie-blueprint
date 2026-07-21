@@ -132,7 +132,7 @@ export default function AdminExperiencesRoute() {
           onClick={() => setCreateOpen(true)}
           className="h-10 px-4 text-sm gap-1.5"
         >
-          <Plus className="w-4 h-4" aria-hidden="true" /> Add Type
+          <Plus className="w-4 h-4" aria-hidden="true" /> Add Experience
         </Button>
       </div>
 

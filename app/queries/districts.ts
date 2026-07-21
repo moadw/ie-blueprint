@@ -17,6 +17,9 @@ export const DistrictFindManyDocument = graphql(`
       courses
       coursesCollections
       licenseLabel
+      licenseExpDate
+      userTotal
+      schoolLicense
       coverPhoto {
         type
         url
@@ -70,6 +73,9 @@ export const DistrictUpdateOneDocument = graphql(`
         courses
         coursesCollections
         licenseLabel
+        licenseExpDate
+        userTotal
+        schoolLicense
         createdAt
         updatedAt
       }
