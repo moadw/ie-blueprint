@@ -34,6 +34,56 @@ export const DistrictFindManyDocument = graphql(`
   }
 `);
 
+// Federated (payment subgraph) fuzzy search + pagination over districts.
+// Platform is forced from the session (no `platform` arg): platform admins see
+// only their platform, global admins see all. With `query` present the primary
+// order is relevance and `sortBy` is the tiebreaker; without `query` it returns
+// every district ordered purely by `sortBy`. `total` reflects the fuzzy match
+// count — use it for the paginator, don't compare it against a client count.
+export const DistrictSearchDocument = graphql(`
+  query DistrictSearch(
+    $query: String
+    $sortBy: String
+    $sortOrder: Int
+    $limit: Int
+    $skip: Int
+  ) {
+    DistrictSearch(
+      query: $query
+      sortBy: $sortBy
+      sortOrder: $sortOrder
+      limit: $limit
+      skip: $skip
+    ) {
+      total
+      data {
+        _id
+        name
+        state
+        country
+        platform
+        organization
+        courses
+        coursesCollections
+        licenseLabel
+        licenseExpDate
+        userTotal
+        schoolLicense
+        coverPhoto {
+          type
+          url
+        }
+        logo {
+          type
+          url
+        }
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`);
+
 export const DistrictCreateOneDocument = graphql(`
   mutation DistrictCreateOne($record: CreateOnedistrictInput!) {
     DistrictCreateOne(record: $record) {
