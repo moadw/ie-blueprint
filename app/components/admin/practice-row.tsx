@@ -11,6 +11,7 @@ import {
   GripVertical,
   Image as ImageIcon,
   ImageIcon as ImageOverlay,
+  Images,
   Loader2,
   Music,
   NotebookPen,
@@ -54,6 +55,7 @@ export type ClassContentSummary = {
   full: string[];
   fiveMin: string[];
   video: string[];
+  slider: string[];
 };
 
 export const EMPTY_CONTENT_SUMMARY: ClassContentSummary = {
@@ -61,11 +63,13 @@ export const EMPTY_CONTENT_SUMMARY: ClassContentSummary = {
   full: [],
   fiveMin: [],
   video: [],
+  slider: [],
 };
 
-// The four content-block boxes, in display order. Active tint per type mirrors
-// the prototype (Full=blue, 5min=amber, Video=purple); Journal=teal is added
-// per request. Inactive types fall back to a dashed grey box.
+// The five content-block boxes, in display order. Active tint per type mirrors
+// the prototype (Full=blue, 5min=amber, Video=purple); Journal=teal and
+// Slider=rose are added per request. Inactive types fall back to a dashed grey
+// box.
 const CONTENT_BOXES: ReadonlyArray<{
   key: keyof ClassContentSummary;
   label: string;
@@ -76,6 +80,7 @@ const CONTENT_BOXES: ReadonlyArray<{
   { key: "full", label: "Full", Icon: Music, active: "border-blue-200 bg-blue-50 text-blue-600" },
   { key: "fiveMin", label: "5min", Icon: Clock, active: "border-amber-300 bg-amber-50 text-amber-700" },
   { key: "video", label: "Video", Icon: Film, active: "border-purple-200 bg-purple-50 text-purple-600" },
+  { key: "slider", label: "Slider", Icon: Images, active: "border-rose-200 bg-rose-50 text-rose-600" },
 ];
 
 // Collapsed-row content checklist. One box per block type; colored when the
