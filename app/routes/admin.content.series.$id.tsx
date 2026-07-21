@@ -413,6 +413,7 @@ export default function AdminContentSeriesDetail() {
                       EMPTY_CONTENT_SUMMARY)
                     : null
                 }
+                currentSeriesTitle={curriculum.title ?? null}
                 onChange={() => revalidator.revalidate()}
               />
             ))}
