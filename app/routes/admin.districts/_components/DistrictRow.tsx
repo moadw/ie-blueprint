@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { formatMonthYear } from "~/lib/format-date";
 import { DistrictAdminLine } from "./DistrictAdminLine";
 
 export interface DistrictRowDistrict {
@@ -18,6 +19,9 @@ export interface DistrictRowDistrict {
   courses?: Array<string | null> | null;
   coursesCollections?: Array<string | null> | null;
   licenseLabel?: string | null;
+  licenseExpDate?: string | number | null;
+  userTotal?: number | null;
+  schoolLicense?: boolean | null;
   coverPhoto?: { url?: string | null } | null;
   logo?: { url?: string | null } | null;
   profile?: {
@@ -45,6 +49,10 @@ export function DistrictRow({
   );
   const courseCount = validCourses.length;
   const hasLicense = !!district.licenseLabel;
+  const licenseExpLabel = formatMonthYear(district.licenseExpDate);
+  const licenseText = licenseExpLabel
+    ? `${district.licenseLabel} - ${licenseExpLabel}`
+    : district.licenseLabel;
   return (
     <div className="bg-card rounded-lg border border-border p-4 hover:border-border/80 transition-colors">
       <div className="flex items-start gap-4">
@@ -100,7 +108,7 @@ export function DistrictRow({
         <div className="flex flex-col items-end gap-2 flex-shrink-0">
           <div className="flex items-center gap-2">
             {hasLicense ? (
-              <Badge variant="active">{district.licenseLabel}</Badge>
+              <Badge variant="active">{licenseText}</Badge>
             ) : (
               <Badge variant="neutral">No License</Badge>
             )}

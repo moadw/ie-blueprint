@@ -48,6 +48,9 @@ type District = {
   courses?: Array<string | null> | null;
   coursesCollections?: Array<string | null> | null;
   licenseLabel?: string | null;
+  licenseExpDate?: string | number | null;
+  userTotal?: number | null;
+  schoolLicense?: boolean | null;
   coverPhoto?: { type?: string | null; url?: string | null } | null;
   logo?: { type?: string | null; url?: string | null } | null;
   country?: string | null;
@@ -311,6 +314,9 @@ export default function AdminDistrictsRoute() {
                   courses: target.courses ?? null,
                   coursesCollections: target.coursesCollections ?? null,
                   licenseLabel: target.licenseLabel ?? null,
+                  licenseExpDate: target.licenseExpDate ?? null,
+                  userTotal: target.userTotal ?? null,
+                  schoolLicense: target.schoolLicense ?? null,
                 });
                 setLicenseDialogOpen(true);
               }}
@@ -361,7 +367,14 @@ export default function AdminDistrictsRoute() {
         district={licenseTarget}
         presets={presets}
         curriculums={curriculums}
-        onSubmit={async ({ coursesCollections, courses, licenseLabel }) => {
+        onSubmit={async ({
+          coursesCollections,
+          courses,
+          licenseLabel,
+          licenseExpDate,
+          userTotal,
+          schoolLicense,
+        }) => {
           if (!licenseTarget) return;
           try {
             const data = await gqlClient.request(DistrictUpdateOneDocument, {
@@ -370,6 +383,9 @@ export default function AdminDistrictsRoute() {
                 courses,
                 coursesCollections,
                 licenseLabel,
+                licenseExpDate,
+                userTotal,
+                schoolLicense,
                 platform: env.PLATFORM,
               },
             });
