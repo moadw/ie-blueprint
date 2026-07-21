@@ -45,6 +45,7 @@ type Documents = {
     "\n  mutation UsersSetPasswordAdmin($user: String!, $password: String!) {\n    UsersSetPasswordAdmin(user: $user, password: $password)\n  }\n": typeof types.UsersSetPasswordAdminDocument,
     "\n  mutation SchoolUserDeleteOne($school: String!, $user: String!) {\n    SchoolUserDeleteOne(school: $school, user: $user)\n  }\n": typeof types.SchoolUserDeleteOneDocument,
     "\n  mutation SetUserSchool($school: String!, $user: String!) {\n    SetUserSchool(school: $school, user: $user)\n  }\n": typeof types.SetUserSchoolDocument,
+    "\n  mutation UserJoinByCode($code: String!) {\n    UserJoinByCode(code: $code)\n  }\n": typeof types.UserJoinByCodeDocument,
     "\n  query OrganizationUserHistoryFindMany(\n    $dateField: String!\n    $organization: String\n    $startDate: String\n    $endDate: String\n    $type: String\n  ) {\n    OrganizationUserHistoryFindMany(\n      dateField: $dateField\n      organization: $organization\n      startDate: $startDate\n      endDate: $endDate\n      type: $type\n    ) {\n      date\n      count\n    }\n  }\n": typeof types.OrganizationUserHistoryFindManyDocument,
     "\n  query UserTotalsFindMany(\n    $district: String\n    $school: String\n    $global: Boolean\n  ) {\n    UserTotalsFindMany(district: $district, school: $school, global: $global) {\n      students\n      teachers\n      schools\n      groups\n      districts\n    }\n  }\n": typeof types.UserTotalsFindManyDocument,
     "\n  query UsersSparksTotals(\n    $district: String\n    $school: String\n    $group: String\n    $global: Boolean\n    $startDate: String\n    $endDate: String\n    $type: String\n  ) {\n    UsersSparksTotals(\n      district: $district\n      school: $school\n      group: $group\n      global: $global\n      startDate: $startDate\n      endDate: $endDate\n      type: $type\n    ) {\n      date\n      week\n      month\n      year\n      dailyPoints\n      weeklyPoints\n      monthlyPoints\n      total\n    }\n  }\n": typeof types.UsersSparksTotalsDocument,
@@ -139,6 +140,7 @@ const documents: Documents = {
     "\n  mutation UsersSetPasswordAdmin($user: String!, $password: String!) {\n    UsersSetPasswordAdmin(user: $user, password: $password)\n  }\n": types.UsersSetPasswordAdminDocument,
     "\n  mutation SchoolUserDeleteOne($school: String!, $user: String!) {\n    SchoolUserDeleteOne(school: $school, user: $user)\n  }\n": types.SchoolUserDeleteOneDocument,
     "\n  mutation SetUserSchool($school: String!, $user: String!) {\n    SetUserSchool(school: $school, user: $user)\n  }\n": types.SetUserSchoolDocument,
+    "\n  mutation UserJoinByCode($code: String!) {\n    UserJoinByCode(code: $code)\n  }\n": types.UserJoinByCodeDocument,
     "\n  query OrganizationUserHistoryFindMany(\n    $dateField: String!\n    $organization: String\n    $startDate: String\n    $endDate: String\n    $type: String\n  ) {\n    OrganizationUserHistoryFindMany(\n      dateField: $dateField\n      organization: $organization\n      startDate: $startDate\n      endDate: $endDate\n      type: $type\n    ) {\n      date\n      count\n    }\n  }\n": types.OrganizationUserHistoryFindManyDocument,
     "\n  query UserTotalsFindMany(\n    $district: String\n    $school: String\n    $global: Boolean\n  ) {\n    UserTotalsFindMany(district: $district, school: $school, global: $global) {\n      students\n      teachers\n      schools\n      groups\n      districts\n    }\n  }\n": types.UserTotalsFindManyDocument,
     "\n  query UsersSparksTotals(\n    $district: String\n    $school: String\n    $group: String\n    $global: Boolean\n    $startDate: String\n    $endDate: String\n    $type: String\n  ) {\n    UsersSparksTotals(\n      district: $district\n      school: $school\n      group: $group\n      global: $global\n      startDate: $startDate\n      endDate: $endDate\n      type: $type\n    ) {\n      date\n      week\n      month\n      year\n      dailyPoints\n      weeklyPoints\n      monthlyPoints\n      total\n    }\n  }\n": types.UsersSparksTotalsDocument,
@@ -340,6 +342,10 @@ export function graphql(source: "\n  mutation SchoolUserDeleteOne($school: Strin
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n  mutation SetUserSchool($school: String!, $user: String!) {\n    SetUserSchool(school: $school, user: $user)\n  }\n"): (typeof documents)["\n  mutation SetUserSchool($school: String!, $user: String!) {\n    SetUserSchool(school: $school, user: $user)\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  mutation UserJoinByCode($code: String!) {\n    UserJoinByCode(code: $code)\n  }\n"): (typeof documents)["\n  mutation UserJoinByCode($code: String!) {\n    UserJoinByCode(code: $code)\n  }\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

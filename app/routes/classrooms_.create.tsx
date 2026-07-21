@@ -19,6 +19,7 @@ import { setLanguage } from "~/lib/language";
 import { uploadGroupCover } from "~/lib/group-cover";
 import { gqlClient } from "~/lib/graphql";
 import { getInitials } from "~/lib/initials";
+import { requireSchoolAssigned } from "~/lib/onboarding-guard.server";
 import { hasSeenOnboardingWelcome } from "~/lib/onboarding-welcome";
 import { safe } from "~/lib/safe-loader";
 import { requireSessionToken } from "~/lib/session.server";
@@ -28,7 +29,7 @@ import { CurriculumsFindManyDocument } from "~/queries/curriculums";
 import { UserDistrictFindOneDocument } from "~/queries/districts";
 import { UsersFindOneDocument } from "~/queries/users";
 import { GroupCreateOneDocument, GroupFindManyDocument } from "~/queries/groups";
-import { OnboardingLayout } from "./classrooms_.create/_components/onboarding-layout";
+import { OnboardingLayout } from "~/components/layout/onboarding-layout";
 import { ClassroomIconUpload } from "./classrooms_.create/_components/classroom-icon-upload";
 import { ClassroomInfoCard } from "./classrooms_.create/_components/classroom-info-card";
 import { ClassroomPreviewCard } from "./classrooms_.create/_components/classroom-preview-card";
@@ -47,6 +48,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (user?.typeObj?.identifier !== "teacher") {
     throw redirect(homePathForIdentifier(user?.typeObj?.identifier));
   }
+
+  // Org-joined (self-signed-up) teachers who haven't picked a school yet are
+  // funneled back into onboarding instead of into classroom creation. Reuses
+  // the `user` already fetched above; fail-open on a transient backend error.
+  await requireSchoolAssigned(request, token, user);
 
   const [districtRes, collectionsRes, curriculaRes, groupsRes] =
     await Promise.all([
