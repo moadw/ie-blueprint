@@ -12,6 +12,13 @@ import { PasswordInput } from "~/components/ui/password-input";
 type JoinSignupActionData = { error: string; title?: string } | undefined;
 
 export const joinSignupSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Please enter your name")
+    .refine((v) => v.split(/\s+/).filter(Boolean).length >= 2, {
+      message: "Please enter your first and last name",
+    }),
   email: z.string().email(),
   password: z.string().min(6),
 });
@@ -19,10 +26,11 @@ export const joinSignupSchema = z.object({
 export type JoinSignupFormValues = z.infer<typeof joinSignupSchema>;
 
 /**
- * Email + password account-creation form for the district join flow. Mirrors
- * `login-form.tsx` (RHF + zod + `useSubmit` POST to the route action +
- * `useActionData` sonner toast). Name is NOT collected here — it is set later at
- * `/onboarding/account`.
+ * Name + email + password account-creation form for the district join flow.
+ * Mirrors `login-form.tsx` (RHF + zod + `useSubmit` POST to the route action +
+ * `useActionData` sonner toast). Name IS collected here because the backend
+ * `POST /webapi/signup` requires `firstName`/`lastName` up front; it is then
+ * prefilled (as a confirm/edit) at `/onboarding/account` step 1.
  */
 export function JoinSignupForm() {
   const navigation = useNavigation();
@@ -62,6 +70,14 @@ export function JoinSignupForm() {
 
   return (
     <Form method="post" onSubmit={handleSubmit(onValid)} className="space-y-4">
+      <Input
+        label="Full name"
+        type="text"
+        placeholder="Jane Doe"
+        autoComplete="name"
+        {...(errors.name?.message ? { error: errors.name.message } : {})}
+        {...register("name")}
+      />
       <Input
         label="Email"
         type="email"
