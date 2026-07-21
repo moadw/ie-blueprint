@@ -8,6 +8,8 @@ import { env } from "~/lib/env";
 interface DistrictInviteCardProps {
   /** The district admin's own organization (from `MyOrganizationFindOne`). */
   organization: { code: string | null; name: string | null } | null;
+  /** District name, appended to the invite URL as `?district=<encoded>`. */
+  districtName: string | null;
   /** `safe()` loader error for `MyOrganizationFindOne` (case C → hide the section). */
   error: string | null;
   /** Master-admin preview: the loader skips the org query, so render nothing. */
@@ -16,6 +18,7 @@ interface DistrictInviteCardProps {
 
 export function DistrictInviteCard({
   organization,
+  districtName,
   error,
   readOnly = false,
 }: DistrictInviteCardProps) {
@@ -27,7 +30,9 @@ export function DistrictInviteCard({
   if (readOnly || error) return null;
 
   const code = organization?.code ?? null;
-  const inviteUrl = code ? `${env.APP_URL}/signup/district/${code}` : "";
+  const inviteUrl = code
+    ? `${env.APP_URL}/join/${code}${districtName ? `?district=${encodeURIComponent(districtName)}` : ""}`
+    : "";
 
   function handleCopy() {
     if (!inviteUrl) return;
