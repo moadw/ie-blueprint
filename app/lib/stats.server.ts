@@ -25,9 +25,7 @@ import {
   allSeries,
   amplitudeGet,
   cached,
-  dailyWindow,
   firstSeries,
-  isAmplitudeConfigured,
   type DashboardChartResponse,
   type EventPropFilter,
 } from "~/lib/amplitude.server";
@@ -241,54 +239,4 @@ export async function getActiveDates(
     fetchActiveDates(userId, window),
   );
   return value ?? [];
-}
-
-// ---------------------------------------------------------------------------
-// Entry point (the loader calls this)
-// ---------------------------------------------------------------------------
-
-/** The per-teacher Amplitude read-back the `/settings/stats` loader consumes. */
-export interface TeacherStats {
-  minutesPracticed: number;
-  practicesCompleted: number;
-  /** Sorted `YYYY-MM-DD` local days with ≥1 `practice_completed` in the window. */
-  activeDates: string[];
-  /** `false` when the Dashboard REST API is not configured (soft/empty state). */
-  configured: boolean;
-}
-
-/**
- * All per-teacher Amplitude metrics for the stats page, scoped to `userId` over
- * a trailing 365-day daily window (the segmentation daily cap). When Amplitude
- * is unconfigured, returns the soft-empty shape with `configured:false` and does
- * NOT hit the network; otherwise runs the three fetchers concurrently (the
- * shared concurrency gate caps in-flight requests) and returns real numbers.
- * Never throws — each fetcher soft-fails to its empty value.
- *
- * `token` is accepted for signature symmetry with the loader (the Blueprint
- * `totalPractices` count is computed alongside, in step-3); the Amplitude reads
- * here authenticate via the server-side Basic-auth env keys, not the user token.
- */
-export async function getTeacherStats(
-  userId: string,
-  token: string,
-): Promise<TeacherStats> {
-  void token;
-  if (!isAmplitudeConfigured()) {
-    return {
-      minutesPracticed: 0,
-      practicesCompleted: 0,
-      activeDates: [],
-      configured: false,
-    };
-  }
-
-  const window = dailyWindow(365);
-  const [minutesPracticed, practicesCompleted, activeDates] = await Promise.all([
-    getMinutesPracticed(userId, window),
-    getPracticesCompleted(userId, window),
-    getActiveDates(userId, window),
-  ]);
-
-  return { minutesPracticed, practicesCompleted, activeDates, configured: true };
 }
