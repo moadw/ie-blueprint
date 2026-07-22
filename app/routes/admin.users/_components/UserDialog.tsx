@@ -8,6 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import { DistrictCombobox } from "~/components/ui/district-combobox";
+import type { DistrictSearchOption } from "~/components/ui/district-combobox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Select } from "~/components/ui/select";
@@ -16,6 +18,7 @@ import { env } from "~/lib/env";
 import { duplicateKeyField, toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
 import { isSelectableRole } from "~/lib/user";
+import { DistrictOptionsFindManyDocument } from "~/queries/districts";
 import { SchoolFindManyDocument } from "~/queries/schools";
 import {
   UserTypesFindManyDocument,
@@ -28,12 +31,6 @@ import {
 import type { AdminUserRow } from "./UserRow";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-interface DistrictOption {
-  _id: string;
-  name?: string | null;
-  organization?: string | null;
-}
 
 interface UserTypeOption {
   _id: string;
@@ -48,8 +45,6 @@ interface SchoolOption {
 export interface UserDialogProps {
   open: boolean;
   target: AdminUserRow | null;
-  /** Full district list from the route loader (already `limit: 500`). */
-  districts: ReadonlyArray<DistrictOption>;
   onOpenChange: (open: boolean) => void;
   onSaved: () => void;
 }
@@ -57,7 +52,6 @@ export interface UserDialogProps {
 export function UserDialog({
   open,
   target,
-  districts,
   onOpenChange,
   onSaved,
 }: UserDialogProps) {
@@ -70,10 +64,11 @@ export function UserDialog({
   const emailInputRef = useRef<HTMLInputElement>(null);
   const [password, setPassword] = useState("");
   const [type, setType] = useState("");
-  // Holds the selected district's _id. The user's `organization` field is
+  // Holds the selected district option. The user's `organization` field is
   // derived from `district.organization` at submit time — districts are the
   // real connector between users and organizations in the admin UI.
-  const [districtId, setDistrictId] = useState("");
+  const [district, setDistrict] = useState<DistrictSearchOption | null>(null);
+  const districtId = district?._id ?? "";
   const [school, setSchool] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -81,7 +76,7 @@ export function UserDialog({
   const [schools, setSchools] = useState<SchoolOption[]>([]);
 
   // Reset form fields whenever the dialog opens or the target changes.
-  // `districtId` is resolved separately once districts load (see below).
+  // `district` is resolved separately in edit mode (see below).
   useEffect(() => {
     if (!open) return;
     setFirstName(target?.firstName ?? "");
@@ -90,21 +85,45 @@ export function UserDialog({
     setEmailError(null);
     setPassword("");
     setType(target?.type_id ?? "");
-    setDistrictId("");
+    setDistrict(null);
     setSchool("");
     setSchools([]);
   }, [open, target]);
 
-  // In edit mode, resolve the district whose `organization` matches the
-  // user's `organization` once the districts list is available.
+  // In edit mode, preselect the district the user already belongs to by
+  // resolving it from the user's `organization` (the combobox no longer has a
+  // full district list to match against). Degrades to unselected on failure.
   useEffect(() => {
     if (!open || !isEdit) return;
-    if (districts.length === 0) return;
     const userOrgId = target?.organization_id;
     if (!userOrgId) return;
-    const match = districts.find((d) => d.organization === userOrgId);
-    setDistrictId(match?._id ?? "");
-  }, [open, isEdit, districts, target?.organization_id]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const result = await gqlClient.request(DistrictOptionsFindManyDocument, {
+          filter: { organization: userOrgId },
+          limit: 1,
+        });
+        if (cancelled) return;
+        const match = (result.DistrictFindMany ?? []).find(
+          (d): d is NonNullable<typeof d> => d != null,
+        );
+        if (match) {
+          setDistrict({
+            _id: match._id,
+            name: match.name ?? "",
+            state: match.state ?? null,
+            organization: match.organization ?? null,
+          });
+        }
+      } catch {
+        if (!cancelled) setDistrict(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, isEdit, target?.organization_id]);
 
   // Load user types when the dialog opens. Districts come from the route
   // loader as a prop. Errors degrade gracefully — the select renders its
@@ -169,8 +188,7 @@ export function UserDialog({
     }
     // A user's `organization` is set from the chosen district's `organization`
     // — districts and users only meet through the organization layer.
-    const selectedDistrict = districts.find((d) => d._id === districtId);
-    const orgId = selectedDistrict?.organization ?? null;
+    const orgId = district?.organization ?? null;
     if (!orgId) {
       toast.error("Selected district is missing an organization.");
       return;
@@ -253,7 +271,7 @@ export function UserDialog({
     !lastName.trim() ||
     !email.trim() ||
     !type ||
-    !districtId;
+    !district;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -336,19 +354,12 @@ export function UserDialog({
             >
               District
             </Label>
-            <Select
+            <DistrictCombobox
               id="user-dialog-district"
-              value={districtId}
-              onChange={(e) => setDistrictId(e.target.value)}
-              required
-            >
-              <option value="">Select district</option>
-              {districts.map((d) => (
-                <option key={d._id} value={d._id}>
-                  {d.name ?? d._id}
-                </option>
-              ))}
-            </Select>
+              value={district}
+              onChange={setDistrict}
+              placeholder="Select district"
+            />
           </div>
 
           {!isEdit && districtId && schools.length > 0 ? (

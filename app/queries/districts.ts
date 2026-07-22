@@ -84,6 +84,51 @@ export const DistrictSearchDocument = graphql(`
   }
 `);
 
+// Lean projection of DistrictSearch for combobox/autocomplete options — just
+// enough to display (name/state) and connect a user to its org (organization).
+// Powers `<DistrictCombobox />` via the `/resources/district-search` route.
+export const DistrictSearchOptionsDocument = graphql(`
+  query DistrictSearchOptions(
+    $query: String
+    $sortBy: String
+    $sortOrder: Int
+    $limit: Int
+    $skip: Int
+  ) {
+    DistrictSearch(
+      query: $query
+      sortBy: $sortBy
+      sortOrder: $sortOrder
+      limit: $limit
+      skip: $skip
+    ) {
+      total
+      data {
+        _id
+        name
+        state
+        organization
+      }
+    }
+  }
+`);
+
+// Exact district lookup for combobox preselection (e.g. resolve the district a
+// user already belongs to from its `organization`). Lean, same option shape.
+export const DistrictOptionsFindManyDocument = graphql(`
+  query DistrictOptionsFindMany(
+    $filter: FilterFindManydistrictInput
+    $limit: Int
+  ) {
+    DistrictFindMany(filter: $filter, limit: $limit) {
+      _id
+      name
+      state
+      organization
+    }
+  }
+`);
+
 export const DistrictCreateOneDocument = graphql(`
   mutation DistrictCreateOne($record: CreateOnedistrictInput!) {
     DistrictCreateOne(record: $record) {
