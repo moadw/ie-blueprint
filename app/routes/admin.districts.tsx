@@ -91,7 +91,7 @@ type Curriculum = {
 // Districts fan out one lazy per-row `district-admin` lookup each (see
 // `<DistrictAdminLine />`), so this list uses a smaller page than the shared
 // `ADMIN_LIST_PAGE_SIZE` (100) to keep that burst bounded.
-const DISTRICTS_PAGE_SIZE = 30;
+const DISTRICTS_PAGE_SIZE = 20;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const token = await requireSessionToken(request);
