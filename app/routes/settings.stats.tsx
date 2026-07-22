@@ -1,154 +1,154 @@
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import { Await, useLoaderData } from "react-router";
 
-import { gqlClient } from "~/lib/graphql";
-import { safe } from "~/lib/safe-loader";
-import { requireSessionToken } from "~/lib/session.server";
-import { getTeacherStats } from "~/lib/stats.server";
+import { getStatsPage } from "~/lib/stats-page.server";
+import type { StatsCompletion } from "~/lib/stats-page.server";
 import { useHydrated } from "~/hooks/use-hydrated";
-import { UsersFindOneDocument } from "~/queries/users";
-import { GroupFindManyDocument } from "~/queries/groups";
-import { ClassesByCurriculumFindOneDocument } from "~/queries/classes";
 import { SectionHeader } from "~/routes/settings/_components/section-header";
 import { StatCard } from "~/routes/settings/_components/stats/stat-card";
 import { WeeklyChain } from "~/routes/settings/_components/stats/weekly-chain";
 import { JourneyProgress } from "~/routes/settings/_components/stats/journey-progress";
 import { RoutineCard } from "~/routes/settings/_components/stats/routine-card";
 import {
+  JourneyProgressSkeleton,
+  RoutineCardSkeleton,
+  StatCardSkeleton,
+  StatRegionError,
+  WeeklyChainSkeleton,
+} from "~/routes/settings/_components/stats/stat-skeletons";
+import {
   deriveDayMetrics,
   resolveWindowStart,
   PLACEHOLDER_DAY_METRICS,
+  type DayMetrics,
 } from "~/routes/settings/_lib/stats-derive";
 
+// ---------------------------------------------------------------------------
+// Loader — delegates to the dedicated stats-page server module. It awaits only
+// the cheap "me" resolution, then returns the three regions as UN-awaited
+// promises the route streams in behind skeletons (CLAUDE.md "Resilient
+// loaders"; same strategy as /district/home).
+// ---------------------------------------------------------------------------
+
 export async function loader({ request }: LoaderFunctionArgs) {
-  const token = await requireSessionToken(request);
-  const headers = { "access-token": token };
+  return await getStatsPage(request);
+}
 
-  // "me" — the token resolves the current user when `_id` is omitted (same path
-  // as settings.profile). `safe()` keeps a backend 500 from white-screening the
-  // page; a miss/error degrades to the soft state below (never fixtures).
-  const userResult = await safe(
-    gqlClient.request(UsersFindOneDocument, {}, headers),
+/**
+ * tz-sensitive day metrics — computed ONLY after hydration with the browser's
+ * local `new Date()` so "today"/"this week" match the viewer's timezone (not the
+ * SSR/UTC server). First paint renders a stable placeholder to avoid a React
+ * hydration mismatch. Shared by every `activity`-derived region.
+ */
+function useDayMetrics(
+  activeDates: string[],
+  createdAt: string | null,
+): DayMetrics {
+  const hydrated = useHydrated();
+  return useMemo(() => {
+    if (!hydrated) return PLACEHOLDER_DAY_METRICS;
+    const today = new Date();
+    return deriveDayMetrics(
+      activeDates,
+      today,
+      resolveWindowStart(createdAt, today),
+    );
+  }, [hydrated, activeDates, createdAt]);
+}
+
+// --- `activity`-derived regions (streams behind their own skeletons) ---------
+
+/** The two day-streak tiles (grid cells 2 & 3). */
+function StreakCards({
+  activeDates,
+  createdAt,
+}: {
+  activeDates: string[];
+  createdAt: string | null;
+}) {
+  const day = useDayMetrics(activeDates, createdAt);
+  return (
+    <>
+      <StatCard value={day.dayStreak} label="Current Day Streak" />
+      <StatCard value={day.longestStreak} label="Longest Streak" />
+    </>
   );
-  const user = userResult.ok ? (userResult.data.UsersFindOne ?? null) : null;
+}
 
-  // No resolvable user → soft/empty state. `error` (non-null only on a real
-  // fetch failure) drives the dashed-red card; a clean miss shows the neutral
-  // "not available yet" card via `configured:false`.
-  if (!user?._id) {
-    return {
-      minutesPracticed: 0,
-      practicesCompleted: 0,
-      totalPractices: 0,
-      activeDates: [] as string[],
-      createdAt: null as string | null,
-      configured: false,
-      error: userResult.ok ? null : userResult.error,
-    };
-  }
-
-  // Per-teacher Amplitude read-back (step-2). Soft-fails internally to an
-  // all-zero/empty shape with `configured:false`; never throws.
-  const stats = await getTeacherStats(user._id, token);
-
-  // `totalPractices` (Blueprint denominator) = Σ over the teacher's DISTINCT
-  // curricula of `ClassesByCurriculumFindOne(curr).length` filtered `!deleted`.
-  // ("Current curriculum" lives only in client localStorage — not resolvable in
-  // a loader — so we sum across ALL the teacher's curricula.) Every call is
-  // `safe()`-wrapped; a partial failure degrades to the PARTIAL sum rather than
-  // crashing the route. Mirrors the sibling-count fan-out in
-  // `classrooms_.$groupId.$curriculumId.tsx`.
-  const groupsResult = await safe(
-    gqlClient.request(
-      GroupFindManyDocument,
-      { filter: { manager: user._id } },
-      headers,
-    ),
+function WeeklyChainRegion({
+  activeDates,
+  createdAt,
+}: {
+  activeDates: string[];
+  createdAt: string | null;
+}) {
+  const day = useDayMetrics(activeDates, createdAt);
+  return (
+    <WeeklyChain
+      completedDays={day.completedDays}
+      currentDayIndex={day.currentDayIndex}
+    />
   );
-  const curriculumIds = groupsResult.ok
-    ? [
-        ...new Set(
-          (groupsResult.data.GroupFindMany ?? [])
-            .flatMap((g) => g?.curriculums ?? [])
-            .filter((id): id is string => Boolean(id)),
-        ),
-      ]
-    : [];
+}
 
-  const counts = await Promise.all(
-    curriculumIds.map(async (curriculum) => {
-      const r = await safe(
-        gqlClient.request(
-          ClassesByCurriculumFindOneDocument,
-          { curriculum },
-          headers,
-        ),
-      );
-      return r.ok
-        ? (r.data.ClassesByCurriculumFindOne ?? []).filter(
-            (c) => c != null && !c.deleted,
-          ).length
-        : 0;
-    }),
+function RoutineCardRegion({
+  activeDates,
+  createdAt,
+}: {
+  activeDates: string[];
+  createdAt: string | null;
+}) {
+  const day = useDayMetrics(activeDates, createdAt);
+  return <RoutineCard averageDaysPerWeek={day.averageDaysPerWeek} />;
+}
+
+// --- `completion`-derived regions --------------------------------------------
+
+/**
+ * Course Completion clamp: the numerator (`practicesCompleted`, global &
+ * forward-only) can exceed the denominator (`totalPractices`, current curricula
+ * only), and `totalPractices` can be 0. The card still shows the TRUE
+ * `practicesCompleted / totalPractices` count; only the bar math is clamped
+ * (JourneyProgress) so it never overflows / renders `NaN%`.
+ */
+function CourseCompletionCard({ practicesCompleted, totalPractices }: StatsCompletion) {
+  const hasTotal = totalPractices > 0;
+  return (
+    <StatCard
+      value={hasTotal ? practicesCompleted : "—"}
+      {...(hasTotal ? { suffix: `/${totalPractices}` } : {})}
+      label="Course Completion"
+    />
   );
-  const totalPractices = counts.reduce((a, b) => a + b, 0);
+}
 
-  return {
-    minutesPracticed: stats.minutesPracticed,
-    practicesCompleted: stats.practicesCompleted,
-    totalPractices,
-    activeDates: stats.activeDates,
-    // `createdAt` is the Date scalar (typed `any`); narrow to a serializable
-    // `string | null` so the client `windowStart` clamp gets a stable type.
-    createdAt: (user.createdAt ?? null) as string | null,
-    configured: stats.configured,
-    error: userResult.ok ? null : userResult.error,
-  };
+/** Journey Progress bar — hidden when there's no denominator (avoids NaN%). */
+function JourneyProgressRegion({ practicesCompleted, totalPractices }: StatsCompletion) {
+  if (totalPractices <= 0) return null;
+  return (
+    <JourneyProgress
+      currentPractice={Math.min(practicesCompleted, totalPractices)}
+      totalPractices={totalPractices}
+    />
+  );
 }
 
 export default function SettingsStatsRoute() {
-  const {
-    minutesPracticed,
-    practicesCompleted,
-    totalPractices,
-    activeDates,
-    createdAt,
-    configured,
-    error,
-  } = useLoaderData<typeof loader>();
+  const { createdAt, configured, error, deferred } =
+    useLoaderData<typeof loader>();
 
-  const hydrated = useHydrated();
-
-  // tz-sensitive day metrics — computed ONLY after hydration with the browser's
-  // local `new Date()` so "today"/"this week" match the viewer's timezone (not
-  // the SSR/UTC server). First paint renders a stable placeholder to avoid a
-  // React hydration mismatch; the loader scalars below render on SSR normally.
-  const day = useMemo(() => {
-    if (!hydrated) return PLACEHOLDER_DAY_METRICS;
-    const today = new Date();
-    return deriveDayMetrics(activeDates, today, resolveWindowStart(createdAt, today));
-  }, [hydrated, activeDates, createdAt]);
-
-  // Course Completion clamp: the numerator (`practicesCompleted`, global &
-  // forward-only) can exceed the denominator (`totalPractices`, current curricula
-  // only), and `totalPractices` can be 0. Guard both so the JourneyProgress bar
-  // never overflows the track / renders `NaN%`. The StatCard still shows the
-  // TRUE `practicesCompleted / totalPractices` count; only the bar math is clamped.
-  const hasTotal = totalPractices > 0;
-  const clampedCompleted = Math.min(practicesCompleted, totalPractices);
-
-  const showSoftState = Boolean(error) || !configured;
-
-  return (
-    <div className="max-w-2xl space-y-5">
-      <SectionHeader
-        title="My Stats"
-        subtitle="Track your mindfulness journey and celebrate your progress."
-      />
-
-      {showSoftState ? (
-        error ? (
+  // Soft state (known synchronously — no skeleton): a user-fetch failure shows
+  // the dashed-red card; a clean miss / unconfigured Amplitude shows the neutral
+  // "not available yet" card.
+  if (error || !configured || !deferred) {
+    return (
+      <div className="max-w-2xl space-y-5">
+        <SectionHeader
+          title="My Stats"
+          subtitle="Track your mindfulness journey and celebrate your progress."
+        />
+        {error ? (
           <div className="rounded-xl border-2 border-dashed border-red-200 bg-red-50 py-4 px-4">
             <p className="text-xs text-red-600">Couldn&apos;t load your stats.</p>
           </div>
@@ -159,39 +159,97 @@ export default function SettingsStatsRoute() {
               tracking your progress.
             </p>
           </div>
-        )
-      ) : (
-        <>
-          {/* Top Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <StatCard value={minutesPracticed} label="Total Practice Time" />
-            <StatCard value={day.dayStreak} label="Current Day Streak" />
-            <StatCard value={day.longestStreak} label="Longest Streak" />
-            <StatCard
-              value={hasTotal ? practicesCompleted : "—"}
-              {...(hasTotal ? { suffix: `/${totalPractices}` } : {})}
-              label="Course Completion"
-            />
-          </div>
+        )}
+      </div>
+    );
+  }
 
-          {/* Weekly Chain */}
-          <WeeklyChain
-            completedDays={day.completedDays}
-            currentDayIndex={day.currentDayIndex}
-          />
+  return (
+    <div className="max-w-2xl space-y-5">
+      <SectionHeader
+        title="My Stats"
+        subtitle="Track your mindfulness journey and celebrate your progress."
+      />
 
-          {/* Journey Progress — hidden when there's no denominator (avoids NaN%) */}
-          {hasTotal ? (
-            <JourneyProgress
-              currentPractice={clampedCompleted}
-              totalPractices={totalPractices}
-            />
-          ) : null}
+      {/* Top Stats Grid — each source streams into its cell(s) independently. */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Suspense fallback={<StatCardSkeleton />}>
+          <Await
+            resolve={deferred.minutes}
+            errorElement={<StatRegionError className="min-h-[100px]" />}
+          >
+            {(minutes) => (
+              <StatCard value={minutes} label="Total Practice Time" />
+            )}
+          </Await>
+        </Suspense>
 
-          {/* Routine Card */}
-          <RoutineCard averageDaysPerWeek={day.averageDaysPerWeek} />
-        </>
-      )}
+        <Suspense
+          fallback={
+            <>
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+            </>
+          }
+        >
+          <Await
+            resolve={deferred.activity}
+            errorElement={
+              <>
+                <StatRegionError className="min-h-[100px]" />
+                <StatRegionError className="min-h-[100px]" />
+              </>
+            }
+          >
+            {(activeDates) => (
+              <StreakCards activeDates={activeDates} createdAt={createdAt} />
+            )}
+          </Await>
+        </Suspense>
+
+        <Suspense fallback={<StatCardSkeleton />}>
+          <Await
+            resolve={deferred.completion}
+            errorElement={<StatRegionError className="min-h-[100px]" />}
+          >
+            {(completion) => <CourseCompletionCard {...completion} />}
+          </Await>
+        </Suspense>
+      </div>
+
+      {/* Weekly Chain */}
+      <Suspense fallback={<WeeklyChainSkeleton />}>
+        <Await
+          resolve={deferred.activity}
+          errorElement={<StatRegionError className="min-h-[200px]" />}
+        >
+          {(activeDates) => (
+            <WeeklyChainRegion activeDates={activeDates} createdAt={createdAt} />
+          )}
+        </Await>
+      </Suspense>
+
+      {/* Journey Progress — collapses to nothing when there's no denominator. */}
+      <Suspense fallback={<JourneyProgressSkeleton />}>
+        <Await
+          resolve={deferred.completion}
+          errorElement={<StatRegionError className="min-h-[120px]" />}
+        >
+          {(completion) => <JourneyProgressRegion {...completion} />}
+        </Await>
+      </Suspense>
+
+      {/* Routine Card */}
+      <Suspense fallback={<RoutineCardSkeleton />}>
+        <Await
+          resolve={deferred.activity}
+          errorElement={<StatRegionError className="min-h-[160px]" />}
+        >
+          {(activeDates) => (
+            <RoutineCardRegion activeDates={activeDates} createdAt={createdAt} />
+          )}
+        </Await>
+      </Suspense>
     </div>
   );
 }
