@@ -22,7 +22,7 @@
 import { gqlClient } from "~/lib/graphql";
 import { safe } from "~/lib/safe-loader";
 import { requireSessionToken } from "~/lib/session.server";
-import { dailyWindow, isAmplitudeConfigured } from "~/lib/amplitude.server";
+import { isAmplitudeConfigured } from "~/lib/amplitude.server";
 import {
   getActiveDates,
   getMinutesPracticed,
@@ -78,6 +78,36 @@ async function deferStat<T>(build: () => Promise<T>, empty: T): Promise<T> {
   } catch {
     return empty;
   }
+}
+
+/** `YYYYMMDD` (UTC) — the Dashboard REST date format. */
+function ymd(d: Date): string {
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}${m}${day}`;
+}
+
+/**
+ * Trailing ~1-year daily window for the per-teacher segmentation reads, whose
+ * END is TOMORROW (UTC).
+ *
+ * WHY end at tomorrow (not today, as `dailyWindow(365)` does): Amplitude's daily
+ * `events/segmentation` silently returns **0 for the final day of an exactly
+ * 365-day window ending today** — a just-completed practice (whose event lands
+ * on today's UTC bucket) reads as zero, so every metric on `/settings/stats`
+ * shows 0. Empirically, the same query with the window ending on `today+1`
+ * returns the real value; shorter windows ending today are also fine. Ending at
+ * tomorrow keeps "today" strictly inside the range (never the fragile boundary),
+ * so a fresh completion shows up immediately. Start stays a full year back.
+ */
+function trailingYearWindow(): { start: string; end: string } {
+  const now = new Date();
+  const start = new Date(now);
+  start.setUTCDate(start.getUTCDate() - 364);
+  const end = new Date(now);
+  end.setUTCDate(end.getUTCDate() + 1);
+  return { start: ymd(start), end: ymd(end) };
 }
 
 /**
@@ -165,7 +195,7 @@ export async function getStatsPage(request: Request): Promise<StatsPageData> {
   }
 
   const userId = user._id;
-  const window = dailyWindow(365);
+  const window = trailingYearWindow();
 
   // Fire everything UN-awaited so the route can render skeletons immediately.
   const minutes = deferStat(() => getMinutesPracticed(userId, window), 0);
