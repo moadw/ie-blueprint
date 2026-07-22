@@ -1,9 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   useLoaderData,
-  useNavigate,
   useNavigation,
   useRevalidator,
+  useSearchParams,
 } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { Building2, Loader2, Plus, Search } from "lucide-react";
@@ -17,13 +17,12 @@ import { readPageFromRequest } from "~/lib/pagination";
 import { requireSessionToken } from "~/lib/session.server";
 import { safe } from "~/lib/safe-loader";
 import {
-  DistrictFindManyDocument,
   DistrictProfileFindManyDocument,
+  DistrictSearchDocument,
   DistrictUpdateOneDocument,
 } from "~/queries/districts";
 import { LicensePresetFindManyDocument } from "~/queries/license-presets";
 import { CurriculumsFindManyDocument } from "~/queries/curriculums";
-import { SortFindManydistrictInput } from "~/gql/graphql";
 import { toast } from "~/components/ui/toast";
 import { DistrictRow } from "./admin.districts/_components/DistrictRow";
 import { DistrictDialog } from "./admin.districts/_components/DistrictDialog";
@@ -48,6 +47,9 @@ type District = {
   courses?: Array<string | null> | null;
   coursesCollections?: Array<string | null> | null;
   licenseLabel?: string | null;
+  licenseExpDate?: string | number | null;
+  userTotal?: number | null;
+  schoolLicense?: boolean | null;
   coverPhoto?: { type?: string | null; url?: string | null } | null;
   logo?: { type?: string | null; url?: string | null } | null;
   country?: string | null;
@@ -89,16 +91,19 @@ type Curriculum = {
 // Districts fan out one lazy per-row `district-admin` lookup each (see
 // `<DistrictAdminLine />`), so this list uses a smaller page than the shared
 // `ADMIN_LIST_PAGE_SIZE` (100) to keep that burst bounded.
-const DISTRICTS_PAGE_SIZE = 30;
+const DISTRICTS_PAGE_SIZE = 20;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const token = await requireSessionToken(request);
+  const query = (new URL(request.url).searchParams.get("q") ?? "").trim();
   if (!env.PLATFORM) {
     return {
       districts: [] as District[],
+      total: 0,
       loadError:
         "Platform is not configured. Please contact your administrator.",
       page: 1,
+      query,
       hasMore: false,
       presets: [] as LicensePreset[],
       curriculums: [] as Curriculum[],
@@ -106,20 +111,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
   const page = readPageFromRequest(request);
   const skip = (page - 1) * DISTRICTS_PAGE_SIZE;
+  // `DistrictSearch` is scoped to the session user's platform automatically
+  // (no `platform` arg). With `query` empty it returns every district ordered
+  // by `sortBy`; with `query` present it fuzzy-matches name/city/state and
+  // `sortBy` is the tiebreaker. `total` is the fuzzy match count that drives
+  // pagination — see [[reference_blueprint_sort_operators_index_driven]].
   const result = await safe(
     gqlClient.request(
-      DistrictFindManyDocument,
+      DistrictSearchDocument,
       {
-        filter: { platform: env.PLATFORM },
+        ...(query ? { query } : {}),
+        sortBy: "name",
+        sortOrder: 1,
         limit: DISTRICTS_PAGE_SIZE,
         skip,
-        sort: SortFindManydistrictInput._ID_DESC,
       },
       { "access-token": token },
     ),
   );
+  const total = result.ok ? (result.data.DistrictSearch?.total ?? 0) : 0;
   const baseDistricts = result.ok
-    ? (result.data.DistrictFindMany ?? []).filter(
+    ? (result.data.DistrictSearch?.data ?? []).filter(
         (d): d is NonNullable<typeof d> => d != null,
       )
     : [];
@@ -189,22 +201,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     districts,
+    total,
     loadError: result.error,
     page,
-    hasMore: districts.length === DISTRICTS_PAGE_SIZE,
+    query,
+    hasMore: page * DISTRICTS_PAGE_SIZE < total,
     presets,
     curriculums,
   };
 }
 
 export default function AdminDistrictsRoute() {
-  const { districts, loadError, page, hasMore, presets, curriculums } =
+  const { districts, total, loadError, page, query, hasMore, presets, curriculums } =
     useLoaderData<typeof loader>();
   const navigation = useNavigation();
-  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const revalidator = useRevalidator();
 
-  const [query, setQuery] = useState("");
+  const [queryInput, setQueryInput] = useState(query);
   const [createOpen, setCreateOpen] = useState(false);
   const [schoolsTarget, setSchoolsTarget] = useState<District | null>(null);
   const [editTarget, setEditTarget] = useState<District | null>(null);
@@ -212,26 +226,44 @@ export default function AdminDistrictsRoute() {
   const [licenseTarget, setLicenseTarget] =
     useState<LicenseDialogDistrict | null>(null);
 
-  const filteredSorted = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const filtered = q
-      ? districts.filter((d) => (d.name ?? "").toLowerCase().includes(q))
-      : districts;
-    return [...filtered].sort((a, b) =>
-      (a.name ?? "")
-        .toLocaleLowerCase()
-        .localeCompare((b.name ?? "").toLocaleLowerCase()),
-    );
-  }, [districts, query]);
+  // Debounce the input into the `?q=` search param (server-side search via
+  // `DistrictSearch`). No-op when the typed value already matches the URL, so
+  // this never fires on mount nor loops after the loader re-runs. Resetting
+  // `page` keeps a new query on page 1; `replace` avoids polluting history.
+  useEffect(() => {
+    const trimmed = queryInput.trim();
+    if (trimmed === (searchParams.get("q") ?? "")) return;
+    const handle = setTimeout(() => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (trimmed) next.set("q", trimmed);
+          else next.delete("q");
+          next.delete("page");
+          return next;
+        },
+        { replace: true },
+      );
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [queryInput, searchParams, setSearchParams]);
 
-  const isInitialLoading =
-    navigation.state === "loading" && districts.length === 0;
+  function goToPage(next: number) {
+    setSearchParams((prev) => {
+      const merged = new URLSearchParams(prev);
+      merged.set("page", String(next));
+      return merged;
+    });
+  }
+
+  const isBusy = navigation.state !== "idle";
+  const isInitialLoading = isBusy && districts.length === 0;
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-medium text-foreground">
-          Districts ({filteredSorted.length})
+          Districts ({total})
         </h3>
         <Button
           variant="primary"
@@ -250,11 +282,17 @@ export default function AdminDistrictsRoute() {
         <Input
           type="search"
           placeholder="Search districts…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          value={queryInput}
+          onChange={(e) => setQueryInput(e.target.value)}
           aria-label="Search districts"
-          className="pl-10"
+          className="pl-10 pr-10"
         />
+        {isBusy ? (
+          <Loader2
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground"
+            aria-hidden="true"
+          />
+        ) : null}
       </div>
 
       {isInitialLoading ? (
@@ -271,6 +309,10 @@ export default function AdminDistrictsRoute() {
           </p>
           <p className="text-xs text-red-600">{loadError}</p>
         </div>
+      ) : total === 0 && query ? (
+        <div className="py-12 text-center text-muted-foreground">
+          No districts match &quot;{query}&quot;
+        </div>
       ) : districts.length === 0 ? (
         <div className="bg-card rounded-lg border border-border p-12 text-center">
           <Building2
@@ -286,13 +328,9 @@ export default function AdminDistrictsRoute() {
             <Plus className="w-4 h-4" aria-hidden="true" /> Create your first district
           </Button>
         </div>
-      ) : filteredSorted.length === 0 ? (
-        <div className="py-12 text-center text-muted-foreground">
-          No districts match &quot;{query}&quot;
-        </div>
       ) : (
         <div className="space-y-3">
-          {filteredSorted.map((d) => (
+          {districts.map((d) => (
             <DistrictRow
               key={d._id}
               district={d}
@@ -311,6 +349,9 @@ export default function AdminDistrictsRoute() {
                   courses: target.courses ?? null,
                   coursesCollections: target.coursesCollections ?? null,
                   licenseLabel: target.licenseLabel ?? null,
+                  licenseExpDate: target.licenseExpDate ?? null,
+                  userTotal: target.userTotal ?? null,
+                  schoolLicense: target.schoolLicense ?? null,
                 });
                 setLicenseDialogOpen(true);
               }}
@@ -361,7 +402,14 @@ export default function AdminDistrictsRoute() {
         district={licenseTarget}
         presets={presets}
         curriculums={curriculums}
-        onSubmit={async ({ coursesCollections, courses, licenseLabel }) => {
+        onSubmit={async ({
+          coursesCollections,
+          courses,
+          licenseLabel,
+          licenseExpDate,
+          userTotal,
+          schoolLicense,
+        }) => {
           if (!licenseTarget) return;
           try {
             const data = await gqlClient.request(DistrictUpdateOneDocument, {
@@ -370,6 +418,9 @@ export default function AdminDistrictsRoute() {
                 courses,
                 coursesCollections,
                 licenseLabel,
+                licenseExpDate,
+                userTotal,
+                schoolLicense,
                 platform: env.PLATFORM,
               },
             });
@@ -427,13 +478,13 @@ export default function AdminDistrictsRoute() {
         }}
       />
 
-      {(hasMore || page > 1) && !query ? (
+      {hasMore || page > 1 ? (
         <AdminListPagination
           page={page}
           hasMore={hasMore}
-          loading={navigation.state !== "idle"}
-          onPrev={() => navigate(`?page=${page - 1}`)}
-          onNext={() => navigate(`?page=${page + 1}`)}
+          loading={isBusy}
+          onPrev={() => goToPage(page - 1)}
+          onNext={() => goToPage(page + 1)}
         />
       ) : null}
     </div>

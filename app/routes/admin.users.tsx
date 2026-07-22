@@ -20,10 +20,8 @@ import { gqlClient } from "~/lib/graphql";
 import { readPageFromRequest } from "~/lib/pagination";
 import { safe } from "~/lib/safe-loader";
 import { requireSessionToken } from "~/lib/session.server";
-import {
-  DistrictFindManyDocument,
-  DistrictFindOneDocument,
-} from "~/queries/districts";
+import { DistrictFindOneDocument } from "~/queries/districts";
+import type { DistrictSearchOption } from "~/routes/resources.district-search";
 import { SchoolFindManyDocument } from "~/queries/schools";
 import { DeleteUsersManyDocument } from "~/mutations/users";
 import {
@@ -42,11 +40,6 @@ import type { AdminUserRow } from "./admin.users/_components/UserRow";
 import { UserSchoolsDialog } from "./admin.users/_components/UserSchoolsDialog";
 import { UsersFilterBar } from "./admin.users/_components/UsersFilterBar";
 
-type DistrictOption = {
-  _id: string;
-  name?: string | null;
-  organization?: string | null;
-};
 type UserTypeOption = {
   _id: string;
   label?: string | null;
@@ -78,7 +71,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       page: 1,
       hasMore: false,
       userTypes: [] as UserTypeOption[],
-      districts: [] as DistrictOption[],
+      selectedDistrict: null as DistrictSearchOption | null,
       schools: [] as SchoolOption[],
       filters,
     };
@@ -89,7 +82,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Users carry `organization`, not `district` — resolve the selected district
   // to its organization and scope UserSearch by that. Only runs when a district
   // filter is active, so the unfiltered default view stays fully parallel.
+  // Resolve the filtered district once: gives both its `organization` (to
+  // scope UserSearch) and its name (to display in the district combobox, which
+  // no longer receives a full district list).
   let organizationId: string | undefined;
+  let selectedDistrict: DistrictSearchOption | null = null;
   if (districtId) {
     const orgResult = await safe(
       gqlClient.request(
@@ -98,58 +95,57 @@ export async function loader({ request }: LoaderFunctionArgs) {
         { "access-token": token },
       ),
     );
-    organizationId = orgResult.ok
-      ? (orgResult.data.DistrictFindOne?.organization ?? undefined)
-      : undefined;
+    const d = orgResult.ok ? orgResult.data.DistrictFindOne : null;
+    organizationId = d?.organization ?? undefined;
+    if (d) {
+      selectedDistrict = {
+        _id: d._id,
+        name: d.name ?? "",
+        state: null,
+        organization: d.organization ?? null,
+      };
+    }
   }
 
-  const [searchResult, userTypesResult, districtsResult, schoolsResult] =
-    await Promise.all([
-      safe(
-        gqlClient.request(
-          UserSearchDocument,
-          {
-            platformId: env.PLATFORM,
-            ...(organizationId ? { organizationId } : {}),
-            ...(schoolId ? { schoolId } : {}),
-            ...(type ? { type } : {}),
-            ...(search ? { search } : {}),
-            sortBy: "createdAt",
-            sortOrder: -1,
-            limit: ADMIN_LIST_PAGE_SIZE,
-            skip,
-          },
-          { "access-token": token },
-        ),
+  const [searchResult, userTypesResult, schoolsResult] = await Promise.all([
+    safe(
+      gqlClient.request(
+        UserSearchDocument,
+        {
+          platformId: env.PLATFORM,
+          ...(organizationId ? { organizationId } : {}),
+          ...(schoolId ? { schoolId } : {}),
+          ...(type ? { type } : {}),
+          ...(search ? { search } : {}),
+          sortBy: "createdAt",
+          sortOrder: -1,
+          limit: ADMIN_LIST_PAGE_SIZE,
+          skip,
+        },
+        { "access-token": token },
       ),
-      safe(
-        gqlClient.request(
-          UserTypesFindManyDocument,
-          { limit: 100 },
-          { "access-token": token },
-        ),
+    ),
+    safe(
+      gqlClient.request(
+        UserTypesFindManyDocument,
+        { limit: 100 },
+        { "access-token": token },
       ),
-      safe(
-        gqlClient.request(
-          DistrictFindManyDocument,
-          { filter: { platform: env.PLATFORM }, limit: 500 },
-          { "access-token": token },
-        ),
-      ),
-      districtId
-        ? safe(
-            gqlClient.request(
-              SchoolFindManyDocument,
-              { filter: { district: districtId }, limit: 500 },
-              { "access-token": token },
-            ),
-          )
-        : Promise.resolve({
-            ok: true as const,
-            data: { SchoolFindMany: [] as SchoolOption[] },
-            error: null,
-          }),
-    ]);
+    ),
+    districtId
+      ? safe(
+          gqlClient.request(
+            SchoolFindManyDocument,
+            { filter: { district: districtId }, limit: 500 },
+            { "access-token": token },
+          ),
+        )
+      : Promise.resolve({
+          ok: true as const,
+          data: { SchoolFindMany: [] as SchoolOption[] },
+          error: null,
+        }),
+  ]);
   const users: AdminUserRow[] = searchResult.ok
     ? (searchResult.data.UserSearch?.data ?? []).filter(
         (u): u is NonNullable<typeof u> => u != null,
@@ -161,11 +157,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const userTypes: UserTypeOption[] = userTypesResult.ok
     ? (userTypesResult.data.UserTypesFindMany ?? []).filter(
         (t): t is NonNullable<typeof t> => t != null,
-      )
-    : [];
-  const districts: DistrictOption[] = districtsResult.ok
-    ? (districtsResult.data.DistrictFindMany ?? []).filter(
-        (d): d is NonNullable<typeof d> => d != null,
       )
     : [];
   const schools: SchoolOption[] = schoolsResult.ok
@@ -180,7 +171,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     page,
     hasMore: users.length === ADMIN_LIST_PAGE_SIZE,
     userTypes,
-    districts,
+    selectedDistrict,
     schools,
     filters,
   };
@@ -194,7 +185,7 @@ export default function AdminUsersRoute() {
     page,
     hasMore,
     userTypes,
-    districts,
+    selectedDistrict,
     schools,
     filters,
   } = useLoaderData<typeof loader>();
@@ -285,7 +276,7 @@ export default function AdminUsersRoute() {
       </div>
 
       <UsersFilterBar
-        districts={districts}
+        selectedDistrict={selectedDistrict}
         userTypes={userTypes}
         schools={schools}
         filters={filters}
@@ -345,7 +336,6 @@ export default function AdminUsersRoute() {
       <UserDialog
         open={createOpen || editTarget !== null}
         target={editTarget}
-        districts={districts}
         onOpenChange={(open) => {
           if (!open) {
             setCreateOpen(false);

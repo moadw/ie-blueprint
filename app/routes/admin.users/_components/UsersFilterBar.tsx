@@ -3,6 +3,8 @@ import type { FormEvent } from "react";
 import { useSearchParams } from "react-router";
 import { Search } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { DistrictCombobox } from "~/components/ui/district-combobox";
+import type { DistrictSearchOption } from "~/components/ui/district-combobox";
 import { Input } from "~/components/ui/input";
 import { Select } from "~/components/ui/select";
 import { isSelectableRole } from "~/lib/user";
@@ -10,11 +12,8 @@ import { isSelectableRole } from "~/lib/user";
 type FilterKey = "district" | "role" | "school" | "query";
 
 interface UsersFilterBarProps {
-  districts: ReadonlyArray<{
-    _id: string;
-    name?: string | null;
-    organization?: string | null;
-  }>;
+  /** The currently-filtered district (resolved by the loader for display). */
+  selectedDistrict: DistrictSearchOption | null;
   userTypes: ReadonlyArray<{
     _id: string;
     label?: string | null;
@@ -29,7 +28,7 @@ interface UsersFilterBarProps {
 }
 
 export function UsersFilterBar({
-  districts,
+  selectedDistrict,
   userTypes,
   schools,
   filters,
@@ -98,22 +97,18 @@ export function UsersFilterBar({
         ))}
       </Select>
 
-      <Select
+      <DistrictCombobox
+        className="w-auto min-w-[200px]"
         aria-label="Filter by district"
-        className="w-auto min-w-[160px]"
-        value={filters.district ?? ""}
-        onChange={(e) => {
+        value={selectedDistrict}
+        allowClear
+        clearLabel="All Districts"
+        placeholder="All Districts"
+        onChange={(d) => {
           // Changing district clears school (district-scoped).
-          update({ district: e.target.value, school: "" });
+          update({ district: d?._id ?? "", school: "" });
         }}
-      >
-        <option value="">All Districts</option>
-        {districts.map((d) => (
-          <option key={d._id} value={d._id}>
-            {d.name ?? "Unnamed District"}
-          </option>
-        ))}
-      </Select>
+      />
 
       {filters.district ? (
         <Select

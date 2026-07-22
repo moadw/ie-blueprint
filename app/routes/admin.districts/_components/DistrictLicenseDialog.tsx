@@ -15,7 +15,9 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Select } from "~/components/ui/select";
+import { Switch } from "~/components/ui/switch";
 import { ConfirmDialog } from "~/components/ui/alert-dialog";
+import { fromDateInputValue, toDateInputValue } from "~/lib/format-date";
 
 export interface LicenseDialogDistrict {
   _id: string;
@@ -23,6 +25,9 @@ export interface LicenseDialogDistrict {
   courses?: Array<string | null> | null;
   coursesCollections?: Array<string | null> | null;
   licenseLabel?: string | null;
+  licenseExpDate?: string | number | null;
+  userTotal?: number | null;
+  schoolLicense?: boolean | null;
 }
 
 export interface LicenseDialogPreset {
@@ -50,6 +55,9 @@ export interface DistrictLicenseDialogProps {
     coursesCollections: string[];
     courses: string[];
     licenseLabel: string;
+    licenseExpDate: string | null;
+    userTotal: number | null;
+    schoolLicense: boolean;
   }) => Promise<void> | void;
   onUnassign: () => Promise<void> | void;
 }
@@ -69,6 +77,9 @@ export function DistrictLicenseDialog({
   }>({ coursesCollection: [], courses: [] });
   const [selectedPresetId, setSelectedPresetId] = useState<string>("");
   const [customLabel, setCustomLabel] = useState<string>("");
+  const [expDate, setExpDate] = useState<string>("");
+  const [userTotal, setUserTotal] = useState<string>("");
+  const [schoolLicense, setSchoolLicense] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [confirmUnassignOpen, setConfirmUnassignOpen] = useState(false);
 
@@ -115,6 +126,12 @@ export function DistrictLicenseDialog({
       setSelectedPresetId("");
       setCustomLabel(district.licenseLabel ?? "");
     }
+
+    setExpDate(toDateInputValue(district.licenseExpDate));
+    setUserTotal(
+      district.userTotal != null ? String(district.userTotal) : "",
+    );
+    setSchoolLicense(!!district.schoolLicense);
   }, [open, district, presets, curriculaLite]);
 
   function togglePresetSelect(nextPresetId: string) {
@@ -191,12 +208,21 @@ export function DistrictLicenseDialog({
       ? (legacyPreset.courses ?? []).filter((id): id is string => !!id)
       : selection.courses;
 
+    const trimmedTotal = userTotal.trim();
+    const parsedTotal = trimmedTotal === "" ? null : Number(trimmedTotal);
+
     setSubmitting(true);
     try {
       await onSubmit({
         coursesCollections,
         courses,
         licenseLabel: effectiveLabel,
+        licenseExpDate: fromDateInputValue(expDate),
+        userTotal:
+          parsedTotal != null && Number.isFinite(parsedTotal)
+            ? parsedTotal
+            : null,
+        schoolLicense,
       });
     } finally {
       setSubmitting(false);
@@ -266,6 +292,58 @@ export function DistrictLicenseDialog({
               </p>
             </div>
           ) : null}
+
+          {/* License details */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label
+                htmlFor="license-exp-date"
+                className="text-sm font-medium"
+              >
+                Expiration date
+              </Label>
+              <Input
+                id="license-exp-date"
+                type="date"
+                value={expDate}
+                onChange={(e) => setExpDate(e.target.value)}
+                className="mt-1.5"
+                disabled={submitting}
+              />
+            </div>
+            <div>
+              <Label
+                htmlFor="license-user-total"
+                className="text-sm font-medium"
+              >
+                User total
+              </Label>
+              <Input
+                id="license-user-total"
+                type="number"
+                min={0}
+                step={1}
+                inputMode="numeric"
+                value={userTotal}
+                onChange={(e) => setUserTotal(e.target.value)}
+                placeholder="Unlimited"
+                className="mt-1.5"
+                disabled={submitting}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Switch
+              id="license-school"
+              checked={schoolLicense}
+              onCheckedChange={setSchoolLicense}
+              disabled={submitting}
+            />
+            <Label htmlFor="license-school" className="text-sm font-medium">
+              School license
+            </Label>
+          </div>
 
           {/* Experiences selector */}
           <div className="flex flex-col gap-1.5">
