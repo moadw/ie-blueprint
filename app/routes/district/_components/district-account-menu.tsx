@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import { useFetcher, useNavigate } from "react-router";
-import { ChevronRight, LogOut, User } from "lucide-react";
+import { ChevronRight, LogOut, Settings, User } from "lucide-react";
 import { setToken } from "~/lib/auth";
+import { setSettingsOrigin } from "~/lib/last-curriculum";
 import { getUserDisplayName, getUserInitials } from "~/lib/user";
 import type { UserNameFields } from "~/lib/user";
 import {
@@ -106,7 +107,23 @@ export function DistrictAccountMenu({ user }: DistrictAccountMenuProps) {
 
         <button
           type="button"
-          onClick={() => navigate("/settings/profile")}
+          onClick={() => {
+            setSettingsOrigin("district");
+            navigate("/settings");
+          }}
+          className={rowClass}
+        >
+          <Settings className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+          <span className="flex-1">All Settings</span>
+          <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground/70" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setSettingsOrigin("district");
+            navigate("/settings/profile");
+          }}
           className={rowClass}
         >
           <User className="h-4 w-4 flex-shrink-0 text-muted-foreground" />

@@ -7,7 +7,7 @@ import { requireSessionToken } from "~/lib/session.server";
 import { UsersFindOneDocument } from "~/queries/users";
 import { SettingsSidebar } from "~/routes/settings/_components/settings-sidebar";
 import { BottomFade } from "~/routes/settings/_components/bottom-fade";
-import { getLastLocation } from "~/lib/last-curriculum";
+import { getLastLocation, takeSettingsOrigin } from "~/lib/last-curriculum";
 import glassBackground from "~/assets/glass-background.webp";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -26,18 +26,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function SettingsLayoutRoute() {
   const { isDistrictAdmin } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
-  // District admins return to the portal. Teachers return to the last classroom
-  // curriculum they were on (recorded in localStorage by the series route),
-  // falling back to the classrooms index when there's no saved location.
+  // Close destination is origin-based, decoupled from role: whichever avatar
+  // menu opened settings stamped a one-shot origin marker. "district" → back to
+  // the portal; otherwise fall back to the last classroom curriculum (recorded
+  // by the series route). `isDistrictAdmin` is only the last-resort default when
+  // neither an origin marker nor a saved last-location exists.
   const close = () => {
-    if (isDistrictAdmin) {
+    const origin = takeSettingsOrigin();
+    if (origin === "district") {
       navigate("/district");
       return;
     }
     const last = getLastLocation();
-    navigate(
-      last ? `/classrooms/${last.groupId}/${last.curriculumId}` : "/classrooms",
-    );
+    if (last) {
+      navigate(`/classrooms/${last.groupId}/${last.curriculumId}`);
+      return;
+    }
+    navigate(isDistrictAdmin ? "/district" : "/classrooms");
   };
 
   return (
@@ -62,7 +67,7 @@ export default function SettingsLayoutRoute() {
             "0 25px 80px -12px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1)",
         }}
       >
-        <SettingsSidebar isDistrictAdmin={isDistrictAdmin} />
+        <SettingsSidebar />
 
         {/* White content card */}
         <div className="flex-1 bg-white rounded-r-[24px] overflow-hidden relative">
