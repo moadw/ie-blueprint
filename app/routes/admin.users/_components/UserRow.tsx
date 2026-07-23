@@ -1,5 +1,4 @@
 import { ArrowUpRight, KeyRound, Pencil, Plus, Trash2 } from "lucide-react";
-import { Link } from "react-router";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import type { UserSearchQuery } from "~/gql/graphql";
@@ -22,6 +21,7 @@ export interface UserRowProps {
   onDelete: (u: AdminUserRow) => void;
   onSetPassword: (u: AdminUserRow) => void;
   onManageSchools: (u: AdminUserRow) => void;
+  onViewDetail: (u: AdminUserRow) => void;
   /** Whether this user's role is school-scoped (false hides the + control). */
   canManageSchools: boolean;
 }
@@ -58,7 +58,7 @@ export function UsersTableHeader() {
   );
 }
 
-function formatDate(value?: string | null): string {
+export function formatDate(value?: string | null): string {
   if (!value) return "—";
   // The backend returns timestamps as epoch milliseconds in a string, which
   // `new Date(string)` can't parse (→ "Invalid Date"). Coerce plain-digit
@@ -68,7 +68,7 @@ function formatDate(value?: string | null): string {
   return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString();
 }
 
-function joinSchools(schools: AdminUserRow["schools"]): string {
+export function joinSchools(schools: AdminUserRow["schools"]): string {
   if (!schools || schools.length === 0) return "—";
   const names = schools
     .map((s) => s?.school_name)
@@ -82,6 +82,7 @@ export function UserRow({
   onDelete,
   onSetPassword,
   onManageSchools,
+  onViewDetail,
   canManageSchools,
 }: UserRowProps) {
   const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
@@ -162,16 +163,16 @@ export function UserRow({
         >
           <Pencil className="w-4 h-4" aria-hidden="true" />
         </Button>
-        {user.userId ? (
-          <Link
-            to={`/admin/users/${user.userId}`}
-            title="View user detail"
-            aria-label="View user detail"
-            className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-muted text-foreground transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-          >
-            <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
-          </Link>
-        ) : null}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onViewDetail(user)}
+          title="View detail"
+          aria-label="View user detail"
+          className="h-8 w-8"
+        >
+          <ArrowUpRight className="w-4 h-4" aria-hidden="true" />
+        </Button>
         <Button
           variant="ghost"
           size="icon"

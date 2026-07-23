@@ -72,7 +72,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
         UserSearchDocument,
         {
           ...(district.organization ? { organizationId: district.organization } : {}),
-          platformId: env.PLATFORM,
           ...(type ? { type } : {}),
           ...(search ? { search } : {}),
           ...(schoolId ? { schoolId } : {}),
