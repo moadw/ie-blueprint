@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
 import { useFetcher, useNavigate } from "react-router";
-import { ChevronRight, LogOut, Settings, User } from "lucide-react";
+import { Building2, ChevronRight, LogOut, Settings, User } from "lucide-react";
 import { setToken } from "~/lib/auth";
+import { setSettingsOrigin } from "~/lib/last-curriculum";
+import { isDistrictOrSchoolAdmin } from "~/lib/user";
 import {
   Popover,
   PopoverContent,
@@ -14,6 +16,7 @@ export interface ProfileMenuUser {
   email?: string | null;
   userName?: string | null;
   profilePicture?: { url?: string | null } | null;
+  typeObj?: { identifier?: string | null } | null;
 }
 
 /**
@@ -87,6 +90,7 @@ export function ProfileMenu({
   const name = displayName(user);
   const photo = user?.profilePicture?.url;
   const email = user?.email;
+  const showDistrictAdmin = isDistrictOrSchoolAdmin(user?.typeObj?.identifier);
 
   const finished =
     groupProgress?.finishedClasses?.filter(Boolean).length ?? 0;
@@ -213,7 +217,10 @@ export function ProfileMenu({
         {/* Action rows */}
         <button
           type="button"
-          onClick={() => navigate("/settings")}
+          onClick={() => {
+            setSettingsOrigin("classroom");
+            navigate("/settings");
+          }}
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-white transition-colors duration-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
         >
           <Settings className="h-4 w-4 flex-shrink-0 text-white/80" />
@@ -223,13 +230,28 @@ export function ProfileMenu({
 
         <button
           type="button"
-          onClick={() => navigate("/settings/profile")}
+          onClick={() => {
+            setSettingsOrigin("classroom");
+            navigate("/settings/profile");
+          }}
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-white transition-colors duration-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
         >
           <User className="h-4 w-4 flex-shrink-0 text-white/80" />
           <span className="flex-1">View Profile</span>
           <ChevronRight className="h-4 w-4 flex-shrink-0 text-white/50" />
         </button>
+
+        {showDistrictAdmin ? (
+          <button
+            type="button"
+            onClick={() => navigate("/district")}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-white transition-colors duration-200 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+          >
+            <Building2 className="h-4 w-4 flex-shrink-0 text-white/80" />
+            <span className="flex-1">District Admin</span>
+            <ChevronRight className="h-4 w-4 flex-shrink-0 text-white/50" />
+          </button>
+        ) : null}
 
         <div className="my-1 h-px bg-white/15" />
 

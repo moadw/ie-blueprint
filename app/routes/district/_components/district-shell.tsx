@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Button } from "~/components/ui/button";
 import { Logo } from "~/components/ui/logo";
 import { AnnouncementBar } from "~/components/ui/announcement-bar";
@@ -26,6 +26,7 @@ export function DistrictShell({
   preview,
   children,
 }: DistrictShellProps) {
+  const navigate = useNavigate();
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-white print:h-auto print:overflow-visible">
       {announcement ? (
@@ -57,6 +58,17 @@ export function DistrictShell({
             >
               <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
               <span className="hidden md:inline">Back to CMS</span>
+            </Button>
+          ) : null}
+          {!preview?.active ? (
+            <Button
+              size="sm"
+              className="gap-1.5 rounded-full"
+              aria-label="Go to the platform"
+              onClick={() => navigate("/classrooms")}
+            >
+              <ArrowLeft className="w-3.5 h-3.5" aria-hidden="true" />
+              <span className="hidden md:inline">Go to the platform</span>
             </Button>
           ) : null}
           <DistrictAccountMenu user={user} />

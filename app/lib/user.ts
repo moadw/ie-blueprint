@@ -23,6 +23,22 @@ export function homePathForIdentifier(
 }
 
 /**
+ * Identifiers treated as "district/school admin" for the act-as-teacher flow.
+ * `school-admin` is intentionally NOT here yet — its backend identifier is not
+ * wired (2026-07-21). Add it here (one line) to enable the flow for school
+ * admins; also add it to HOME_BY_IDENTIFIER (→ "/district") and the district.tsx
+ * layout gate in that future session.
+ */
+const DISTRICT_OR_SCHOOL_ADMIN = new Set<string>(["district-admin"]);
+
+/** True when the identifier is a district (or, later, school) admin. */
+export function isDistrictOrSchoolAdmin(
+  identifier: string | null | undefined,
+): boolean {
+  return !!identifier && DISTRICT_OR_SCHOOL_ADMIN.has(identifier);
+}
+
+/**
  * Role labels hidden from every role picker/filter across the app (admin +
  * district user forms). Matched case-insensitively against the role label.
  * District forms additionally hide "Administrator" (see DistrictUsersFilterBar);
