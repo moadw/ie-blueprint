@@ -49,12 +49,28 @@ export async function establishSessionFromToken(
       {},
       { "access-token": token },
     );
-  } catch {
+  } catch (err) {
+    console.error(
+      "[sso] verify-failed — UsersFindOne lookup threw for the token returned by the SSO backend",
+      err,
+    );
     throw new SsoAuthError("verify-failed");
   }
 
   const user = userResp.UsersFindOne;
   if (!user?.platform || user.platform !== env.PLATFORM) {
+    console.warn("[sso] not-allowed — platform gate failed", {
+      userId: user?._id ?? null,
+      userEmail: user?.email ?? null,
+      userType: user?.typeObj?.identifier ?? null,
+      userPlatform: user?.platform ?? null,
+      expectedPlatform: env.PLATFORM,
+      reason: !user
+        ? "UsersFindOne returned null (token has no associated user)"
+        : !user.platform
+          ? "user record has no platform"
+          : "user.platform !== expected platform",
+    });
     throw new SsoAuthError("not-allowed");
   }
 
