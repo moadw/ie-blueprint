@@ -32,7 +32,6 @@ export const UserSearchDocument = graphql(`
     $sortOrder: Int
     $limit: Int
     $skip: Int
-    $platformId: String
     $organizationId: String
   ) {
     UserSearch(
@@ -44,7 +43,6 @@ export const UserSearchDocument = graphql(`
       sortOrder: $sortOrder
       limit: $limit
       skip: $skip
-      platformId: $platformId
       organizationId: $organizationId
     ) {
       total

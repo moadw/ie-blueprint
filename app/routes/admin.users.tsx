@@ -112,7 +112,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       gqlClient.request(
         UserSearchDocument,
         {
-          platformId: env.PLATFORM,
           ...(organizationId ? { organizationId } : {}),
           ...(schoolId ? { schoolId } : {}),
           ...(type ? { type } : {}),
