@@ -74,3 +74,31 @@ export function setLastLocation(groupId: string, curriculumId: string): void {
     JSON.stringify({ groupId, curriculumId }),
   );
 }
+
+// One-shot marker for "where did the user open /settings from" so the modal's
+// close() can return them to the right surface. Set by whichever avatar menu
+// opens settings (district rows → "district", teacher rows → "classroom"), then
+// read+cleared by settings.tsx close(). A query param can't do this: the
+// settings._index → /settings/profile redirect and the sidebar NavLinks both
+// drop search params. sessionStorage (not localStorage) so it's tab-scoped and
+// naturally short-lived.
+const SETTINGS_ORIGIN_KEY = "ie:settings-origin";
+
+export function setSettingsOrigin(origin: "district" | "classroom"): void {
+  try {
+    sessionStorage.setItem(SETTINGS_ORIGIN_KEY, origin);
+  } catch {
+    /* SSR / privacy mode */
+  }
+}
+
+/** Reads AND clears the origin (one-shot). */
+export function takeSettingsOrigin(): "district" | "classroom" | null {
+  try {
+    const v = sessionStorage.getItem(SETTINGS_ORIGIN_KEY);
+    sessionStorage.removeItem(SETTINGS_ORIGIN_KEY);
+    return v === "district" || v === "classroom" ? v : null;
+  } catch {
+    return null;
+  }
+}

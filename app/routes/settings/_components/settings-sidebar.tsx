@@ -13,24 +13,7 @@ const NAV_ITEMS: { to: string; label: string; icon: LucideIcon }[] = [
   { to: "/settings/get-help", label: "Get Help", icon: HelpCircle },
 ];
 
-// Learner/progress surfaces that don't apply to district admins — they only
-// see Manage Profile and Get Help.
-const DISTRICT_ADMIN_HIDDEN = new Set([
-  "/settings/journals",
-  "/settings/favorites",
-  "/settings/stats",
-  "/settings/toolkit",
-]);
-
-interface SettingsSidebarProps {
-  isDistrictAdmin?: boolean;
-}
-
-export function SettingsSidebar({ isDistrictAdmin = false }: SettingsSidebarProps) {
-  const navItems = isDistrictAdmin
-    ? NAV_ITEMS.filter((item) => !DISTRICT_ADMIN_HIDDEN.has(item.to))
-    : NAV_ITEMS;
-
+export function SettingsSidebar() {
   return (
     <div
       className="w-72 flex flex-col rounded-l-[24px] overflow-hidden"
@@ -55,7 +38,7 @@ export function SettingsSidebar({ isDistrictAdmin = false }: SettingsSidebarProp
       {/* Menu Items */}
       <nav className="flex-1 p-4 overflow-y-auto">
         <ul className="space-y-1">
-          {navItems.map(({ to, label, icon: Icon }) => (
+          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
             <li key={to}>
               <NavLink
                 to={to}

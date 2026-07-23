@@ -23,7 +23,7 @@ import { requireSchoolAssigned } from "~/lib/onboarding-guard.server";
 import { hasSeenOnboardingWelcome } from "~/lib/onboarding-welcome";
 import { safe } from "~/lib/safe-loader";
 import { requireSessionToken } from "~/lib/session.server";
-import { homePathForIdentifier } from "~/lib/user";
+import { homePathForIdentifier, isDistrictOrSchoolAdmin } from "~/lib/user";
 import { CurriculumCollectionFindManyDocument } from "~/queries/curriculum-collections";
 import { CurriculumsFindManyDocument } from "~/queries/curriculums";
 import { UserDistrictFindOneDocument } from "~/queries/districts";
@@ -45,8 +45,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     { "access-token": token },
   );
   const user = userData.UsersFindOne ?? null;
-  if (user?.typeObj?.identifier !== "teacher") {
-    throw redirect(homePathForIdentifier(user?.typeObj?.identifier));
+  const id = user?.typeObj?.identifier;
+  if (!user || (id !== "teacher" && !isDistrictOrSchoolAdmin(id))) {
+    throw redirect(homePathForIdentifier(id));
   }
 
   // Org-joined (self-signed-up) teachers who haven't picked a school yet are
