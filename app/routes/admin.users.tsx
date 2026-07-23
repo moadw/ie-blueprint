@@ -32,6 +32,7 @@ import { DownloadUsersButton } from "./admin.users/_components/DownloadUsersButt
 import { ImportUsersDialog } from "./admin.users/_components/ImportUsersDialog";
 import { SetPasswordDialog } from "./admin.users/_components/SetPasswordDialog";
 import { UserDialog } from "./admin.users/_components/UserDialog";
+import { UserDetailDialog } from "./admin.users/_components/UserDetailDialog";
 import {
   UserRow,
   UsersTableHeader,
@@ -204,6 +205,7 @@ export default function AdminUsersRoute() {
     null,
   );
   const [schoolsTarget, setSchoolsTarget] = useState<AdminUserRow | null>(null);
+  const [detailTarget, setDetailTarget] = useState<AdminUserRow | null>(null);
   const [importOpen, setImportOpen] = useState<boolean>(false);
   const [deleting, setDeleting] = useState<boolean>(false);
 
@@ -314,6 +316,7 @@ export default function AdminUsersRoute() {
               onDelete={setDeleteTarget}
               onSetPassword={setPasswordTarget}
               onManageSchools={setSchoolsTarget}
+              onViewDetail={setDetailTarget}
               canManageSchools={!schoolLessTypeIds.has(u.type_id ?? "")}
             />
           ))}
@@ -376,6 +379,12 @@ export default function AdminUsersRoute() {
           if (!open) setSchoolsTarget(null);
         }}
         onChanged={() => revalidator.revalidate()}
+      />
+      <UserDetailDialog
+        target={detailTarget}
+        onOpenChange={(open) => {
+          if (!open) setDetailTarget(null);
+        }}
       />
 
       <ImportUsersDialog
