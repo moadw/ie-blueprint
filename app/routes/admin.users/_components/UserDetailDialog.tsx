@@ -152,7 +152,7 @@ export function UserDetailDialog({
             {/* Classes */}
             <section>
               <h3 className="mb-3 text-sm font-medium text-foreground">
-                Classes
+                Classrooms
                 {!loading && !error ? (
                   <span className="ml-1 text-muted-foreground">
                     ({classes.length})
@@ -176,7 +176,7 @@ export function UserDetailDialog({
                 </div>
               ) : classes.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  This user has no classes yet.
+                  This user has no classrooms yet.
                 </p>
               ) : (
                 <ul className="space-y-2">
@@ -190,8 +190,8 @@ export function UserDetailDialog({
                         className="rounded-[14px] border border-border bg-card p-3"
                       >
                         <div className="flex items-center justify-between gap-3">
-                          <span className="truncate font-medium text-foreground">
-                            {c.name ?? "Untitled class"}
+                          <span className="truncate text-sm font-medium text-foreground">
+                            {c.name ?? "Untitled classroom"}
                           </span>
                           <span className="flex-shrink-0 text-xs text-muted-foreground">
                             {seriesCount} series
