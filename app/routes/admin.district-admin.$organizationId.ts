@@ -78,7 +78,6 @@ export async function loader({
       UserSearchDocument,
       {
         organizationId,
-        platformId: env.PLATFORM,
         type: typeId,
         sortBy: "createdAt",
         sortOrder: -1,

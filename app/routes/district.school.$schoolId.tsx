@@ -8,7 +8,6 @@ import {
   getSchoolTotalPlays,
 } from "~/lib/amplitude.server";
 import { resolveDistrictAdmin } from "~/lib/district-admin.server";
-import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
 import { safe } from "~/lib/safe-loader";
 import { SchoolFindOneDocument } from "~/queries/schools";
@@ -162,7 +161,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ...(district.organization
           ? { organizationId: district.organization }
           : {}),
-        platformId: env.PLATFORM,
         schoolId,
         ...(teacherTypeId ? { type: teacherTypeId } : {}),
         sortBy: "createdAt",

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Check,
-  CheckCircle2,
   ChevronDown,
   ChevronUp,
   Clock,
@@ -20,7 +19,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -125,15 +123,6 @@ export interface PracticeRowProps {
   onChange: () => void;
 }
 
-const GRADE_OPTIONS = [
-  { value: "early_learning", label: "Early Learning" },
-  { value: "elementary", label: "Elementary" },
-  { value: "middle_school", label: "Middle School" },
-  { value: "high_school", label: "High School" },
-  { value: "all_levels", label: "All Levels" },
-  { value: "sports", label: "Sports" },
-] as const;
-
 const labelClass = "block text-[14px] text-foreground mb-2 font-medium";
 
 export function PracticeRow({
@@ -170,8 +159,6 @@ export function PracticeRow({
   const [feedback, setFeedback] = useState<boolean>(practice.feedback ?? false);
 
   // Visual-only state (not persisted)
-  const [category, setCategory] = useState<string>("");
-  const [gradeLevel, setGradeLevel] = useState<string>("all_levels");
   const [active, setActive] = useState<boolean>(true);
 
   const [submitting, setSubmitting] = useState(false);
@@ -217,17 +204,6 @@ export function PracticeRow({
   ]);
 
   const dayValue = Math.max(1, Math.round(day || 1));
-  const completeness = (() => {
-    const hasImage = Boolean(practice.cover?.url);
-    const hasDescription = Boolean(practice.description);
-    const hasCategory = Boolean(category);
-    const missing: string[] = [];
-    if (!hasImage) missing.push("Cover image");
-    if (!hasDescription) missing.push("Description");
-    if (!hasCategory) missing.push("Category");
-    return { isComplete: missing.length === 0, missing };
-  })();
-  const isComplete = completeness.isComplete;
 
   // Prefer the optimistic just-uploaded preview, else the persisted background.
   const bgUrl = bgPreview ?? practice.background?.url ?? null;
@@ -380,12 +356,7 @@ export function PracticeRow({
   }
 
   return (
-    <div
-      className={cn(
-        "rounded-[16px] border-2 bg-white shadow-xs transition-colors",
-        isComplete ? "border-emerald-400" : "border-stone-200",
-      )}
-    >
+    <div className="rounded-[16px] border-2 border-stone-200 bg-white shadow-xs transition-colors">
       <div className="flex items-center justify-between gap-3 p-4">
         {/* TODO(reorder): wire to dnd-kit + ClassesUpdateOne order mutation */}
         <button
@@ -531,23 +502,17 @@ export function PracticeRow({
               {practice.title || "Untitled"}
             </p>
           )}
-          <div className="mt-1 flex flex-wrap items-center gap-1.5">
-            {category ? (
-              <Badge shape="tag" className="bg-transparent text-stone-500 border-stone-300">
-                {category}
-              </Badge>
-            ) : null}
-            <Badge shape="tag" className="bg-transparent text-stone-500 border-stone-300">
-              {GRADE_OPTIONS.find((g) => g.value === gradeLevel)?.label ?? "All Levels"}
-            </Badge>
-            {isComplete ? (
-              <Badge shape="tag" className="bg-emerald-100 text-emerald-700 border-emerald-200">
-                <CheckCircle2 className="w-3 h-3" />
-                Complete
-              </Badge>
+          <div className="mt-1 flex items-center gap-2">
+            {practice.description ? (
+              <p
+                className="min-w-0 flex-1 truncate text-sm text-stone-500"
+                title={practice.description}
+              >
+                {practice.description}
+              </p>
             ) : (
-              <span className="text-xs text-stone-400">
-                Missing: {completeness.missing.join(", ")}
+              <span className="min-w-0 flex-1 truncate text-xs italic text-stone-400">
+                No description added
               </span>
             )}
           </div>
