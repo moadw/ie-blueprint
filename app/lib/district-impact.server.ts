@@ -8,17 +8,16 @@ import { ImpactFindManyDocument } from "~/queries/impact";
  * Costura de datos del Impact Hub de distrito (solo lectura).
  *
  * Lee `ImpactFindMany` REAL (tipo `impact`) y lo mapea al view model `ImpactStory`.
- * Verificado en runtime (2026-06-17): la query funciona pero el backend está
- * VACÍO → cuando no hay items reales se cae a `SAMPLE_STORIES` (las 7 historias
- * de muestra del prototipo), igual que el demo (que marca cada card "Sample").
- * Cuando exista data real, la reemplaza. NO se escribe nada al backend.
+ * Cuando no hay items reales devuelve una lista VACÍA — la vista renderiza su
+ * empty state. NO hay historias de muestra ni placeholders; NO se escribe nada al
+ * backend.
  *
  * Scoping por distrito (2026-07-23): el backend agregó `organization` + `platform`
  * al tipo `impact`, así que el hub ya se scopea de verdad. Filtra
  * `{ organization, platform, deleted:false }` donde `organization` sale de
  * `resolveDistrictAdmin` (el distrito del usuario logeado, o el distrito
  * previsualizado si un master admin navega como distrito). Si no se puede
- * resolver la org, NO se consulta (evita leer null-org / cross-org); cae a samples.
+ * resolver la org, NO se consulta (evita leer null-org / cross-org) → lista vacía.
  *
  * Convención de datos:
  *  - convención (acordada con backend, 2026-06-17): `user`/`userType`/`school`
@@ -43,7 +42,6 @@ export interface ImpactStory {
   authorRole: string | null;
   schoolName: string | null;
   rating: number | null; // feedback: 1-5
-  isSample: boolean;
 }
 
 export interface DistrictImpactData {
@@ -54,7 +52,6 @@ export interface DistrictImpactData {
   organization: string | null;
   platform: string;
   stories: ImpactStory[];
-  source: "real" | "sample";
   // Identidad del admin logeado, para autofill del autor al crear (read-only).
   // `isAdmin` = master admin → el hub NO autocompleta autor/rol (crea a nombre
   // del distrito previsualizado, no del admin).
@@ -80,96 +77,6 @@ function parseRating(type: ImpactStoryType, title: string | null): number | null
   if (!Number.isFinite(n) || n <= 0) return null;
   return Math.min(5, Math.max(1, Math.round(n)));
 }
-
-// Historias de muestra portadas de los SEED_ITEMS del prototipo (orden 1..7 para
-// espejar el layout del demo). Contenido estático → SSR-safe.
-const SAMPLE_STORIES: ImpactStory[] = [
-  {
-    id: "sample-1",
-    type: "testimonial",
-    title: null,
-    body: "Inner Explorer has completely transformed our morning routine. Students arrive calmer, more focused, and ready to learn. It's the best five minutes of our day.",
-    imageUrl: null,
-    authorName: "Ms. Rodriguez",
-    authorRole: "3rd Grade Teacher",
-    schoolName: "Sunset Elementary",
-    rating: null,
-    isSample: true,
-  },
-  {
-    id: "sample-2",
-    type: "milestone",
-    title: "12,450 Mindful Minutes",
-    body: "Across 14 schools, educators and students have collectively practiced over 12,000 minutes of mindfulness this semester.",
-    imageUrl: null,
-    authorName: null,
-    authorRole: null,
-    schoolName: null,
-    rating: null,
-    isSample: true,
-  },
-  {
-    id: "sample-3",
-    type: "journal",
-    title: "A Moment of Stillness",
-    body: "Today I noticed how quiet my mind became during the breathing exercise. I could hear the birds outside for the first time in weeks. I want to bring this feeling into my afternoon classes.",
-    imageUrl: null,
-    authorName: "Anonymous Teacher",
-    authorRole: "Middle School",
-    schoolName: "Riverside Academy",
-    rating: null,
-    isSample: true,
-  },
-  {
-    id: "sample-4",
-    type: "feedback",
-    title: "5",
-    body: "The breathing exercise really helped my class settle down after recess. Every student was engaged by the end.",
-    imageUrl: null,
-    authorName: "Ms. Thompson",
-    authorRole: null,
-    schoolName: "Oak Hill Elementary",
-    rating: 5,
-    isSample: true,
-  },
-  {
-    id: "sample-5",
-    type: "photo",
-    title: null,
-    body: null,
-    imageUrl:
-      "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=600&q=80",
-    authorName: null,
-    authorRole: null,
-    schoolName: null,
-    rating: null,
-    isSample: true,
-  },
-  {
-    id: "sample-6",
-    type: "testimonial",
-    title: null,
-    body: "As a principal, I've seen a measurable decrease in behavioral referrals since we adopted Inner Explorer district-wide. The data speaks for itself.",
-    imageUrl: null,
-    authorName: "Dr. James Chen",
-    authorRole: "Principal",
-    schoolName: "Lincoln High School",
-    rating: null,
-    isSample: true,
-  },
-  {
-    id: "sample-7",
-    type: "milestone",
-    title: "1,200 Practices Completed",
-    body: "Educators across the district have completed over 1,200 guided mindfulness practices since the start of the school year.",
-    imageUrl: null,
-    authorName: null,
-    authorRole: null,
-    schoolName: null,
-    rating: null,
-    isSample: true,
-  },
-];
 
 export async function getDistrictImpact(request: Request): Promise<{
   data: DistrictImpactData | null;
@@ -226,20 +133,16 @@ export async function getDistrictImpact(request: Request): Promise<{
         authorRole: raw.userType ?? null,
         schoolName: raw.school ?? null,
         rating: parseRating(type, raw.title ?? null),
-        isSample: false,
       } satisfies ImpactStory;
     });
   }
-
-  const useReal = realStories.length > 0;
 
   return {
     data: {
       districtName: district.name,
       organization,
       platform: env.PLATFORM,
-      stories: useReal ? realStories : SAMPLE_STORIES,
-      source: useReal ? "real" : "sample",
+      stories: realStories,
       currentUser,
     },
     loadError: null,
