@@ -90,6 +90,14 @@ export function LoginForm({ ssoError }: { ssoError?: SsoError }) {
     >
       <Input
         label="Email"
+        labelAction={
+          <Link
+            to="/forgot-password"
+            className="text-[12px] text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Forgot password?
+          </Link>
+        }
         type="email"
         placeholder="you@example.com"
         autoComplete="email"
