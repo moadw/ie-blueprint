@@ -23,17 +23,20 @@ export function InsightCard({ insights }: InsightCardProps) {
   const isEmpty = !slide;
 
   const handleSwipe = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    // A press that starts on an indicator dot is a tab click, not a swipe — let it
+    // through so the button's onClick fires. (We intentionally do NOT capture the
+    // pointer on the card: pointer capture swallows the child buttons' click events,
+    // which is what made the dots look clickable but do nothing.)
+    if ((e.target as HTMLElement).closest("[data-insight-dot]")) return;
     const startX = e.clientX;
-    const el = e.currentTarget;
     const onUp = (ev: PointerEvent) => {
       const dx = ev.clientX - startX;
       if (dx < -40) setActive(Math.min(clampedActive + 1, insights.length - 1));
       if (dx > 40) setActive(Math.max(clampedActive - 1, 0));
-      el.releasePointerCapture(ev.pointerId);
-      el.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointerup", onUp);
     };
-    el.setPointerCapture(e.pointerId);
-    el.addEventListener("pointerup", onUp);
+    // Listen on window so the swipe still completes if the pointer leaves the card.
+    window.addEventListener("pointerup", onUp);
   }, [clampedActive, insights.length]);
 
   return (
@@ -124,8 +127,9 @@ export function InsightCard({ insights }: InsightCardProps) {
                 <button
                   key={i}
                   type="button"
+                  data-insight-dot
                   onClick={() => setActive(i)}
-                  className="flex-1 h-[4px] rounded-full transition-all duration-500 ease-out"
+                  className="flex-1 h-[4px] rounded-full transition-all duration-500 ease-out cursor-pointer hover:opacity-80"
                   style={{
                     backgroundColor:
                       i === clampedActive ? "hsl(0 0% 100% / 0.9)" : "hsl(0 0% 0% / 0.25)",
