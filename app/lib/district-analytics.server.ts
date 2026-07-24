@@ -8,6 +8,7 @@ import {
   getActiveTeacherSeries,
   getActiveTeacherTotal,
   getActiveUsersTotal,
+  getCompletedUsersTotal,
   getEngagedUsersTotal,
   getMindfulSecondsSeries,
   getRetentionCurve,
@@ -153,6 +154,30 @@ function seriesToGrid(series: number[], rows = 5, cols = 7): number[][] {
 function pctChange(cur: number, prev: number): number {
   if (prev <= 0) return 0;
   return Math.round(((cur - prev) / prev) * 1000) / 10;
+}
+
+/**
+ * Compact count for Insight stats ("2.4k"). Mirrors the Sessions card's
+ * `formatCompactTotal` (kept local so `lib/` doesn't depend on a route util).
+ */
+function compactStat(value: number): string {
+  if (value >= 10000) {
+    const k = value / 1000;
+    return `${Number.isInteger(k) ? k.toFixed(0) : k.toFixed(1).replace(/\.0$/, "")}k`;
+  }
+  return value.toLocaleString();
+}
+
+/**
+ * Trailing sentence clause describing a delta vs the compare window, e.g.
+ * " up 4 pts vs last period". Empty string when the delta is null or 0, so the
+ * Insight title reads cleanly without a trend when there's no comparison.
+ */
+function deltaClause(delta: number | null, unit: string): string {
+  if (delta === null || delta === 0) return "";
+  return delta > 0
+    ? ` up ${delta} ${unit} vs last period`
+    : ` down ${Math.abs(delta)} ${unit} vs last period`;
 }
 
 /**
@@ -322,8 +347,18 @@ export async function getDistrictAnalytics(
     mindfulTeacherP: getMindfulSecondsSeries(org, primary, "teacher", schoolId),
     mindfulStudentP: getMindfulSecondsSeries(org, primary, "student", schoolId),
     retentionP: getRetentionCurve(org, primary, params.granularity, schoolId),
+    retentionCompareP: compareWindow
+      ? getRetentionCurve(org, compareWindow, params.granularity, schoolId)
+      : Promise.resolve(null),
     activeUsersTotalP: getActiveUsersTotal(org, primary, schoolId),
     engagedUsersTotalP: getEngagedUsersTotal(org, primary, schoolId),
+    // Engagement rate = completed ÷ registered. `getCompletedUsersTotal` is
+    // org-scoped only (no schoolId) — engagement stays district-wide by design
+    // (see plan Derail notes), matching the district-home `activeUserRate`.
+    completedPrimaryP: getCompletedUsersTotal(org, primary),
+    completedCompareP: compareWindow
+      ? getCompletedUsersTotal(org, compareWindow)
+      : Promise.resolve(null),
   });
 
   let {
@@ -337,8 +372,11 @@ export async function getDistrictAnalytics(
     mindfulTeacherP,
     mindfulStudentP,
     retentionP,
+    retentionCompareP,
     activeUsersTotalP,
     engagedUsersTotalP,
+    completedPrimaryP,
+    completedCompareP,
   } = buildAmplitude(params.schoolId);
 
   // Await the (concurrent) school list, then validate the requested school id.
@@ -376,8 +414,11 @@ export async function getDistrictAnalytics(
       mindfulTeacherP,
       mindfulStudentP,
       retentionP,
+      retentionCompareP,
       activeUsersTotalP,
       engagedUsersTotalP,
+      completedPrimaryP,
+      completedCompareP,
     } = buildAmplitude(effectiveSchoolId));
   }
 
@@ -478,43 +519,85 @@ export async function getDistrictAnalytics(
     return ZERO_FUNNEL;
   }, ZERO_FUNNEL);
 
-  // Insights — composed from the already-firing promises (no duplicate calls):
-  // the awaited schools count, Amplitude active users, and the mindful card's
-  // trend. `mindfulPrimaryP` distinguishes a real 0 from "no data" for the trend
-  // insight. Each entry is included only when its source is available → `[]`
-  // shows the card's "No insights available." empty state.
+  // Insights — the three prototype metrics (Engagement rate, Retention rate,
+  // New sessions), composed from the already-firing (cached) promises so there
+  // are no duplicate Amplitude calls. Deltas use the page's compare window, same
+  // as the sibling cards. A metric is included ONLY when its displayed value is
+  // > 0; a 0 or unavailable metric is dropped. When all three drop, `[]` renders
+  // the card's "Still learning" empty state — i.e. 0 / no-data shows the holding
+  // state (the original request), rather than a row of "0%" cards.
   const insights = deferCard(async () => {
-    const [activeUsersTotal, mindfulPrimary, mindfulCard] = await Promise.all([
-      activeUsersTotalP,
-      mindfulPrimaryP,
-      mindfulMinutes,
+    const [
+      completedPrimary,
+      completedCompare,
+      totalsResult,
+      retentionPrimary,
+      retentionCompare,
+      sessionsPrimary,
+      sessionsCompare,
+    ] = await Promise.all([
+      completedPrimaryP,
+      completedCompareP,
+      totalsP,
+      retentionP,
+      retentionCompareP,
+      sessionsPrimaryP,
+      sessionsCompareP,
     ]);
     const out: AnalyticsDashboardData["insights"] = [];
-    if (schoolsCount > 0) {
+
+    // 1. Engagement rate = completed ÷ registered (district-wide roster).
+    const registered =
+      totalsResult.ok && totalsResult.data.UserTotalsFindMany
+        ? (totalsResult.data.UserTotalsFindMany.students ?? 0) +
+          (totalsResult.data.UserTotalsFindMany.teachers ?? 0)
+        : null;
+    if (completedPrimary !== null && registered !== null && registered > 0) {
+      const rate = Math.round((completedPrimary / registered) * 100);
+      if (rate > 0) {
+        const prevRate =
+          completedCompare !== null ? (completedCompare / registered) * 100 : null;
+        const deltaPP = prevRate !== null ? Math.round(rate - prevRate) : null;
+        out.push({
+          stat: `${rate}%`,
+          title: `Engagement rate${deltaClause(deltaPP, "pts")}.`,
+          description: `${completedPrimary.toLocaleString()} of ${registered.toLocaleString()} registered users completed a practice this period.`,
+        });
+      }
+    }
+
+    // 2. Retention rate = retention-curve peak, delta vs the compare window.
+    if (retentionPrimary !== null && retentionPrimary.peakPct > 0) {
+      const deltaPP =
+        retentionCompare !== null
+          ? Math.round(retentionPrimary.peakPct - retentionCompare.peakPct)
+          : null;
       out.push({
-        stat: String(schoolsCount),
-        title: "Schools in the district",
+        stat: `${retentionPrimary.peakPct}%`,
+        title: `Peak retention${deltaClause(deltaPP, "pts")}.`,
         description:
-          "Number of schools currently provisioned in this district on the platform.",
+          "Share of active users who returned within the retention window.",
       });
     }
-    if (activeUsersTotal !== null) {
-      out.push({
-        stat: activeUsersTotal.toLocaleString(),
-        title: "Active users this period",
-        description:
-          "Total unique users with at least one recorded activity during the selected range.",
-      });
+
+    // 3. New sessions started (autocaptured `session_start`), delta vs compare.
+    if (sessionsPrimary !== null) {
+      const total = sum(sessionsPrimary);
+      if (total > 0) {
+        const delta =
+          sessionsCompare !== null ? total - sum(sessionsCompare) : null;
+        const description =
+          delta !== null && delta !== 0
+            ? `${Math.abs(delta).toLocaleString()} ${delta > 0 ? "more" : "fewer"} than the previous period.`
+            : "Practice sessions started in the selected range.";
+        out.push({
+          stat: compactStat(total),
+          title: `New sessions started across ${schoolsCount} ${schoolsCount === 1 ? "school" : "schools"}.`,
+          description,
+        });
+      }
     }
-    if (mindfulPrimary !== null) {
-      const trendPct = mindfulCard.trendPct;
-      out.push({
-        stat: `${trendPct >= 0 ? "+" : ""}${trendPct}%`,
-        title: "Mindful minutes trend vs. previous period",
-        description:
-          "Change in total mindful minutes compared with the prior equivalent window.",
-      });
-    }
+
     return out;
   }, EMPTY_INSIGHTS);
 
