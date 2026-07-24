@@ -143,20 +143,25 @@ export function AnalyticsHeader({
           </PopoverContent>
         </Popover>
 
-        {/* School filter — scopes the Amplitude-driven charts (default all schools) */}
-        <Select
-          aria-label="Filter by school"
-          value={schoolId ?? ""}
-          onChange={(e) => applySchool(e.target.value)}
-          className="w-auto cursor-pointer rounded-full border-border bg-card px-4 py-2 pr-8 text-muted-foreground transition-colors hover:bg-muted"
-        >
-          <option value="">All schools</option>
-          {schools.map((s) => (
-            <option key={s._id} value={s._id}>
-              {s.name ?? "Untitled school"}
-            </option>
-          ))}
-        </Select>
+        {/* School filter — scopes the Amplitude-driven charts (default all
+            schools). Hidden when there's nothing to switch between (a
+            single-school scope, e.g. a single-school school-admin); the
+            loader still aggregates that full list either way. */}
+        {schools.length > 1 ? (
+          <Select
+            aria-label="Filter by school"
+            value={schoolId ?? ""}
+            onChange={(e) => applySchool(e.target.value)}
+            className="w-auto cursor-pointer rounded-full border-border bg-card px-4 py-2 pr-8 text-muted-foreground transition-colors hover:bg-muted"
+          >
+            <option value="">All schools</option>
+            {schools.map((s) => (
+              <option key={s._id} value={s._id}>
+                {s.name ?? "Untitled school"}
+              </option>
+            ))}
+          </Select>
+        ) : null}
       </div>
     </div>
   );

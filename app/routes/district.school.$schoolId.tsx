@@ -17,6 +17,7 @@ import {
 } from "~/queries/users";
 import { SchoolEducatorsTable } from "~/routes/district.school.$schoolId/_components/school-educators-table";
 import { SchoolStatsRow } from "~/routes/district.school.$schoolId/_components/school-stats-row";
+import { SchoolTitleSelector } from "~/routes/district.school.$schoolId/_components/school-title-selector";
 import type { UserSearchQuery } from "~/gql/graphql";
 
 /** A single teacher row from `UserSearch` (non-null). */
@@ -51,20 +52,42 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const schoolId = params.schoolId;
 
   const result = await resolveDistrictAdmin(request);
-  if (result.loadError || !result.district) {
+  const { token, district, preview, role, schools } = result;
+
+  // Hard failure (auth/user/district/school-list resolution) — never throw,
+  // degrade to the not-found/error card.
+  if (result.loadError) {
     return {
       school: null as SchoolDetail | null,
       educators: [] as SchoolEducatorRow[],
       teacherTotal: 0,
       totalPlays: Promise.resolve<number | null>(null),
       activeEducators: Promise.resolve<number | null>(null),
-      error: result.loadError ?? "Could not resolve district.",
+      error: result.loadError,
       notFound: false,
-      preview: result.preview,
+      preview,
+      role,
+      schools,
     };
   }
 
-  const { token, district, preview } = result;
+  // A district-admin/preview caller needs a resolved district; a school-admin
+  // has no district concept — their scope is `schools`/`schoolIds` instead
+  // (checked below, once the school itself is in hand).
+  if (role !== "school-admin" && !district) {
+    return {
+      school: null as SchoolDetail | null,
+      educators: [] as SchoolEducatorRow[],
+      teacherTotal: 0,
+      totalPlays: Promise.resolve<number | null>(null),
+      activeEducators: Promise.resolve<number | null>(null),
+      error: "Could not resolve district.",
+      notFound: false,
+      preview,
+      role,
+      schools,
+    };
+  }
 
   // Missing param → treat as not-found rather than issuing a wildcard lookup
   // that could surface some other school.
@@ -78,6 +101,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       error: null,
       notFound: true,
       preview,
+      role,
+      schools,
     };
   }
 
@@ -98,13 +123,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       error: schoolResult.error,
       notFound: false,
       preview,
+      role,
+      schools,
     };
   }
 
   const rawSchool = schoolResult.data.SchoolFindOne;
-  // Scope enforcement: a missing school OR one belonging to another district
-  // must NOT leak — render the not-found state (do NOT throw, do NOT show it).
-  if (!rawSchool || rawSchool.district !== district._id) {
+  // Scope enforcement — role-branched: a district-admin/preview caller must
+  // own the district the school belongs to; a school-admin must have the
+  // school in their own `schoolIds`/`schools` list. Either way, a school
+  // outside scope must NOT leak — render the not-found state (do NOT throw,
+  // do NOT show it).
+  const inScope =
+    rawSchool != null &&
+    (role === "school-admin"
+      ? (schools ?? []).some((s) => s._id === rawSchool._id)
+      : district != null && rawSchool.district === district._id);
+  if (!rawSchool || !inScope) {
     return {
       school: null as SchoolDetail | null,
       educators: [] as SchoolEducatorRow[],
@@ -114,6 +149,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       error: null,
       notFound: true,
       preview,
+      role,
+      schools,
     };
   }
 
@@ -158,7 +195,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     gqlClient.request(
       UserSearchDocument,
       {
-        ...(district.organization
+        ...(district?.organization
           ? { organizationId: district.organization }
           : {}),
         schoolId,
@@ -191,6 +228,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     error: searchResult.error,
     notFound: false,
     preview,
+    role,
+    schools,
   };
 }
 
@@ -203,20 +242,34 @@ export default function DistrictSchoolDetailRoute() {
     activeEducators,
     error,
     notFound,
+    role,
+    schools,
   } = useLoaderData<typeof loader>();
 
+  // A school-admin's "Admin" tab lands directly on this page — there's no
+  // Schools list of theirs to go "back" to (unlike a district-admin's
+  // `/district/admin/schools`), so the back link is district-admin/preview only.
+  const showBackLink = role !== "school-admin";
+  // Only a school-admin ever gets a non-null `schools` list; the title becomes
+  // a switcher only once they have more than one (single-school stays a plain
+  // `<h1>`, same as every district-admin).
+  const schoolOptions = role === "school-admin" ? (schools ?? []) : [];
+
   // No school in hand: either scope-enforced not-found, or the district/school
-  // fetch soft-failed. Both keep a back link so the page never dead-ends.
+  // fetch soft-failed. Both keep a back link so the page never dead-ends
+  // (district-admin/preview only — see `showBackLink` above).
   if (!school) {
     return (
       <div className="max-w-5xl mx-auto p-6 space-y-6">
-        <Link
-          to={BACK_TO_SCHOOLS}
-          className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Back to Schools
-        </Link>
+        {showBackLink ? (
+          <Link
+            to={BACK_TO_SCHOOLS}
+            className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            Back to Schools
+          </Link>
+        ) : null}
         {notFound ? (
           <p className="mt-8 text-center text-muted-foreground">
             School not found.
@@ -237,21 +290,31 @@ export default function DistrictSchoolDetailRoute() {
     <div className="max-w-5xl mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-start gap-4">
-        <Link
-          to={BACK_TO_SCHOOLS}
-          className="mt-1 p-1.5 rounded-lg hover:bg-muted transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-          aria-label="Back to Schools"
-        >
-          <ArrowLeft
-            className="h-4 w-4 text-muted-foreground"
-            aria-hidden="true"
-          />
-        </Link>
+        {showBackLink ? (
+          <Link
+            to={BACK_TO_SCHOOLS}
+            className="mt-1 p-1.5 rounded-lg hover:bg-muted transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            aria-label="Back to Schools"
+          >
+            <ArrowLeft
+              className="h-4 w-4 text-muted-foreground"
+              aria-hidden="true"
+            />
+          </Link>
+        ) : null}
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-foreground">
-              {school.name ?? "Unnamed School"}
-            </h1>
+            {schoolOptions.length > 1 ? (
+              <SchoolTitleSelector
+                schools={schoolOptions}
+                currentSchoolId={school._id}
+                currentSchoolName={school.name ?? "Unnamed School"}
+              />
+            ) : (
+              <h1 className="text-xl font-bold text-foreground">
+                {school.name ?? "Unnamed School"}
+              </h1>
+            )}
             <Badge variant={school.deletedAt ? "neutral" : "active"}>
               {school.deletedAt ? "Inactive" : "Active"}
             </Badge>

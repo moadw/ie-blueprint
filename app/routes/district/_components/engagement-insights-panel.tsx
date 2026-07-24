@@ -75,7 +75,7 @@ export function EngagementInsightsPanel({
         <MiniMetric
           label="Active User Rate"
           value={`${activeUserRate}%`}
-          description="Stable participation across all schools."
+          description="Stable participation across your schools."
         />
         <MiniMetric
           label="From Prior Week"

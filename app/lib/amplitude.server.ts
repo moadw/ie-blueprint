@@ -105,16 +105,34 @@ export function orgSegmentFilter(org: string | null | undefined): SegmentClause[
 }
 
 /**
- * Build a segment-filter clause scoping a query to a single school via the
+ * Build a segment-filter clause scoping a query to one or more schools via the
  * `gp:school` group property `analytics.ts` stamps on every event. `schools` is
  * an ARRAY property (a user can belong to several schools), so `op: "is"` here
- * means "the school set CONTAINS this id" — a multi-school user's events match
- * under any of their schools, not exclusively this one. An empty/falsy id yields
- * no filter (district-wide baseline).
+ * means "the school set CONTAINS any of these ids" — a multi-school user's
+ * events match under any of their schools, not exclusively one. A single id
+ * keeps the historical `values: [id]` shape; a non-empty array emits
+ * `values: [id1, id2, …]` (matches ANY of the listed schools — the school-admin
+ * multi-school aggregate). An empty/falsy id (or empty array) yields no filter
+ * (district-wide / all-schools baseline).
  */
-export function schoolSegmentFilter(schoolId?: string | null): SegmentClause[] {
-  if (!schoolId) return [];
-  return [{ prop: "gp:school", op: "is", values: [schoolId] }];
+export function schoolSegmentFilter(
+  schoolId?: string | string[] | null,
+): SegmentClause[] {
+  const ids = Array.isArray(schoolId) ? schoolId : schoolId ? [schoolId] : [];
+  if (ids.length === 0) return [];
+  return [{ prop: "gp:school", op: "is", values: ids }];
+}
+
+/**
+ * Stable cache-key fragment for a `schoolId` argument: a single id, a
+ * sorted-and-joined multi-id list, or `"all"` for empty/nullish. Sorting keeps
+ * the key stable regardless of the caller's array order (so
+ * `["a","b"]`/`["b","a"]` share one cache entry).
+ */
+function schoolCacheKey(schoolId?: string | string[] | null): string {
+  const ids = Array.isArray(schoolId) ? schoolId : schoolId ? [schoolId] : [];
+  if (ids.length === 0) return "all";
+  return [...ids].sort().join(",");
 }
 
 // ---------------------------------------------------------------------------
@@ -895,9 +913,9 @@ async function fetchSegmentationCollapsed(
 export function getSessionCountSeries(
   org: string | null | undefined,
   window: AnalyticsWindow,
-  schoolId?: string | null,
+  schoolId?: string | string[] | null,
 ): Promise<number[] | null> {
-  const key = `tab-sessions:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
+  const key = `tab-sessions:${org ?? "all"}:${schoolCacheKey(schoolId)}:${window.start}-${window.end}`;
   return cached(key, () =>
     fetchSegmentationSeries({
       eventType: "session_start",
@@ -916,9 +934,9 @@ export function getSessionCountSeries(
 export function getActiveTeacherSeries(
   org: string | null | undefined,
   window: AnalyticsWindow,
-  schoolId?: string | null,
+  schoolId?: string | string[] | null,
 ): Promise<number[] | null> {
-  const key = `tab-teachers:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
+  const key = `tab-teachers:${org ?? "all"}:${schoolCacheKey(schoolId)}:${window.start}-${window.end}`;
   return cached(key, () =>
     fetchSegmentationSeries({
       eventType: "_active",
@@ -946,9 +964,9 @@ export function getActiveTeacherSeries(
 export function getActiveTeacherTotal(
   org: string | null | undefined,
   window: AnalyticsWindow,
-  schoolId?: string | null,
+  schoolId?: string | string[] | null,
 ): Promise<number | null> {
-  const key = `tab-teachers-total:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
+  const key = `tab-teachers-total:${org ?? "all"}:${schoolCacheKey(schoolId)}:${window.start}-${window.end}`;
   return cached(key, () =>
     fetchSegmentationCollapsed({
       eventType: "_active",
@@ -996,10 +1014,10 @@ export function getMindfulSecondsSeries(
   org: string | null | undefined,
   window: AnalyticsWindow,
   userType?: string,
-  schoolId?: string | null,
+  schoolId?: string | string[] | null,
 ): Promise<number[] | null> {
   const scope = userType ?? "all";
-  const key = `tab-mindful:${org ?? "all"}:${schoolId ?? "all"}:${scope}:${window.start}-${window.end}`;
+  const key = `tab-mindful:${org ?? "all"}:${schoolCacheKey(schoolId)}:${scope}:${window.start}-${window.end}`;
   return cached(key, () =>
     fetchSegmentationSeries({
       eventType: "content_played",
@@ -1037,9 +1055,9 @@ export function getMindfulSecondsSeries(
 export function getActiveUsersTotal(
   org: string | null | undefined,
   window: AnalyticsWindow,
-  schoolId?: string | null,
+  schoolId?: string | string[] | null,
 ): Promise<number | null> {
-  const key = `tab-active-total:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
+  const key = `tab-active-total:${org ?? "all"}:${schoolCacheKey(schoolId)}:${window.start}-${window.end}`;
   return cached(key, () =>
     fetchSegmentationCollapsed({
       eventType: "_active",
@@ -1058,9 +1076,9 @@ export function getActiveUsersTotal(
 export function getEngagedUsersTotal(
   org: string | null | undefined,
   window: AnalyticsWindow,
-  schoolId?: string | null,
+  schoolId?: string | string[] | null,
 ): Promise<number | null> {
-  const key = `tab-engaged-total:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
+  const key = `tab-engaged-total:${org ?? "all"}:${schoolCacheKey(schoolId)}:${window.start}-${window.end}`;
   return cached(key, () =>
     fetchSegmentationCollapsed({
       eventType: "content_played",
@@ -1078,18 +1096,24 @@ export function getEngagedUsersTotal(
  * who logs in AND completes ≥1 practice. The `practice_completed` event is
  * emitted client-side when a class's final media step ends (see
  * `recordCompletion` in the lesson route). `null` on soft error / unconfigured.
+ *
+ * `schoolId` (step-5) additively widens this the same way `getActiveUsersTotal`
+ * / `getEngagedUsersTotal` already were in step-1: a single id, a multi-id
+ * list (the school-admin aggregate), or omitted/`null` for the existing
+ * org-only behavior — every existing 2-arg caller is unaffected.
  */
 export function getCompletedUsersTotal(
   org: string | null | undefined,
   window: AnalyticsWindow,
+  schoolId?: string | string[] | null,
 ): Promise<number | null> {
-  const key = `home-completed-total:${org ?? "all"}:${window.start}-${window.end}`;
+  const key = `home-completed-total:${org ?? "all"}:${schoolCacheKey(schoolId)}:${window.start}-${window.end}`;
   return cached(key, () =>
     fetchSegmentationCollapsed({
       eventType: "practice_completed",
       window,
       metric: "uniques",
-      segment: orgSegmentFilter(org),
+      segment: [...orgSegmentFilter(org), ...schoolSegmentFilter(schoolId)],
     }),
   );
 }
@@ -1138,14 +1162,14 @@ export function getRetentionCurve(
   org: string | null | undefined,
   window: AnalyticsWindow,
   granularity: "daily" | "weekly" | "monthly",
-  schoolId?: string | null,
+  schoolId?: string | string[] | null,
 ): Promise<RetentionResult | null> {
   const interval = granularity === "monthly" ? 30 : granularity === "weekly" ? 7 : 1;
   const prefix = interval === 30 ? "M" : interval === 7 ? "W" : "D";
   // The chart is small — cap the cohort buckets shown per granularity
   // (daily 7, weekly 4, monthly 5). Applied after the trailing-empty trim below.
   const cap = interval === 30 ? 5 : interval === 7 ? 4 : 7;
-  const key = `tab-retention:${org ?? "all"}:${schoolId ?? "all"}:${granularity}:${window.start}-${window.end}`;
+  const key = `tab-retention:${org ?? "all"}:${schoolCacheKey(schoolId)}:${granularity}:${window.start}-${window.end}`;
   return cached(key, async () => {
     if (!isAmplitudeConfigured()) return null;
     const resp = await amplitudeGet<RetentionResponse>(
@@ -1342,10 +1366,10 @@ export async function getSchoolActiveEducators(
 export async function getActiveSchoolsCount(
   org: string | null | undefined,
   window: AnalyticsWindow,
-  schoolId?: string | null,
+  schoolId?: string | string[] | null,
 ): Promise<number | null> {
   if (!isAmplitudeConfigured()) return null;
-  const key = `home-active-schools:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
+  const key = `home-active-schools:${org ?? "all"}:${schoolCacheKey(schoolId)}:${window.start}-${window.end}`;
   return cached(key, async () => {
     const series = await fetchActiveSchoolsPerDay(window, [
       ...orgSegmentFilter(org),
@@ -1366,9 +1390,9 @@ export async function getActiveSchoolsCount(
 export function getContentPlayedTotal(
   org: string | null | undefined,
   window: AnalyticsWindow,
-  schoolId?: string | null,
+  schoolId?: string | string[] | null,
 ): Promise<number | null> {
-  const key = `home-plays-total:${org ?? "all"}:${schoolId ?? "all"}:${window.start}-${window.end}`;
+  const key = `home-plays-total:${org ?? "all"}:${schoolCacheKey(schoolId)}:${window.start}-${window.end}`;
   return cached(key, () =>
     fetchSegmentationCollapsed({
       eventType: "content_played",

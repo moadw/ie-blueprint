@@ -61,7 +61,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function DistrictAnalyticsRoute() {
-  const { district, schools, schoolId, deferred, loadError, params } =
+  // `district` is intentionally unused here — see the `!deferred` guard below.
+  const { schools, schoolId, deferred, loadError, params } =
     useLoaderData<typeof loader>();
 
   return (
@@ -83,7 +84,11 @@ export default function DistrictAnalyticsRoute() {
           </div>
         ) : null}
 
-        {!district || !deferred ? (
+        {/* `district` is legitimately `null` for a school-admin (no district
+            concept for that role) — `deferred` alone tells us whether the
+            loader actually resolved a scope (district OR the caller's own
+            schools) vs hit an error. */}
+        {!deferred ? (
           <div className="rounded-xl border-2 border-dashed border-border bg-muted/30 py-12 text-center">
             <p className="text-sm text-muted-foreground">Could not load analytics data.</p>
           </div>

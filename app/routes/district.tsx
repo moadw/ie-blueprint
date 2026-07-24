@@ -11,6 +11,7 @@ import { AnnouncementFindManyDocument } from "~/queries/announcements";
 import { SortFindManyannouncementInput } from "~/gql/graphql";
 import { isAnnouncementDismissed } from "~/lib/announcement-dismissal";
 import { homePathForIdentifier } from "~/lib/user";
+import { resolveDistrictAdmin } from "~/lib/district-admin.server";
 import { DistrictShell } from "~/routes/district/_components/district-shell";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -21,27 +22,37 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const previewId = await readPreviewDistrictId(request);
   // If the user query succeeded, gate on role. A master `admin` is allowed
   // through ONLY when a preview cookie is present (they then see the previewed
-  // district). Any other non-district-admin is redirected home. If the user
+  // district). A `school-admin` is admitted the same as a `district-admin` —
+  // their scope is resolved below via the role-polymorphic
+  // `resolveDistrictAdmin`. Any other role is redirected home. If the user
   // query failed (backend 500 etc.), pass through with a banner — the session
   // token is still required, so this is not an open door.
   let previewActive = false;
+  let identifier: string | null | undefined;
   if (userResult.ok) {
-    const id = userResult.data.UsersFindOne?.typeObj?.identifier;
-    previewActive = id === "admin" && !!previewId;
-    if (id !== "district-admin" && !previewActive) {
-      throw redirect(homePathForIdentifier(id));
+    identifier = userResult.data.UsersFindOne?.typeObj?.identifier;
+    previewActive = identifier === "admin" && !!previewId;
+    if (
+      identifier !== "district-admin" &&
+      identifier !== "school-admin" &&
+      !previewActive
+    ) {
+      throw redirect(homePathForIdentifier(identifier));
     }
   }
+  const isSchoolAdmin = identifier === "school-admin";
+
   // Resolve the district: in admin-preview mode by the previewed `_id` (with a
   // platform guard so a foreign id fails soft), otherwise by the logged-in
   // user's own organization. If the user query failed (authError), district
-  // stays null as before.
+  // stays null as before. Skipped entirely for a school-admin — they have no
+  // district concept (see the scope resolution below instead).
   const organization = userResult.ok
     ? userResult.data.UsersFindOne?.organization ?? null
     : null;
   // Sin filtro de platform en el path normal: paridad con MTW (solo organization).
   const districtResult =
-    previewActive && previewId
+    !isSchoolAdmin && previewActive && previewId
       ? await safe(
           gqlClient.request(
             DistrictFindOneDocument,
@@ -49,7 +60,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
             { "access-token": token },
           ),
         )
-      : organization
+      : !isSchoolAdmin && organization
         ? await safe(
             gqlClient.request(
               DistrictFindOneDocument,
@@ -58,6 +69,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
             ),
           )
         : null;
+
+  // School-admin scope: the role-polymorphic resolver returns the caller's
+  // schools instead of a district (already `safe()`-wrapped internally). Child
+  // routes (steps 2-4) resolve their own school-scoped data from
+  // `schools`/`schoolIds`; this loader only needs them to synthesize the hero
+  // title (comma-joined school names over the generic default image — no code
+  // change to `DistrictHero`).
+  const scopeResult = isSchoolAdmin
+    ? await resolveDistrictAdmin(request)
+    : null;
+  const schools = scopeResult && !scopeResult.loadError ? scopeResult.schools : null;
+  const schoolIds =
+    scopeResult && !scopeResult.loadError ? scopeResult.schoolIds : null;
+  const scopeError =
+    scopeResult && scopeResult.loadError ? scopeResult.loadError : null;
   // Latest active district-portal announcement (global — no platform filter).
   // A failed fetch → announcement null; the layout must not break.
   const announcementResult = await safe(
@@ -81,17 +107,36 @@ export async function loader({ request }: LoaderFunctionArgs) {
     !isAnnouncementDismissed(request.headers.get("Cookie"), announcementRow._id)
       ? announcementRow
       : null;
-  const resolvedDistrict =
-    districtResult && districtResult.ok
+  // For a school-admin, synthesize a hero-compatible "district" from their
+  // school name(s): comma-joined names, generic default image (no cover/logo),
+  // rendered by the unmodified `DistrictHero`/`DistrictShell`. `_id` is a
+  // placeholder (first school id) — never read by the hero, just satisfies the
+  // shared `district` shape. Empty/failed scope → `null` (shell degrades as
+  // today, matching the district-admin soft-error path).
+  const resolvedDistrict = isSchoolAdmin
+    ? schools && schools.length > 0
+      ? {
+          _id: schoolIds?.[0] ?? "school-admin",
+          name: schools.map((s) => s.name ?? "Unnamed School").join(", "),
+          coverPhoto: null,
+          logo: null,
+        }
+      : null
+    : districtResult && districtResult.ok
       ? (districtResult.data.DistrictFindOne ?? null)
       : null;
+  const districtError =
+    districtResult && !districtResult.ok ? districtResult.error : null;
   return {
     district: resolvedDistrict,
+    // School-admin only — `null` for district-admin/preview. Child routes
+    // (steps 2-4) resolve their own school-scoped data from these.
+    schools,
+    schoolIds,
     // Surfaced for the header account menu (avatar initials, name, email).
     // Null when the user query 500s — the menu degrades gracefully.
     user: userResult.ok ? (userResult.data.UsersFindOne ?? null) : null,
-    error:
-      districtResult && !districtResult.ok ? districtResult.error : null,
+    error: isSchoolAdmin ? scopeError : districtError,
     authError: userResult.ok ? null : userResult.error,
     announcement,
     // Consumed by Phase 4's "Back to CMS" header affordance. `active` is only
