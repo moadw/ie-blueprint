@@ -15,6 +15,7 @@
 import type { AudioPref } from "~/lib/audio-preference";
 import {
   buildTapTypeResolver,
+  isPreviewTap,
   isSliderTap,
   resolveTapType,
   type PracticeTap,
@@ -50,6 +51,14 @@ export interface CardMediaDescriptor {
    * slider-only class stays `shape: "none"` and shows only the icon.
    */
   hasSlider: boolean;
+  /**
+   * A `preview` (educator-deck) tap is present. Drives the two-button
+   * Preview / Start-Lesson treatment on the card in place of the duration pill.
+   * Like `slider`, preview taps carry no duration, so this never affects
+   * `shape` / `primaryDurationMinutes` — a preview-only class stays
+   * `shape: "none"`.
+   */
+  hasPreview: boolean;
   video?: MediaDuration;
   audios: {
     "full-audio"?: MediaDuration;
@@ -135,6 +144,7 @@ export function deriveCardMedia(
   let fiveMinAudio: MediaDuration | undefined;
   let hasJournal = false;
   let hasSlider = false;
+  let hasPreview = false;
 
   for (const tap of taps) {
     if (tap.deleted) continue;
@@ -152,6 +162,10 @@ export function deriveCardMedia(
       // Reuse the player's canonical slider check (step-1) rather than
       // re-inlining the `"slider"` identifier here.
       hasSlider = true;
+    } else if (isPreviewTap(tap, resolver)) {
+      // Educator-deck preview taps: like slider they carry no duration and
+      // never affect `shape` — they drive the card's two-button treatment.
+      hasPreview = true;
     }
   }
 
@@ -171,6 +185,7 @@ export function deriveCardMedia(
     audios,
     hasJournal,
     hasSlider,
+    hasPreview,
   };
   if (video) descriptor.video = video;
   return descriptor;

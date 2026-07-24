@@ -5,10 +5,16 @@
 //
 // Tap-type mapping: branch on the resolved `tap.type` identifier — `video` →
 // video player, `full-audio`/`5min-audio` → audio player, `ie-journal` →
-// JournalScreen. Any unknown non-journal type defaults to the player. Media URL
-// = first `tap.videos[]` entry (`videos[0].url`); audio-vs-video derived from
-// the resolved type (fallback `videos[0].type`). Journal prompt = `tap.intro`
-// (fallback first `extraQuestions[].question`).
+// JournalScreen, `slider` → slider (slide-viewer) screen. Any unknown
+// non-journal type defaults to the player. Media URL = first `tap.videos[]`
+// entry (`videos[0].url`); audio-vs-video derived from the resolved type
+// (fallback `videos[0].type`). Journal prompt = `tap.intro` (fallback first
+// `extraQuestions[].question`).
+//
+// The `preview` type is EDUCATOR-only: it shares the slider media model and
+// viewer but is EXCLUDED from the student lesson entirely — `buildPracticeSteps`
+// never emits a step for a `preview` tap. Preview slides are surfaced only via
+// the dedicated no-progress preview route. Use `isPreviewTap` to detect them.
 //
 // IMPORTANT — use the REAL backend identifiers. The source of truth is
 // `main.taptype` / `admin/tap-dialog.tsx`: `ie-journal`, `video`, `full-audio`,
@@ -78,6 +84,12 @@ const AUDIO_TYPES: ReadonlySet<string> = new Set([
 ]);
 /** Tap-type identifiers that route to the slider (slide-viewer) screen. */
 const SLIDER_TYPES: ReadonlySet<string> = new Set(["slider"]);
+/**
+ * Tap-type identifiers that are EDUCATOR-only preview slides. They use the same
+ * media model + slide viewer as `slider`, but are excluded from the student
+ * lesson entirely (surfaced only via the dedicated no-progress preview route).
+ */
+const PREVIEW_TYPES: ReadonlySet<string> = new Set(["preview"]);
 
 /**
  * Build a resolver Map from a `TapTypeFindMany` result that maps a raw
@@ -144,6 +156,22 @@ export function isSliderTap(
 ): boolean {
   const type = resolveTapType(tap, resolver);
   return type != null && SLIDER_TYPES.has(type);
+}
+
+/**
+ * True when this tap is an EDUCATOR-only `preview` slide. Preview taps reuse the
+ * slider media model + viewer but are NEVER shown in the student lesson — they
+ * are surfaced only through the dedicated no-progress preview route. Pass the
+ * resolver so a tap whose `type` is a `_id` resolves to its `preview` slug
+ * before the check. Exported because the preview route and the curriculum card
+ * derivation (card-media) both reuse it to detect preview classes.
+ */
+export function isPreviewTap(
+  tap: PracticeTap,
+  resolver?: ReadonlyMap<string, string>,
+): boolean {
+  const type = resolveTapType(tap, resolver);
+  return type != null && PREVIEW_TYPES.has(type);
 }
 
 /**
@@ -381,10 +409,19 @@ export function buildPracticeSteps(
 ): PracticeStep[] {
   const steps: PracticeStep[] = [];
 
-  // 1. Media (player) taps — anything that isn't a slider or journal. Relative
-  //    order preserved (taps arrive pre-sorted by `order`).
+  // 1. Media (player) taps — anything that isn't a slider, journal, or preview.
+  //    Relative order preserved (taps arrive pre-sorted by `order`). Preview
+  //    taps are EDUCATOR-only and must never leak into the student lesson; the
+  //    slider/journal buckets below already exclude them, so this closes the
+  //    player-bucket path too.
   for (const tap of taps) {
-    if (isSliderTap(tap, resolver) || isJournalTap(tap, resolver)) continue;
+    if (
+      isSliderTap(tap, resolver) ||
+      isJournalTap(tap, resolver) ||
+      isPreviewTap(tap, resolver)
+    ) {
+      continue;
+    }
     steps.push({ kind: "player", media: mediaForTap(tap, resolver), tap });
   }
 

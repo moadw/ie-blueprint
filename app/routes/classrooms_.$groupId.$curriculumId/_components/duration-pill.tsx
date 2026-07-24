@@ -19,6 +19,15 @@ export const GRID_PILL_GLASS = {
   WebkitBackdropFilter: "blur(8px)",
   border: "1px solid rgba(255,255,255,0.2)",
 } as const;
+// Lighter grid pill — the prototype's primary ("Start") button in
+// `ThemedPracticesGrid` sits on a white-translucent fill (vs the darker
+// secondary "View" pill above). Transcribed literally from the prototype.
+export const GRID_PILL_GLASS_LIGHT = {
+  background: "rgba(255,255,255,0.2)",
+  backdropFilter: "blur(8px)",
+  WebkitBackdropFilter: "blur(8px)",
+  border: "1px solid rgba(255,255,255,0.3)",
+} as const;
 
 /** The frosted-glass recipe for a card surface (`"md"` slider / `"sm"` grid). */
 export function pillGlass(size: "sm" | "md") {
