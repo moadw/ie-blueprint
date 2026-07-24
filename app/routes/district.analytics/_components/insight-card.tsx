@@ -91,7 +91,7 @@ export function InsightCard({ insights }: InsightCardProps) {
 
         {isEmpty ? (
           <div className="mt-auto flex flex-col gap-2">
-            <span className="text-4xl font-bold text-white leading-[1.05]">
+            <span className="text-2xl font-bold text-white leading-[1.05]">
               Still learning
             </span>
             <p className="text-white font-medium text-sm leading-snug max-w-[22rem]">
