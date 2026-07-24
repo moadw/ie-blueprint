@@ -17,6 +17,10 @@ export function InsightCard({ insights }: InsightCardProps) {
   // the empty state. Derived, so there's no stale-render flash.
   const clampedActive = Math.min(active, Math.max(insights.length - 1, 0));
   const slide = insights[clampedActive];
+  // No insights yet (empty range / not enough activity) → keep the same gradient
+  // card chrome but swap in the "Still learning" holding state instead of a bare
+  // white card, so the analytics grid stays visually cohesive.
+  const isEmpty = !slide;
 
   const handleSwipe = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     const startX = e.clientX;
@@ -31,14 +35,6 @@ export function InsightCard({ insights }: InsightCardProps) {
     el.setPointerCapture(e.pointerId);
     el.addEventListener("pointerup", onUp);
   }, [clampedActive, insights.length]);
-
-  if (!slide) {
-    return (
-      <div className="bg-white rounded-[24px] border border-border shadow-xs p-5 flex flex-col h-full">
-        <p className="text-sm text-muted-foreground">No insights available.</p>
-      </div>
-    );
-  }
 
   return (
     <div
@@ -56,7 +52,7 @@ export function InsightCard({ insights }: InsightCardProps) {
           hsl(200, 18%, 52%) 100%
         )`,
       }}
-      onPointerDown={handleSwipe}
+      onPointerDown={isEmpty ? undefined : handleSwipe}
     >
       {/* Grain overlay - coarse */}
       <div
@@ -90,31 +86,56 @@ export function InsightCard({ insights }: InsightCardProps) {
           </button>
         </div>
 
-        <div className="mt-auto flex flex-col gap-2">
-          <span className="font-display text-6xl font-bold text-white leading-none transition-opacity duration-300">
-            {slide.stat}
-          </span>
-          <p className="text-white font-semibold text-sm leading-snug transition-opacity duration-300">
-            {slide.title}
-          </p>
+        {isEmpty ? (
+          <div className="mt-auto flex flex-col gap-2">
+            <span className="text-4xl font-bold text-white leading-[1.05]">
+              Still learning
+            </span>
+            <p className="text-white font-medium text-sm leading-snug max-w-[22rem]">
+              Check back in 60 days to see if there are enough insights.
+            </p>
 
-          {/* Slider indicators */}
-          <div className="mt-4 flex items-center gap-2 pointer-events-auto">
-            {insights.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setActive(i)}
-                className="flex-1 h-[4px] rounded-full transition-all duration-500 ease-out"
-                style={{
-                  backgroundColor:
-                    i === clampedActive ? "hsl(0 0% 100% / 0.9)" : "hsl(0 0% 0% / 0.25)",
-                }}
-                aria-label={`Go to insight ${i + 1}`}
-              />
-            ))}
+            {/* Decorative slider indicators (no slides to page through yet) */}
+            <div className="mt-4 flex items-center gap-2">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="flex-1 h-[4px] rounded-full"
+                  style={{
+                    backgroundColor:
+                      i === 0 ? "hsl(0 0% 100% / 0.9)" : "hsl(0 0% 0% / 0.25)",
+                  }}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="mt-auto flex flex-col gap-2">
+            <span className="font-display text-6xl font-bold text-white leading-none transition-opacity duration-300">
+              {slide.stat}
+            </span>
+            <p className="text-white font-semibold text-sm leading-snug transition-opacity duration-300">
+              {slide.title}
+            </p>
+
+            {/* Slider indicators */}
+            <div className="mt-4 flex items-center gap-2 pointer-events-auto">
+              {insights.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setActive(i)}
+                  className="flex-1 h-[4px] rounded-full transition-all duration-500 ease-out"
+                  style={{
+                    backgroundColor:
+                      i === clampedActive ? "hsl(0 0% 100% / 0.9)" : "hsl(0 0% 0% / 0.25)",
+                  }}
+                  aria-label={`Go to insight ${i + 1}`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
