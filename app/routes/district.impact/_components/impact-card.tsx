@@ -176,13 +176,6 @@ export function ImpactCard({ story, index }: ImpactCardProps) {
       className="impact-card-enter relative mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
       style={{ animationDelay: `${delayMs}ms` }}
     >
-      {story.isSample ? (
-        <div className="absolute top-3 right-3 z-10 print:hidden">
-          <span className="rounded-full bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground/60">
-            Sample
-          </span>
-        </div>
-      ) : null}
       <StoryContent story={story} />
     </article>
   );

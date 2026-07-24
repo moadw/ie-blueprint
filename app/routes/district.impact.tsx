@@ -25,15 +25,17 @@ export default function DistrictImpactRoute() {
           <div className="rounded-xl border-2 border-dashed border-red-200 bg-red-50 py-4 px-4">
             <p className="text-xs text-red-600">{loadError}</p>
           </div>
-        ) : null}
-
-        {!data || data.stories.length === 0 ? (
-          <div className="rounded-xl border-2 border-dashed border-border bg-muted/30 py-12 text-center">
-            <p className="text-sm text-muted-foreground">No impact stories yet.</p>
+        ) : data && data.stories.length === 0 ? (
+          <div className="rounded-2xl border-2 border-dashed border-border bg-muted/30 py-16 px-6 text-center">
+            <p className="text-base font-medium text-foreground">No stories yet</p>
+            <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+              Share the first story from across your district and it will appear
+              here.
+            </p>
           </div>
-        ) : (
+        ) : data ? (
           <ImpactMasonry stories={data.stories} />
-        )}
+        ) : null}
       </div>
     </div>
   );
