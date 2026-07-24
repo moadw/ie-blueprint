@@ -1,3 +1,4 @@
+import { env } from "~/lib/env";
 import { gqlClient } from "~/lib/graphql";
 import { resolveDistrictAdmin } from "~/lib/district-admin.server";
 import { safe } from "~/lib/safe-loader";
@@ -12,9 +13,14 @@ import { ImpactFindManyDocument } from "~/queries/impact";
  * de muestra del prototipo), igual que el demo (que marca cada card "Sample").
  * Cuando exista data real, la reemplaza. NO se escribe nada al backend.
  *
- * Limitaciones conocidas (follow-ups, ver research 2026-06-17):
- *  - `impact` no tiene `district` → v1 lee con `deleted:false`; scoping estricto
- *    por distrito pendiente de backend.
+ * Scoping por distrito (2026-07-23): el backend agregó `organization` + `platform`
+ * al tipo `impact`, así que el hub ya se scopea de verdad. Filtra
+ * `{ organization, platform, deleted:false }` donde `organization` sale de
+ * `resolveDistrictAdmin` (el distrito del usuario logeado, o el distrito
+ * previsualizado si un master admin navega como distrito). Si no se puede
+ * resolver la org, NO se consulta (evita leer null-org / cross-org); cae a samples.
+ *
+ * Convención de datos:
  *  - convención (acordada con backend, 2026-06-17): `user`/`userType`/`school`
  *    guardan TEXTO directo (nombre de autor / rol / nombre de escuela), NO IDs —
  *    el userId no aportaba para este hub. La costura los mapea 1:1 a la card.
@@ -42,10 +48,17 @@ export interface ImpactStory {
 
 export interface DistrictImpactData {
   districtName: string | null;
+  // Org + platform del distrito activo — se estampan al crear un impact para que
+  // el hub lo lea filtrado por distrito. `organization` puede ser null en el
+  // borde raro de un distrito sin org (los creates quedan sin scope de org).
+  organization: string | null;
+  platform: string;
   stories: ImpactStory[];
   source: "real" | "sample";
   // Identidad del admin logeado, para autofill del autor al crear (read-only).
-  currentUser: { name: string | null; role: string | null };
+  // `isAdmin` = master admin → el hub NO autocompleta autor/rol (crea a nombre
+  // del distrito previsualizado, no del admin).
+  currentUser: { name: string | null; role: string | null; isAdmin: boolean };
 }
 
 const KNOWN_TYPES: ImpactStoryType[] = [
@@ -176,17 +189,26 @@ export async function getDistrictImpact(request: Request): Promise<{
   }
 
   const { token, district, currentUser } = result;
+  const organization = district.organization;
 
-  const impactResult = await safe(
-    gqlClient.request(
-      ImpactFindManyDocument,
-      { filter: { deleted: false }, limit: 100 },
-      { "access-token": token },
-    ),
-  );
+  // Scoping por distrito: solo consultamos si podemos resolver la org. Una org
+  // ausente NO debe caer a un read sin scope (leería otras orgs) — sin org no
+  // hay historias reales y el hub cae a samples, igual que cuando está vacío.
+  const impactResult = organization
+    ? await safe(
+        gqlClient.request(
+          ImpactFindManyDocument,
+          {
+            filter: { organization, platform: env.PLATFORM, deleted: false },
+            limit: 100,
+          },
+          { "access-token": token },
+        ),
+      )
+    : null;
 
   let realStories: ImpactStory[] = [];
-  if (impactResult.ok && impactResult.data.ImpactFindMany) {
+  if (impactResult?.ok && impactResult.data.ImpactFindMany) {
     // user/userType/school traen TEXTO directo (nombre/rol/escuela) → mapeo 1:1.
     // Ordenamos por `order` para un layout estable.
     const sorted = [...impactResult.data.ImpactFindMany].sort(
@@ -214,6 +236,8 @@ export async function getDistrictImpact(request: Request): Promise<{
   return {
     data: {
       districtName: district.name,
+      organization,
+      platform: env.PLATFORM,
       stories: useReal ? realStories : SAMPLE_STORIES,
       source: useReal ? "real" : "sample",
       currentUser,

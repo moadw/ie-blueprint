@@ -6,15 +6,25 @@ import { ImpactCreateDialog } from "~/routes/district.impact/_components/impact-
 interface ImpactHeaderProps {
   districtName: string | null;
   /** Identidad del admin logeado para autofill del autor (null si no cargó). */
-  currentUser?: { name: string | null; role: string | null } | null;
-  /** Master-admin preview is read-only: hide the "Share a Story" create action. */
-  readOnly?: boolean;
+  currentUser?: {
+    name: string | null;
+    role: string | null;
+    isAdmin: boolean;
+  } | null;
+  /**
+   * Org + platform del distrito activo — se estampan al crear un impact para que
+   * quede scopeado por distrito. En preview de master admin es la org del distrito
+   * previsualizado, de modo que el admin puede crear historias para ese distrito.
+   */
+  organization?: string | null;
+  platform?: string | null;
 }
 
 export function ImpactHeader({
   districtName,
   currentUser,
-  readOnly = false,
+  organization = null,
+  platform = null,
 }: ImpactHeaderProps) {
   const name = districtName ?? "your district";
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -35,7 +45,7 @@ export function ImpactHeader({
       </div>
 
       <div className="flex items-center gap-2 self-start sm:self-auto print:hidden">
-        {currentUser && !readOnly ? (
+        {currentUser ? (
           <Button
             variant="primary"
             onClick={() => setDialogOpen(true)}
@@ -61,6 +71,9 @@ export function ImpactHeader({
           onClose={() => setDialogOpen(false)}
           authorName={currentUser.name}
           authorRole={currentUser.role}
+          isAdmin={currentUser.isAdmin}
+          organization={organization}
+          platform={platform}
         />
       ) : null}
     </div>
