@@ -9,16 +9,17 @@ export interface UploadUsersCsvResponse {
 
 /**
  * Upload a CSV of users to the Blueprint backend for bulk teacher creation.
- * The endpoint accepts a multipart body with a single `file` field. The
- * shared `api()` helper strips the default JSON Content-Type for FormData
- * bodies and injects the lowercase `access-token` header, so no extra
- * plumbing is needed here.
+ * The endpoint accepts a multipart body with a `file` field plus a required
+ * `platform` field (the platform `_id`). The shared `api()` helper strips the
+ * default JSON Content-Type for FormData bodies and injects the lowercase
+ * `access-token` header, so no extra plumbing is needed here.
  */
 export async function uploadUsersCsv(
   file: File,
 ): Promise<UploadUsersCsvResponse> {
   const fd = new FormData();
   fd.append("file", file);
+  fd.append("platform", env.PLATFORM);
   return api<UploadUsersCsvResponse>("/admin/create-teachers-csv", {
     method: "POST",
     body: fd,
