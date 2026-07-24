@@ -1,4 +1,8 @@
-export type UserRoleIdentifier = "admin" | "teacher" | "district-admin";
+export type UserRoleIdentifier =
+  | "admin"
+  | "teacher"
+  | "district-admin"
+  | "school-admin";
 
 export type UserHomePath =
   | "/admin"
@@ -11,6 +15,7 @@ const HOME_BY_IDENTIFIER: Record<UserRoleIdentifier, UserHomePath> = {
   admin: "/admin",
   teacher: "/classrooms",
   "district-admin": "/district",
+  "school-admin": "/district",
 };
 
 export function homePathForIdentifier(
@@ -24,12 +29,15 @@ export function homePathForIdentifier(
 
 /**
  * Identifiers treated as "district/school admin" for the act-as-teacher flow.
- * `school-admin` is intentionally NOT here yet — its backend identifier is not
- * wired (2026-07-21). Add it here (one line) to enable the flow for school
- * admins; also add it to HOME_BY_IDENTIFIER (→ "/district") and the district.tsx
- * layout gate in that future session.
+ * `school-admin` is wired (2026-07-24): it's in `HOME_BY_IDENTIFIER`
+ * (→ "/district"), this set, and admitted by the `/district` layout gate
+ * (`routes/district.tsx`), which resolves a school-polymorphic scope via
+ * `resolveDistrictAdmin` (`district-admin.server.ts`) instead of a district.
  */
-const DISTRICT_OR_SCHOOL_ADMIN = new Set<string>(["district-admin"]);
+const DISTRICT_OR_SCHOOL_ADMIN = new Set<string>([
+  "district-admin",
+  "school-admin",
+]);
 
 /** True when the identifier is a district (or, later, school) admin. */
 export function isDistrictOrSchoolAdmin(

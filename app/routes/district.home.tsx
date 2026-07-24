@@ -34,13 +34,17 @@ export default function DistrictHomeRoute() {
   );
   const heroDistrict = districtData?.district ?? null;
 
-  const { district, loadError, deferred } = useLoaderData<typeof loader>();
+  const { loadError, deferred } = useLoaderData<typeof loader>();
 
-  // Soft-error branch: district resolution failed. Keep the shell + Hero mounted
-  // and render an inline error card in place of the streamed cluster/panels
-  // (red dashed border, "Couldn't load…") instead of throwing to the root
-  // ErrorBoundary. Returning early also narrows `deferred` to non-null below.
-  if (!district || !deferred) {
+  // Soft-error branch: scope resolution failed (district OR school-admin
+  // school-list). Keep the shell + Hero mounted and render an inline error
+  // card in place of the streamed cluster/panels (red dashed border,
+  // "Couldn't load…") instead of throwing to the root ErrorBoundary.
+  // Returning early also narrows `deferred` to non-null below. NOTE: `district`
+  // is legitimately `null` on a *successful* school-admin load (no district
+  // concept for that role — see `district-home.server.ts`), so the gate keys
+  // on `loadError`/`deferred` only, never on `district`.
+  if (loadError || !deferred) {
     return (
       <div className="h-full overflow-auto">
         <div className="flex flex-col gap-4 p-5">
