@@ -19,6 +19,8 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import {
@@ -122,10 +124,18 @@ function ContentTypeBoxes({ content }: { content: ClassContentSummary }) {
 
 export interface PracticeRowProps {
   practice: Practice;
+  /**
+   * Stable sortable id for dnd-kit; must match the `id` the parent registers in
+   * its `<SortableContext items>`. The parent owns id derivation so a class
+   * without an `_id` still gets a unique, agreed-upon key.
+   */
+  id: string;
   /** Content-block summary for the collapsed row; null hides the boxes. */
   content?: ClassContentSummary | null;
   /** The current series' title, shown in the reassign confirm copy. */
   currentSeriesTitle?: string | null;
+  /** True while a reorder is persisting — disables the drag handle. */
+  reordering?: boolean;
   onChange: () => void;
 }
 
@@ -133,13 +143,33 @@ const labelClass = "block text-[14px] text-foreground mb-2 font-medium";
 
 export function PracticeRow({
   practice,
+  id,
   content = null,
   currentSeriesTitle = null,
+  reordering = false,
   onChange,
 }: PracticeRowProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const bgInputRef = useRef<HTMLInputElement | null>(null);
   const practiceId = practice._id ?? "";
+
+  // Sortable wiring (drag initiated only from the GripVertical handle below, so
+  // clicks on cover/title/kebab aren't hijacked). Mirrors SortableTapRow.
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id, disabled: reordering });
+  const sortableStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
 
   const [expanded, setExpanded] = useState(false);
   const [title, setTitle] = useState(practice.title ?? "");
@@ -362,14 +392,21 @@ export function PracticeRow({
   }
 
   return (
-    <div className="rounded-[16px] border-2 border-stone-200 bg-white shadow-xs transition-colors">
+    <div
+      ref={setNodeRef}
+      style={sortableStyle}
+      className="rounded-[16px] border-2 border-stone-200 bg-white shadow-xs transition-colors"
+    >
       <div className="flex items-center justify-between gap-3 p-4">
-        {/* TODO(reorder): wire to dnd-kit + ClassesUpdateOne order mutation */}
         <button
           type="button"
-          aria-label="Drag to reorder"
-          title="Drag to reorder (coming soon)"
-          className="cursor-grab active:cursor-grabbing p-1 text-stone-400 hover:text-stone-600 touch-none flex-shrink-0"
+          ref={setActivatorNodeRef}
+          aria-label={`Drag to reorder ${practice.title || "practice"}`}
+          title="Drag to reorder"
+          disabled={reordering}
+          className="cursor-grab touch-none flex-shrink-0 p-1 text-stone-400 hover:text-stone-600 active:cursor-grabbing disabled:cursor-not-allowed disabled:opacity-50"
+          {...attributes}
+          {...listeners}
         >
           <GripVertical className="h-5 w-5" />
         </button>
