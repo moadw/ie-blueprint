@@ -44,3 +44,14 @@ export const ClassesDeleteOneDocument = graphql(/* GraphQL */ `
     ClassesDeleteOne(_id: $_id)
   }
 `);
+
+// ClassReorder moves a class to `order` (0-based rank in the ORDER_ASC list,
+// verified against the backend) within its curriculum and cascades the order
+// field of every subsequent class server-side, so a drag-and-drop reorder needs
+// a single call rather than N per-row updates. Returns a String scalar — no
+// inner selection set.
+export const ClassReorderDocument = graphql(/* GraphQL */ `
+  mutation ClassReorder($id: String!, $order: Int!) {
+    ClassReorder(id: $id, order: $order)
+  }
+`);

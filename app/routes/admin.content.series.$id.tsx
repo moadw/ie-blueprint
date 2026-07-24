@@ -2,6 +2,21 @@ import { useEffect, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useRevalidator } from "react-router";
 import { ArrowLeft, Edit, Folder, Plus } from "lucide-react";
+import {
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { toast } from "sonner";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -13,10 +28,7 @@ import {
   EMPTY_CONTENT_SUMMARY,
   type ClassContentSummary,
 } from "~/components/admin/practice-row";
-import {
-  AdminListPagination,
-  ADMIN_LIST_PAGE_SIZE,
-} from "~/components/admin/admin-list-pagination";
+import { AdminListPagination } from "~/components/admin/admin-list-pagination";
 import { env } from "~/lib/env";
 import { toErrorMessage } from "~/lib/errors";
 import { gqlClient } from "~/lib/graphql";
@@ -25,6 +37,7 @@ import { safe } from "~/lib/safe-loader";
 import { activeHiddenFromStatus, statusFromActiveHidden } from "~/lib/curriculum";
 import { CurriculumsFindOneDocument } from "~/queries/curriculums";
 import { CurriculumsUpdateOneDocument } from "~/mutations/curriculums";
+import { ClassReorderDocument } from "~/mutations/classes";
 import { ClassesAdminFindManyDocument } from "~/queries/classes";
 import { TapFindManyDocument } from "~/queries/taps";
 import { SortFindManyclassesInput } from "~/gql/graphql";
@@ -37,6 +50,14 @@ import { cn } from "~/lib/utils";
 // comfortably above any real series (curricula top out around 300 classes);
 // we warn if a series ever exceeds it so we don't silently truncate again.
 const SERIES_CLASSES_LIMIT = 500;
+
+// Practices per page in the list below. Deliberately larger than the shared
+// `ADMIN_LIST_PAGE_SIZE` (100) used by the other admin lists: drag-to-reorder
+// only works within the rendered page, and at 200 virtually every real series
+// (which top out around 300 classes) fits on a single page, so the whole
+// ordering is reorderable without paging. Scoped to this route on purpose —
+// don't reach for the shared constant.
+const PRACTICES_PAGE_SIZE = 200;
 
 // One TapFindMany fetches every tap across the series' classes (via
 // `_operators.class.in`) to build the collapsed-row content indicators. Sized
@@ -240,20 +261,90 @@ export default function AdminContentSeriesDetail() {
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [page, setPage] = useState(1);
 
+  // Local, reorderable mirror of the loader's classes so drag-and-drop can
+  // update the list optimistically; resynced to server truth on every
+  // revalidation (the loader already returns them ORDER_ASC).
+  const [orderedClasses, setOrderedClasses] = useState(classes);
+  const [reordering, setReordering] = useState(false);
+  useEffect(() => {
+    setOrderedClasses(classes);
+  }, [classes]);
+
+  // Small activation distance so a click on a row control isn't read as a
+  // drag; KeyboardSensor for accessible reordering (mirrors tap-blocks).
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
   const totalPages = Math.max(
     1,
-    Math.ceil(classes.length / ADMIN_LIST_PAGE_SIZE),
+    Math.ceil(orderedClasses.length / PRACTICES_PAGE_SIZE),
   );
   // Clamp reads so a deletion that shrinks the list can't strand us past the
   // last page; sync state too so Prev/Next math stays correct.
   const safePage = Math.min(page, totalPages);
-  const pageClasses = classes.slice(
-    (safePage - 1) * ADMIN_LIST_PAGE_SIZE,
-    safePage * ADMIN_LIST_PAGE_SIZE,
+  const pageStart = (safePage - 1) * PRACTICES_PAGE_SIZE;
+  const pageClasses = orderedClasses.slice(
+    pageStart,
+    pageStart + PRACTICES_PAGE_SIZE,
   );
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
+
+  // Stable dnd id per row: the class _id, with an absolute-index fallback for
+  // the (backend-guaranteed-absent) case of a missing _id.
+  const rowId = (practice: (typeof orderedClasses)[number], pageIndex: number) =>
+    practice._id ?? `practice-${pageStart + pageIndex}`;
+
+  async function handleReorder(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id || reordering) return;
+
+    const oldPageIdx = pageClasses.findIndex(
+      (c, i) => rowId(c, i) === active.id,
+    );
+    const newPageIdx = pageClasses.findIndex((c, i) => rowId(c, i) === over.id);
+    if (oldPageIdx === -1 || newPageIdx === -1) return;
+
+    const oldAbsIdx = pageStart + oldPageIdx;
+    const newAbsIdx = pageStart + newPageIdx;
+    const moved = orderedClasses[oldAbsIdx];
+    if (!moved?._id) return;
+
+    const previous = orderedClasses;
+    // Optimistic move; ClassReorder cascades the order of subsequent classes
+    // server-side, so a single call suffices. `order` is the 0-based target
+    // rank in the ORDER_ASC list (verified against the backend: passing k lands
+    // the class at index k, orders re-sequenced 0..N-1) — i.e. the new absolute
+    // index, NOT index+1.
+    setOrderedClasses(
+      // Renormalize to contiguous 0-based orders so the row "Day" badges match
+      // what ClassReorder writes, avoiding a flicker until revalidation lands.
+      arrayMove(orderedClasses, oldAbsIdx, newAbsIdx).map((c, i) => ({
+        ...c,
+        order: i,
+      })),
+    );
+    setReordering(true);
+    try {
+      await gqlClient.request(ClassReorderDocument, {
+        id: moved._id,
+        order: newAbsIdx,
+      });
+      toast.success("Order updated");
+    } catch (err) {
+      setOrderedClasses(previous);
+      toast.error(toErrorMessage(err, "Failed to update order"));
+    } finally {
+      setReordering(false);
+      // Reconcile with the server's canonical ordering.
+      revalidator.revalidate();
+    }
+  }
 
   if (!curriculum) {
     return (
@@ -350,7 +441,7 @@ export default function AdminContentSeriesDetail() {
                 {gradeLabel(curriculum.grade)}
               </Badge>
               <span className="text-sm text-stone-400">
-                {classes.length} practices
+                {orderedClasses.length} practices
               </span>
             </div>
           </div>
@@ -395,7 +486,7 @@ export default function AdminContentSeriesDetail() {
           </p>
           <p className="text-xs text-red-600">{classesError}</p>
         </div>
-      ) : classes.length === 0 ? (
+      ) : orderedClasses.length === 0 ? (
         <div className="rounded-xl border-2 border-dashed border-stone-200 bg-stone-50 py-16 text-center">
           <Folder className="mx-auto mb-3 h-12 w-12 text-stone-300" />
           <p className="mb-4 text-stone-500">No practices in this series yet</p>
@@ -410,23 +501,36 @@ export default function AdminContentSeriesDetail() {
         </div>
       ) : (
         <>
-          <div className="space-y-2">
-            {pageClasses.map((practice) => (
-              <PracticeRow
-                key={practice._id}
-                practice={practice}
-                content={
-                  contentByClass
-                    ? (contentByClass[practice._id ?? ""] ??
-                      EMPTY_CONTENT_SUMMARY)
-                    : null
-                }
-                currentSeriesTitle={curriculum.title ?? null}
-                onChange={() => revalidator.revalidate()}
-              />
-            ))}
-          </div>
-          {classes.length > ADMIN_LIST_PAGE_SIZE ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleReorder}
+          >
+            <SortableContext
+              items={pageClasses.map((c, i) => rowId(c, i))}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-2">
+                {pageClasses.map((practice, index) => (
+                  <PracticeRow
+                    key={rowId(practice, index)}
+                    id={rowId(practice, index)}
+                    practice={practice}
+                    reordering={reordering}
+                    content={
+                      contentByClass
+                        ? (contentByClass[practice._id ?? ""] ??
+                          EMPTY_CONTENT_SUMMARY)
+                        : null
+                    }
+                    currentSeriesTitle={curriculum.title ?? null}
+                    onChange={() => revalidator.revalidate()}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+          {orderedClasses.length > PRACTICES_PAGE_SIZE ? (
             <AdminListPagination
               page={safePage}
               hasMore={safePage < totalPages}
@@ -446,7 +550,7 @@ export default function AdminContentSeriesDetail() {
         open={addOpen}
         onClose={() => setAddOpen(false)}
         curriculumId={curriculum._id}
-        defaultOrder={classes.length + 1}
+        defaultOrder={orderedClasses.length + 1}
       />
     </div>
   );
