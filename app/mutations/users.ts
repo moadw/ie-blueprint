@@ -76,3 +76,15 @@ export const UserJoinByCodeDocument = graphql(`
     UserJoinByCode(code: $code)
   }
 `);
+
+export const UserForgotPasswordDocument = graphql(`
+  mutation UserForgotPassword($email: String!) {
+    UserForgotPassword(email: $email)
+  }
+`);
+
+export const UserResetPasswordDocument = graphql(`
+  mutation UserResetPassword($token: String!, $password: String!) {
+    UserResetPassword(token: $token, password: $password)
+  }
+`);
