@@ -62,6 +62,12 @@ const KNOWN_TYPES: Record<string, { title: string; subform: TapSubform }> = {
   "full-audio": { title: "Full Audio", subform: "video" },
   "5min-audio": { title: "5-min Audio", subform: "video" },
   slider: { title: "Slider", subform: "slider" },
+  // `preview` shares the slider media model + subforms (create/edit); it only
+  // differs downstream (educator-only preview route, excluded from the student
+  // lesson). Routing it through `subform: "slider"` reuses the slider path
+  // unchanged — `isSliderCreate` and the edit dispatch both key on
+  // `config.subform`, so no per-type branching is needed here.
+  preview: { title: "Preview", subform: "slider" },
 };
 
 // tap.language is an open string scalar. These values MUST match what the
@@ -365,8 +371,12 @@ export function TapDialog({
           classId,
           platform: env.PLATFORM,
           // `form.type` is the selected option value; in this branch it resolves
-          // to the `slider` identifier (mirrors the single-tap create's `type`).
+          // to the `slider` (or `preview`) identifier (mirrors the single-tap
+          // create's `type`).
           type: form.type,
+          // Title the created taps per the resolved config (e.g. "Slider" or
+          // "Preview") so preview taps aren't mislabeled "Slider".
+          title: config.title,
           defaultOrder,
         });
         const failed = results.filter((r) => !r.ok);

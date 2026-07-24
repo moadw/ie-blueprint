@@ -8,6 +8,7 @@ import {
 import { DurationPill, DurationTabs, SLIDER_PILL_GLASS } from "./duration-pill";
 import { FavoriteHeart } from "./favorite-heart";
 import { MediaIndicatorIcons } from "./media-indicator-icons";
+import { PreviewLessonButtons } from "./preview-lesson-buttons";
 
 export type LessonCardStatus = "watched" | "current" | "none";
 
@@ -31,6 +32,12 @@ interface LessonGlassCardProps {
   isLiked?: boolean;
   /** Optimistically toggles this class's favorite state. */
   onToggleFavorite?: (classId: string) => void;
+  /** Opens the no-progress educator preview route. When present alongside
+   *  `onStartLesson` and `media.hasPreview`, the card swaps its duration pill
+   *  for the Preview / Start-Lesson buttons. */
+  onPreview?: () => void;
+  /** Opens the normal student lesson player (same target as the card body). */
+  onStartLesson?: () => void;
 }
 
 // Glass-theme token literals ported verbatim from the prototype's
@@ -63,6 +70,8 @@ export function LessonGlassCard({
   classId,
   isLiked,
   onToggleFavorite,
+  onPreview,
+  onStartLesson,
 }: LessonGlassCardProps) {
   // Single "N min" pill for video-only / full-audio-only practices. Both-audios
   // (tabs variant) and none render nothing here; `minutes` is non-null for the
@@ -182,7 +191,14 @@ export function LessonGlassCard({
           Media icons (bottom-left): Film for video, BookOpen for a journal. */}
       {isActive ? (
         <>
-          {tabOptions && audioPref && onAudioPrefChange ? (
+          {media?.hasPreview && onPreview && onStartLesson ? (
+            // Educator-deck practices swap the duration pill for the two-button
+            // Preview / Start-Lesson treatment (preview taps carry no duration).
+            <PreviewLessonButtons
+              onPreview={onPreview}
+              onStartLesson={onStartLesson}
+            />
+          ) : tabOptions && audioPref && onAudioPrefChange ? (
             <DurationTabs
               options={tabOptions}
               value={audioPref}

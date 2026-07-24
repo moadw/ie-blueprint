@@ -52,6 +52,7 @@ const TAP_TYPE_TO_BOX: Record<string, keyof ClassContentSummary> = {
   "5min-audio": "fiveMin",
   video: "video",
   slider: "slider",
+  preview: "preview",
 };
 
 // A tap's scalar language → box tag. Empty/null = shown in both languages.
@@ -80,6 +81,7 @@ function summarizeContentByClass(
       fiveMin: Set<string>;
       video: Set<string>;
       slider: Set<string>;
+      preview: Set<string>;
     }
   >();
   for (const tap of taps) {
@@ -95,6 +97,7 @@ function summarizeContentByClass(
         fiveMin: new Set(),
         video: new Set(),
         slider: new Set(),
+        preview: new Set(),
       };
       acc.set(classId, bucket);
     }
@@ -110,6 +113,7 @@ function summarizeContentByClass(
       fiveMin: sortLangs(b.fiveMin),
       video: sortLangs(b.video),
       slider: sortLangs(b.slider),
+      preview: sortLangs(b.preview),
     };
   }
   return out;

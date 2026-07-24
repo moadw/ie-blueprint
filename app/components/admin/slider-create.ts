@@ -30,6 +30,11 @@ export interface RunSliderCreateParams {
    * file gets `max(1, round(defaultOrder)) + rowIndex`.
    */
   defaultOrder: number;
+  /**
+   * Title written onto each created tap (mirrors the type's config title, e.g.
+   * "Slider" or "Preview"). Defaults to "Slider" when omitted.
+   */
+  title?: string;
   /** Max concurrent per-file pipelines (default 4). */
   concurrency?: number;
 }
@@ -82,7 +87,14 @@ export async function runSliderCreate(
   files: readonly SliderFileItem[],
   params: RunSliderCreateParams,
 ): Promise<SliderCreateResult[]> {
-  const { classId, platform, type, defaultOrder, concurrency = 4 } = params;
+  const {
+    classId,
+    platform,
+    type,
+    defaultOrder,
+    title = "Slider",
+    concurrency = 4,
+  } = params;
   const base = Math.max(1, Math.round(defaultOrder));
 
   return runPool(files, concurrency, async (item, index) => {
@@ -110,7 +122,7 @@ export async function runSliderCreate(
           class: classId,
           platform,
           type,
-          title: "Slider",
+          title,
           order,
           points: 100,
           time: 5,
