@@ -18,6 +18,19 @@ export interface ImpactCreateDialogProps {
   authorName: string | null;
   /** Rol (read-only): tipo del admin logeado, ya formateado. */
   authorRole: string | null;
+  /**
+   * Master admin: NO autocompletar autor/rol. Crea a nombre del distrito
+   * previsualizado, no suyo → los campos quedan en blanco para llenarlos a mano.
+   */
+  isAdmin: boolean;
+  /**
+   * Org del distrito activo — se estampa en el record para scopear el hub por
+   * distrito. En preview es la org del distrito previsualizado. Null en el borde
+   * raro de un distrito sin org (el record queda sin scope de org).
+   */
+  organization: string | null;
+  /** Platform (`env.PLATFORM`) que se estampa junto a la org. */
+  platform: string | null;
 }
 
 const TYPE_OPTIONS: { value: ImpactStoryType; label: string }[] = [
@@ -71,6 +84,9 @@ export function ImpactCreateDialog({
   onClose,
   authorName,
   authorRole,
+  isAdmin,
+  organization,
+  platform,
 }: ImpactCreateDialogProps) {
   const revalidator = useRevalidator();
 
@@ -96,11 +112,17 @@ export function ImpactCreateDialog({
   const showSchool = type !== "photo";
 
   // Autofill de autor/rol desde la cuenta al abrir (el usuario puede editarlos).
+  // Un master admin crea a nombre del distrito, no suyo → sin prefill.
   useEffect(() => {
     if (!open) return;
+    if (isAdmin) {
+      setAuthor("");
+      setRole("");
+      return;
+    }
     setAuthor(authorName ?? "");
     setRole(authorRole ?? "");
-  }, [open, authorName, authorRole]);
+  }, [open, authorName, authorRole, isAdmin]);
 
   // Reset al cerrar.
   useEffect(() => {
@@ -151,6 +173,12 @@ export function ImpactCreateDialog({
         type,
         deleted: false,
       };
+
+      // Scoping por distrito: estampa la org (del distrito activo / previsualizado)
+      // + platform para que el hub lo lea filtrado. Guardas por truthiness →
+      // exactOptionalPropertyTypes prohíbe asignar undefined explícito.
+      if (organization) record.organization = organization;
+      if (platform) record.platform = platform;
 
       // feedback guarda el rating en `title` (la costura lo parsea de ahí);
       // los demás tipos usan `title` como encabezado.
@@ -305,7 +333,7 @@ export function ImpactCreateDialog({
           </div>
         ) : null}
 
-        {showAuthor ? (
+        {showAuthor && !isAdmin ? (
           <p className="-mt-1 text-[13px] text-muted-foreground">
             Prefilled from your account — edit if needed.
           </p>

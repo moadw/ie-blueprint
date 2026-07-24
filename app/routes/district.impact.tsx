@@ -9,7 +9,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function DistrictImpactRoute() {
-  const { data, loadError, preview } = useLoaderData<typeof loader>();
+  const { data, loadError } = useLoaderData<typeof loader>();
 
   return (
     <div className="h-full overflow-auto print:h-auto print:overflow-visible">
@@ -17,7 +17,8 @@ export default function DistrictImpactRoute() {
         <ImpactHeader
           districtName={data?.districtName ?? null}
           currentUser={data?.currentUser ?? null}
-          readOnly={preview}
+          organization={data?.organization ?? null}
+          platform={data?.platform ?? null}
         />
 
         {loadError ? (

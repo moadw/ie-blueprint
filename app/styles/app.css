@@ -85,6 +85,16 @@ body {
   }
 }
 
+/* Print (Export Report): kill the fade-up so no card is captured mid-animation
+   or faded (the staggered animation-delay could otherwise leave later cards
+   translucent in the print snapshot). */
+@media print {
+  .impact-card-enter {
+    animation: none;
+    opacity: 1;
+  }
+}
+
 /* Interactive onboarding utilities (ported from ie-prototype/src/index.css:155-169
    for the /onboarding/welcome slider — dark-canvas typography on hsl(0 0% 98%)). */
 .onboarding-text {
