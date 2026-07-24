@@ -9,6 +9,7 @@ import {
 import { DurationPill, DurationTabs } from "./duration-pill";
 import { FavoriteHeart } from "./favorite-heart";
 import { MediaIndicatorIcons } from "./media-indicator-icons";
+import { PreviewLessonButtons } from "./preview-lesson-buttons";
 import type { GroupProgress } from "./profile-menu";
 
 export interface GridLesson {
@@ -156,8 +157,26 @@ export function LessonGrid({
               {/* Duration pill (bottom-center). Single "N min" for
                   video/full-audio; two-segment "5 min | 9 min" tabs for
                   both-audios. Tab clicks stopPropagation so they never trigger
-                  the card's navigate `onClick`. */}
-              {tabOptions ? (
+                  the card's navigate `onClick`. Educator-deck (preview)
+                  practices swap the pill for the Preview / Start-Lesson
+                  buttons instead. */}
+              {lesson.media?.hasPreview ? (
+                <PreviewLessonButtons
+                  size="sm"
+                  onPreview={() => {
+                    if (lesson._id)
+                      navigate(
+                        `/classrooms/${groupId}/${curriculumId}/${lesson._id}/preview`,
+                      );
+                  }}
+                  onStartLesson={() => {
+                    if (lesson._id)
+                      navigate(
+                        `/classrooms/${groupId}/${curriculumId}/${lesson._id}`,
+                      );
+                  }}
+                />
+              ) : tabOptions ? (
                 <DurationTabs
                   options={tabOptions}
                   value={audioPref}

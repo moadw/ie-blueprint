@@ -383,6 +383,18 @@ export function CurriculumSlider({
                   classId={lessonId}
                   isLiked={lessonId ? likedIds.has(lessonId) : false}
                   onToggleFavorite={onToggleFavorite}
+                  onPreview={() => {
+                    if (lessonId)
+                      navigate(
+                        `/classrooms/${groupId}/${curriculumId}/${lessonId}/preview`,
+                      );
+                  }}
+                  onStartLesson={() => {
+                    if (lessonId)
+                      navigate(
+                        `/classrooms/${groupId}/${curriculumId}/${lessonId}`,
+                      );
+                  }}
                 />
               </div>
             );

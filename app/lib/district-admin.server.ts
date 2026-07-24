@@ -21,6 +21,9 @@ export interface DistrictAdminInfo {
 export interface DistrictAdminCurrentUser {
   name: string | null;
   role: string | null;
+  // Master `admin` role. Cuando navega como distrito (preview) crea a nombre del
+  // distrito, no suyo → el Impact Hub NO autocompleta autor/rol para un admin.
+  isAdmin: boolean;
 }
 
 export type ResolveDistrictAdminResult =
@@ -71,14 +74,15 @@ export async function resolveDistrictAdmin(
   }
 
   const me = userResult.data.UsersFindOne;
+  const isAdmin = me?.typeObj?.identifier === "admin";
   const currentUser: DistrictAdminCurrentUser = {
     name:
       `${me?.firstName ?? ""} ${me?.lastName ?? ""}`.trim() ||
       me?.userName ||
       null,
     role: formatRole(me?.typeObj?.identifier),
+    isAdmin,
   };
-  const isAdmin = me?.typeObj?.identifier === "admin";
   const previewId = await readPreviewDistrictId(request);
 
   // Preview branch — MUST run before the org-presence guard below: a master

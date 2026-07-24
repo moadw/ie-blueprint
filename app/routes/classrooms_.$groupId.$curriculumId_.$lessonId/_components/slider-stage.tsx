@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -39,6 +40,20 @@ interface SliderStageProps {
   slides: SliderSlide[];
   /** Class title shown as the centered serif header. */
   title: string;
+  /**
+   * Optional small uppercase tracking-wide line under the serif title (e.g. the
+   * educator-preview route's "EDUCATOR PREVIEW"). Omitted — not `undefined` —
+   * when absent (`exactOptionalPropertyTypes`); the lesson slider passes nothing
+   * and the subtitle line does not render.
+   */
+  subtitle?: string;
+  /**
+   * Optional action pinned top-right of the header, mirroring the Back button's
+   * glass treatment (e.g. the preview route's "Start Lesson With Students"). The
+   * caller supplies the fully-styled node; `SliderStage` only positions it.
+   * Omitted (not `undefined`) when absent.
+   */
+  headerAction?: ReactNode;
   /** Back / Escape (when not in fullscreen) → curriculum. */
   onExit: () => void;
   /** Fired when the last slide is reached → records completion (route). */
@@ -93,6 +108,8 @@ function toPrintable(slides: readonly SliderSlide[]): PrintableSlide[] {
 export function SliderStage({
   slides,
   title,
+  subtitle,
+  headerAction,
   onExit,
   onReachLastSlide,
   onAdvancePastEnd,
@@ -197,9 +214,24 @@ export function SliderStage({
             <span className="text-sm font-medium">Back</span>
           </button>
 
-          <h1 className="text-center font-serif text-2xl text-white md:text-3xl">
-            {title}
-          </h1>
+          {/* Centered title stack: serif title with an optional small uppercase
+              subtitle beneath it (e.g. "EDUCATOR PREVIEW" on the preview route). */}
+          <div className="flex flex-col items-center">
+            <h1 className="text-center font-serif text-2xl text-white md:text-3xl">
+              {title}
+            </h1>
+            {subtitle ? (
+              <p className="mt-1 text-xs font-medium uppercase tracking-widest text-white/60">
+                {subtitle}
+              </p>
+            ) : null}
+          </div>
+
+          {/* Optional top-right action (e.g. "Start Lesson With Students"),
+              positioned to mirror the Back button. The caller styles the node. */}
+          {headerAction ? (
+            <div className="absolute right-8">{headerAction}</div>
+          ) : null}
         </header>
       ) : null}
 

@@ -47,6 +47,7 @@ const TAP_TYPE_LABELS: Record<string, string> = {
   "full-audio": "Full Audio",
   "5min-audio": "5-min Audio",
   slider: "Slider",
+  preview: "Preview",
 };
 
 // tap.language is a scalar "en" | "es" | null/empty. Empty = the content is
@@ -62,8 +63,13 @@ interface SortableTapRowProps {
   id: string;
   tap: TapItem;
   index: number;
-  /** Slider taps only: 1-based position among slider taps → "Slide N". null otherwise. */
+  /**
+   * Slide-style taps (slider/preview): 1-based position among taps of that
+   * kind → "Slide N" / "Preview N". null for non-slide taps.
+   */
   slideNumber: number | null;
+  /** Which slide-style family this row belongs to, or null for a normal tap. */
+  slideKind: "slider" | "preview" | null;
   /** Journal taps only: the resolved question text, shown under the title. */
   question: string | null;
   disabled: boolean;
@@ -80,6 +86,7 @@ function SortableTapRow({
   tap,
   index,
   slideNumber,
+  slideKind,
   question,
   disabled,
   onEdit,
@@ -101,8 +108,9 @@ function SortableTapRow({
     zIndex: isDragging ? 10 : undefined,
   };
 
-  // Slider taps render a slide-style row (thumbnail + media icon + "Slide N")
-  // instead of the order-number + title used by every other tap type.
+  // Slider/preview taps render a slide-style row (thumbnail + media icon +
+  // "Slide N" / "Preview N") instead of the order-number + title used by every
+  // other tap type.
   const isSlide = slideNumber != null;
   const slideIsVideo = isSlide && Boolean(tap.videos && tap.videos[0]);
   const slideThumbUrl = isSlide
@@ -111,7 +119,12 @@ function SortableTapRow({
       : (tap.cover?.url ?? null)
     : null;
   const slideVideoUrl = slideIsVideo ? (tap.videos?.[0]?.url ?? null) : null;
-  const label = isSlide ? `Slide ${slideNumber}` : tap.title || "content";
+  const slideWord = slideKind === "preview" ? "Preview" : "Slide";
+  const label = isSlide ? `${slideWord} ${slideNumber}` : tap.title || "content";
+  // Unified per-type accent for the slide-style media icon: preview→orange,
+  // slider→sky. The Film/Image icon shape still distinguishes video vs image.
+  const slideAccent =
+    slideKind === "preview" ? "text-orange-500" : "text-sky-500";
 
   // Subtitle metadata for non-slide rows: the tap type followed by its
   // language ("Both" when unset). e.g. "Journal · Both", "Video · English".
@@ -160,12 +173,12 @@ function SortableTapRow({
           </div>
           <div className="flex min-w-0 flex-1 items-center gap-1.5">
             {slideIsVideo ? (
-              <Film className="h-4 w-4 flex-shrink-0 text-purple-500" />
+              <Film className={`h-4 w-4 flex-shrink-0 ${slideAccent}`} />
             ) : (
-              <ImageIcon className="h-4 w-4 flex-shrink-0 text-sky-500" />
+              <ImageIcon className={`h-4 w-4 flex-shrink-0 ${slideAccent}`} />
             )}
             <span className="truncate text-sm text-stone-700">
-              Slide {slideNumber}
+              {slideWord} {slideNumber}
             </span>
           </div>
         </>
@@ -448,6 +461,12 @@ export function TapBlocks({ classId }: TapBlocksProps) {
   const slideNumbers = taps.map((t) =>
     t.type === "slider" ? ++sliderSeq : null,
   );
+  // Parallel "Preview N" numbering across preview-type taps (raw equality,
+  // mirroring the slider pattern). Preview taps render the same slide-style row.
+  let previewSeq = 0;
+  const previewNumbers = taps.map((t) =>
+    t.type === "preview" ? ++previewSeq : null,
+  );
 
   return (
     <div className="space-y-2">
@@ -501,7 +520,16 @@ export function TapBlocks({ classId }: TapBlocksProps) {
                       id={id}
                       tap={tap}
                       index={index}
-                      slideNumber={slideNumbers[index] ?? null}
+                      slideNumber={
+                        slideNumbers[index] ?? previewNumbers[index] ?? null
+                      }
+                      slideKind={
+                        slideNumbers[index] != null
+                          ? "slider"
+                          : previewNumbers[index] != null
+                            ? "preview"
+                            : null
+                      }
                       question={question}
                       disabled={savingOrder}
                       onEdit={openEdit}

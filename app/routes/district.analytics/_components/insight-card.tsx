@@ -17,28 +17,27 @@ export function InsightCard({ insights }: InsightCardProps) {
   // the empty state. Derived, so there's no stale-render flash.
   const clampedActive = Math.min(active, Math.max(insights.length - 1, 0));
   const slide = insights[clampedActive];
+  // No insights yet (empty range / not enough activity) → keep the same gradient
+  // card chrome but swap in the "Still learning" holding state instead of a bare
+  // white card, so the analytics grid stays visually cohesive.
+  const isEmpty = !slide;
 
   const handleSwipe = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    // A press that starts on an indicator dot is a tab click, not a swipe — let it
+    // through so the button's onClick fires. (We intentionally do NOT capture the
+    // pointer on the card: pointer capture swallows the child buttons' click events,
+    // which is what made the dots look clickable but do nothing.)
+    if ((e.target as HTMLElement).closest("[data-insight-dot]")) return;
     const startX = e.clientX;
-    const el = e.currentTarget;
     const onUp = (ev: PointerEvent) => {
       const dx = ev.clientX - startX;
       if (dx < -40) setActive(Math.min(clampedActive + 1, insights.length - 1));
       if (dx > 40) setActive(Math.max(clampedActive - 1, 0));
-      el.releasePointerCapture(ev.pointerId);
-      el.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointerup", onUp);
     };
-    el.setPointerCapture(e.pointerId);
-    el.addEventListener("pointerup", onUp);
+    // Listen on window so the swipe still completes if the pointer leaves the card.
+    window.addEventListener("pointerup", onUp);
   }, [clampedActive, insights.length]);
-
-  if (!slide) {
-    return (
-      <div className="bg-white rounded-[24px] border border-border shadow-xs p-5 flex flex-col h-full">
-        <p className="text-sm text-muted-foreground">No insights available.</p>
-      </div>
-    );
-  }
 
   return (
     <div
@@ -56,7 +55,7 @@ export function InsightCard({ insights }: InsightCardProps) {
           hsl(200, 18%, 52%) 100%
         )`,
       }}
-      onPointerDown={handleSwipe}
+      onPointerDown={isEmpty ? undefined : handleSwipe}
     >
       {/* Grain overlay - coarse */}
       <div
@@ -90,31 +89,45 @@ export function InsightCard({ insights }: InsightCardProps) {
           </button>
         </div>
 
-        <div className="mt-auto flex flex-col gap-2">
-          <span className="font-display text-6xl font-bold text-white leading-none transition-opacity duration-300">
-            {slide.stat}
-          </span>
-          <p className="text-white font-semibold text-sm leading-snug transition-opacity duration-300">
-            {slide.title}
-          </p>
-
-          {/* Slider indicators */}
-          <div className="mt-4 flex items-center gap-2 pointer-events-auto">
-            {insights.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setActive(i)}
-                className="flex-1 h-[4px] rounded-full transition-all duration-500 ease-out"
-                style={{
-                  backgroundColor:
-                    i === clampedActive ? "hsl(0 0% 100% / 0.9)" : "hsl(0 0% 0% / 0.25)",
-                }}
-                aria-label={`Go to insight ${i + 1}`}
-              />
-            ))}
+        {isEmpty ? (
+          <div className="mt-auto flex flex-col gap-2">
+            <span className="text-2xl font-bold text-white leading-[1.05]">
+              Still learning
+            </span>
+            <p className="text-white font-medium text-sm leading-snug max-w-[22rem]">
+              Check back in 60 days to see if there are enough insights.
+            </p>
+            {/* No slider indicators in the empty state — there's nothing to
+                page through, and showing tabs here reads as broken navigation. */}
           </div>
-        </div>
+        ) : (
+          <div className="mt-auto flex flex-col gap-2">
+            <span className="font-display text-6xl font-bold text-white leading-none transition-opacity duration-300">
+              {slide.stat}
+            </span>
+            <p className="text-white font-semibold text-sm leading-snug transition-opacity duration-300">
+              {slide.title}
+            </p>
+
+            {/* Slider indicators */}
+            <div className="mt-4 flex items-center gap-2 pointer-events-auto">
+              {insights.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  data-insight-dot
+                  onClick={() => setActive(i)}
+                  className="flex-1 h-[4px] rounded-full transition-all duration-500 ease-out cursor-pointer hover:opacity-80"
+                  style={{
+                    backgroundColor:
+                      i === clampedActive ? "hsl(0 0% 100% / 0.9)" : "hsl(0 0% 0% / 0.25)",
+                  }}
+                  aria-label={`Go to insight ${i + 1}`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
