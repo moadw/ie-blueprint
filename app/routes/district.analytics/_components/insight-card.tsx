@@ -97,20 +97,8 @@ export function InsightCard({ insights }: InsightCardProps) {
             <p className="text-white font-medium text-sm leading-snug max-w-[22rem]">
               Check back in 60 days to see if there are enough insights.
             </p>
-
-            {/* Decorative slider indicators (no slides to page through yet) */}
-            <div className="mt-4 flex items-center gap-2">
-              {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="flex-1 h-[4px] rounded-full"
-                  style={{
-                    backgroundColor:
-                      i === 0 ? "hsl(0 0% 100% / 0.9)" : "hsl(0 0% 0% / 0.25)",
-                  }}
-                />
-              ))}
-            </div>
+            {/* No slider indicators in the empty state — there's nothing to
+                page through, and showing tabs here reads as broken navigation. */}
           </div>
         ) : (
           <div className="mt-auto flex flex-col gap-2">
