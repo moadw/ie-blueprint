@@ -1,7 +1,12 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "~/lib/utils";
 
-export type BadgeVariant = "neutral" | "active" | "trial" | "suspended";
+export type BadgeVariant =
+  | "neutral"
+  | "active"
+  | "pending"
+  | "trial"
+  | "suspended";
 export type BadgeShape = "pill" | "tag";
 
 export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
@@ -13,6 +18,7 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 const variantClasses: Record<BadgeVariant, string> = {
   neutral: "bg-muted text-muted-foreground",
   active: "bg-success/15 text-success",
+  pending: "bg-warning/15 text-warning",
   trial: "bg-warning/15 text-warning",
   suspended: "bg-destructive/15 text-destructive",
 };
