@@ -181,7 +181,9 @@ export function PracticeRow({
     practice.language?.spanish?.description ?? "",
   );
   const [locale, setLocale] = useState<"en" | "es">("en");
-  const initialDay = Math.max(1, Math.round(practice.order ?? 1));
+  // "Day" is 1-based for display; the stored `order` is 0-based (Day 1 = order
+  // 0), so the badge/input show `order + 1` and Save writes back `day - 1`.
+  const initialDay = Math.max(1, Math.round((practice.order ?? 0) + 1));
   const [day, setDay] = useState<number>(initialDay);
 
   // Access is wired to the record's `free` flag.
@@ -225,7 +227,7 @@ export function PracticeRow({
   useEffect(() => {
     setTitle(practice.title ?? "");
     setDescription(practice.description ?? "");
-    setDay(Math.max(1, Math.round(practice.order ?? 1)));
+    setDay(Math.max(1, Math.round((practice.order ?? 0) + 1)));
     setFeedback(practice.feedback ?? false);
     setSpanishTitle(practice.language?.spanish?.title ?? "");
     setSpanishDescription(practice.language?.spanish?.description ?? "");
@@ -307,7 +309,8 @@ export function PracticeRow({
         record: {
           title: title.trim(),
           description: description.trim() || null,
-          order: dayValue,
+          // 1-based Day → 0-based stored order.
+          order: Math.max(0, dayValue - 1),
           free: accessLevel === "free",
           feedback,
           // Category, Grade, Active are visual-only (I2/I3).
