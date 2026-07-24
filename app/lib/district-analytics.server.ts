@@ -522,9 +522,10 @@ export async function getDistrictAnalytics(
   // Insights — the three prototype metrics (Engagement rate, Retention rate,
   // New sessions), composed from the already-firing (cached) promises so there
   // are no duplicate Amplitude calls. Deltas use the page's compare window, same
-  // as the sibling cards. Each entry is included only when its source resolved →
-  // an empty `[]` renders the card's "Still learning" empty state. A genuine
-  // 0%/0 still renders as a slide (that's data, not "no data").
+  // as the sibling cards. A metric is included ONLY when its displayed value is
+  // > 0; a 0 or unavailable metric is dropped. When all three drop, `[]` renders
+  // the card's "Still learning" empty state — i.e. 0 / no-data shows the holding
+  // state (the original request), rather than a row of "0%" cards.
   const insights = deferCard(async () => {
     const [
       completedPrimary,
@@ -553,18 +554,20 @@ export async function getDistrictAnalytics(
         : null;
     if (completedPrimary !== null && registered !== null && registered > 0) {
       const rate = Math.round((completedPrimary / registered) * 100);
-      const prevRate =
-        completedCompare !== null ? (completedCompare / registered) * 100 : null;
-      const deltaPP = prevRate !== null ? Math.round(rate - prevRate) : null;
-      out.push({
-        stat: `${rate}%`,
-        title: `Engagement rate${deltaClause(deltaPP, "pts")}.`,
-        description: `${completedPrimary.toLocaleString()} of ${registered.toLocaleString()} registered users completed a practice this period.`,
-      });
+      if (rate > 0) {
+        const prevRate =
+          completedCompare !== null ? (completedCompare / registered) * 100 : null;
+        const deltaPP = prevRate !== null ? Math.round(rate - prevRate) : null;
+        out.push({
+          stat: `${rate}%`,
+          title: `Engagement rate${deltaClause(deltaPP, "pts")}.`,
+          description: `${completedPrimary.toLocaleString()} of ${registered.toLocaleString()} registered users completed a practice this period.`,
+        });
+      }
     }
 
     // 2. Retention rate = retention-curve peak, delta vs the compare window.
-    if (retentionPrimary !== null) {
+    if (retentionPrimary !== null && retentionPrimary.peakPct > 0) {
       const deltaPP =
         retentionCompare !== null
           ? Math.round(retentionPrimary.peakPct - retentionCompare.peakPct)
@@ -580,17 +583,19 @@ export async function getDistrictAnalytics(
     // 3. New sessions started (autocaptured `session_start`), delta vs compare.
     if (sessionsPrimary !== null) {
       const total = sum(sessionsPrimary);
-      const delta =
-        sessionsCompare !== null ? total - sum(sessionsCompare) : null;
-      const description =
-        delta !== null && delta !== 0
-          ? `${Math.abs(delta).toLocaleString()} ${delta > 0 ? "more" : "fewer"} than the previous period.`
-          : "Practice sessions started in the selected range.";
-      out.push({
-        stat: compactStat(total),
-        title: `New sessions started across ${schoolsCount} ${schoolsCount === 1 ? "school" : "schools"}.`,
-        description,
-      });
+      if (total > 0) {
+        const delta =
+          sessionsCompare !== null ? total - sum(sessionsCompare) : null;
+        const description =
+          delta !== null && delta !== 0
+            ? `${Math.abs(delta).toLocaleString()} ${delta > 0 ? "more" : "fewer"} than the previous period.`
+            : "Practice sessions started in the selected range.";
+        out.push({
+          stat: compactStat(total),
+          title: `New sessions started across ${schoolsCount} ${schoolsCount === 1 ? "school" : "schools"}.`,
+          description,
+        });
+      }
     }
 
     return out;
